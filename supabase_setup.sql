@@ -232,6 +232,39 @@ begin
   return jsonb_build_object('token', v_tok, 'role', case when v_adm then 'admin' else 'student' end, 'mustChange', v_must and not v_adm);
 end $$;
 
+-- 회원가입: 아이디와 비밀번호만 받는다. 가입하면 바로 로그인된다.
+create or replace function castle.r_register(b jsonb) returns jsonb language plpgsql as $$
+declare v_id text := regexp_replace(normalize(coalesce(b->>'id', ''), NFC), '\s', '', 'g');
+        v_pw text := coalesce(b->>'pw', '');
+        v_ip text := coalesce((nullif(current_setting('request.headers', true), '')::jsonb)->>'x-forwarded-for', '');
+        v_key text := 'reg|' || coalesce(nullif(v_ip, ''), 'local'); t castle.tries; v_tok text;
+begin
+  select * into t from castle.tries where key = v_key;
+  if found and t.until_at is not null and t.until_at > now() then
+    return jsonb_build_object('error', '가입을 너무 많이 시도했어요. 10분 뒤에 다시 해 주세요.');
+  end if;
+  if v_id !~ '^[가-힣A-Za-z0-9_]{2,20}$' then
+    return jsonb_build_object('error', '아이디는 한글·영문·숫자·_ 로 2~20자예요.');
+  end if;
+  if lower(v_id) = 'admin' then return jsonb_build_object('error', '쓸 수 없는 아이디예요.'); end if;
+  if length(v_pw) < 4 or length(v_pw) > 30 then
+    return jsonb_build_object('error', '비밀번호는 4~30자예요.');
+  end if;
+  if exists (select 1 from castle.students where id = v_id) then
+    return jsonb_build_object('error', '이미 있는 아이디예요. 다른 아이디를 써 주세요.');
+  end if;
+  insert into castle.tries as x (key, n) values (v_key, 1)
+    on conflict (key) do update set n = case when x.n + 1 >= 100 then 0 else x.n + 1 end,
+                                    until_at = case when x.n + 1 >= 100 then now() + interval '10 minutes' else x.until_at end;
+  insert into castle.students (id, name, points, must_change, pw_hash)
+    values (v_id, v_id, 0, false, extensions.crypt(v_pw, extensions.gen_salt('bf', 6)));
+  perform castle.add_pts(v_id, castle.c('START_POINTS'), '기본 포인트');
+  delete from castle.sessions where exp < now();
+  v_tok := encode(extensions.gen_random_bytes(24), 'hex');
+  insert into castle.sessions values (v_tok, v_id, 'student', now() + interval '7 days');
+  return jsonb_build_object('token', v_tok, 'role', 'student', 'mustChange', false);
+end $$;
+
 create or replace function castle.r_logout(tok text) returns jsonb language plpgsql as $$
 begin
   delete from castle.sessions where token = tok;
@@ -241,7 +274,7 @@ end $$;
 create or replace function castle.r_setpw(tok text, b jsonb) returns jsonb language plpgsql as $$
 declare st castle.students := castle.stu(tok); v_pw text := coalesce(b->>'pw', '');
 begin
-  if v_pw !~ '^[0-9]{4}$' then perform castle.fail(400, '비밀번호는 숫자 4자리예요.'); end if;
+  if length(v_pw) < 4 or length(v_pw) > 30 then perform castle.fail(400, '비밀번호는 4~30자예요.'); end if;
   if v_pw = '0000' then perform castle.fail(400, '0000은 쓸 수 없어요. 다른 숫자로 정해 주세요.'); end if;
   update castle.students set pw_hash = extensions.crypt(v_pw, extensions.gen_salt('bf', 6)), must_change = false where id = st.id;
   return jsonb_build_object('ok', true);
@@ -511,6 +544,7 @@ create or replace function castle.dispatch(p_path text, tok text, b jsonb) retur
 begin
   case p_path
     when 'login' then return castle.r_login(b);
+    when 'register' then return castle.r_register(b);
     when 'logout' then return castle.r_logout(tok);
     when 'setpw' then return castle.r_setpw(tok, b);
     when 'me' then return castle.r_me(tok);
