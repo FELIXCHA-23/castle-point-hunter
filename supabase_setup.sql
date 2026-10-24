@@ -239,6 +239,9 @@ declare v_id text := regexp_replace(normalize(coalesce(b->>'id', ''), NFC), '\s'
         v_ip text := coalesce((nullif(current_setting('request.headers', true), '')::jsonb)->>'x-forwarded-for', '');
         v_key text := 'reg|' || coalesce(nullif(v_ip, ''), 'local'); t castle.tries; v_tok text;
 begin
+  if coalesce(castle.cfg_all() ->> 'SIGNUP_OPEN', '0') <> '1' then
+    return jsonb_build_object('error', '지금은 회원가입을 받지 않아요. 선생님께 등록을 부탁하세요.');
+  end if;
   select * into t from castle.tries where key = v_key;
   if found and t.until_at is not null and t.until_at > now() then
     return jsonb_build_object('error', '가입을 너무 많이 시도했어요. 10분 뒤에 다시 해 주세요.');

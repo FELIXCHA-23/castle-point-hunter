@@ -91,7 +91,7 @@ function renderLogin(msg, signup) {
   <label>비밀번호${signup ? ' (4자 이상)' : ''}</label><input id="pw" type="password" autocomplete="${signup ? 'new-password' : 'current-password'}">
   <div class="err" id="err">${esc(msg || '')}</div>
   <button class="primary btn-big" id="go">${signup ? '가입하고 시작하기' : '로그인'}</button>
-  <button class="btn-big" id="sw" style="border:none;background:none;color:var(--main)">${signup ? '이미 계정이 있어요 (로그인)' : '처음이에요 (회원가입)'}</button></div>`);
+  </div>`);
   const go = async () => {
     try {
       const r = await api(signup ? 'register' : 'login', { id: $('#id').value, pw: $('#pw').value });
@@ -100,7 +100,6 @@ function renderLogin(msg, signup) {
     } catch (e) { showErr(e.message); }
   };
   $('#go').onclick = go; $('#pw').onkeydown = (e) => { if (e.key === 'Enter') go(); };
-  $('#sw').onclick = () => renderLogin('', !signup);
 }
 function renderSetPw() {
   app(`<div class="card" style="margin-top:8vh"><h1>비밀번호 설정</h1>
