@@ -2,6 +2,7 @@
 <html lang="ko">
 <head>
 <meta charset="utf-8">
+<meta name="color-scheme" content="light">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>캐슬 포인트 헌터</title>
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/KaTeX/0.16.9/katex.min.css">
@@ -9,9 +10,8 @@
 <script defer src="https://cdnjs.cloudflare.com/ajax/libs/KaTeX/0.16.9/contrib/auto-render.min.js"></script>
 <style>
 :root{--bg:#f3f7ff;--bg2:#e6efff;--card:#ffffff;--ink:#0f1b3d;--sub:#6b7a99;--line:#e3eaf7;--main:#2b6bff;--main-ink:#ffffff;--tint:#eaf1ff;--gold:#0f1b3d;--ok:#0f9d58;--bad:#e5484d;--fire:#2b6bff;--shadow:0 2px 6px rgba(43,107,255,.05),0 10px 28px rgba(43,107,255,.08);--glass:rgba(255,255,255,.92)}
-@media (prefers-color-scheme:dark){:root{--bg:#0b1020;--bg2:#10182f;--card:#141c33;--ink:#e9eefc;--sub:#8c9ac0;--line:#222c4a;--main:#5b8cff;--main-ink:#08122e;--tint:#18254d;--gold:#e9eefc;--ok:#35c27a;--bad:#ff6b70;--fire:#7ea3ff;--shadow:none;--glass:rgba(20,28,51,.94)}}
 *{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
-html{-webkit-text-size-adjust:100%}
+html{-webkit-text-size-adjust:100%;color-scheme:light}
 body{margin:0;background:var(--bg);background-image:linear-gradient(180deg,var(--bg2) 0,var(--bg) 320px);background-repeat:no-repeat;color:var(--ink);font-family:'Pretendard Variable',Pretendard,-apple-system,BlinkMacSystemFont,'Apple SD Gothic Neo','Malgun Gothic',system-ui,sans-serif;line-height:1.55;letter-spacing:-.01em;font-size:16px;min-height:100vh}
 #app{max-width:520px;margin:0 auto;padding:18px 16px calc(96px + env(safe-area-inset-bottom,0px))}
 #app.nonav{padding-bottom:40px}
