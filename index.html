@@ -213,7 +213,7 @@ async function renderHistory() {
 
 // ---------- 관리자 ----------
 function tabs(cur) {
-  return `<div class="top"><h1>🏰 관리자</h1><button id="out">로그아웃</button></div><div class="tabs">${[['students', '학생·포인트'], ['problems', '문제'], ['log', '포인트 기록'], ['rules', '규칙 값'], ['settings', '비밀번호']].map(([k, n]) => `<button data-t="${k}" class="${k === cur ? 'on' : ''}">${n}</button>`).join('')}</div>`;
+  return `<div class="top"><h1>🏰 관리자</h1><button id="out">로그아웃</button></div><div class="tabs">${[['students', '학생·포인트'], ['problems', '문제'], ['units', '출제 단원'], ['log', '포인트 기록'], ['rules', '규칙 값'], ['settings', '비밀번호']].map(([k, n]) => `<button data-t="${k}" class="${k === cur ? 'on' : ''}">${n}</button>`).join('')}</div>`;
 }
 function bindTabs() { $('#out').onclick = logout; document.querySelectorAll('.tabs button').forEach((b) => b.onclick = () => renderAdmin(b.dataset.t)); }
 async function renderAdmin(tab) {
@@ -276,6 +276,32 @@ async function renderAdmin(tab) {
       $('#dall').onclick = async () => { if (!confirm(`등록된 문제 ${list.length}개를 전부 삭제할까요?
 되돌릴 수 없어요.`)) return; if (prompt('정말 전부 삭제하려면 "삭제"라고 입력하세요.') !== '삭제') return; try { const r = await api('admin/deleteall'); alert(`${r.deleted}개 삭제했어요.`); renderAdmin(tab); } catch (e) { alert(e.message); } };
       document.querySelectorAll('.dp').forEach((b) => b.onclick = async () => { if (confirm('이 문제를 삭제할까요?')) { await api('admin/deleteproblem', { id: b.dataset.id }); renderAdmin(tab); } });
+    } else if (tab === 'units') {
+      const G = ['중1', '중2', '중3', '고1', '고2', '고3'], d = await api('admin/units');
+      let cur = window.__ug || (G.find((g) => d.units.some((u) => u.grade === g)) || '고1');
+      const draw = () => {
+        const us = d.units.filter((u) => u.grade === cur), sel = d.selected[cur], limited = Array.isArray(sel);
+        const key = (u) => `${u.subject}|${u.unit_large}|${u.unit}`, groups = [];
+        us.forEach((u) => { const gk = u.subject + '|' + u.unit_large; let g = groups.find((x) => x.k === gk); if (!g) groups.push(g = { k: gk, subject: u.subject, large: u.unit_large, items: [] }); g.items.push(u); });
+        app(`${tabs('units')}<div class="card"><h2>학생에게 보여줄 단원</h2>
+        <p class="sub">학년을 고르고, 지금 학생들에게 출제할 <b>대단원·중단원</b>에 체크한 뒤 저장하세요. 시험 시기에 맞춰 바꾸면 돼요. 체크한 단원의 문제만 나오고, <b>아무것도 저장하지 않은 학년은 모든 문제가 나와요.</b> 단원이 비어 있는 문제는 제한을 걸면 나오지 않아요.</p>
+        <div class="grades" style="grid-template-columns:repeat(6,1fr);margin:10px 0">${G.map((g) => `<button data-g="${g}" class="${g === cur ? 'on' : ''}">${g}${Array.isArray(d.selected[g]) ? ' ✓' : ''}</button>`).join('')}</div>
+        <div class="banner" style="${limited ? '' : 'background:#eef3ff;color:#1f3a68;border-color:#c9d6f5'}">${cur}: ${limited ? `선택한 ${sel.length}개 중단원의 문제만 출제 중` : '제한 없음 (등록된 모든 문제가 출제돼요)'}</div>
+        ${us.length ? groups.map((g, gi) => `<div class="hist"><label style="margin:0;color:var(--ink)"><input type="checkbox" class="lg" data-gi="${gi}" style="width:auto"> <b>${esc(g.subject ? g.subject + ' · ' : '')}${esc(g.large || '(대단원 없음)')}</b> <span class="sub">${g.items.reduce((a, u) => a + u.n, 0)}문제</span></label>
+          ${g.items.map((u) => `<label style="margin:2px 0 2px 26px;color:var(--ink)"><input type="checkbox" class="un" data-gi="${gi}" value="${esc(key(u))}" ${limited && sel.includes(key(u)) ? 'checked' : ''} style="width:auto"> ${esc(u.unit || '(중단원 없음)')} <span class="sub">${u.n}문제</span></label>`).join('')}</div>`).join('') : '<p class="sub">이 학년에는 등록된 문제가 없어요.</p>'}
+        <div class="row" style="margin-top:12px"><button class="primary" id="sv" ${us.length ? '' : 'disabled'}>저장</button><button id="all2">모두 체크</button><button id="none2">모두 해제</button><button class="danger" id="rel" ${limited ? '' : 'disabled'}>제한 풀기</button></div><div class="err" id="err"></div></div>`);
+        bindTabs();
+        document.querySelectorAll('[data-g]').forEach((b) => b.onclick = () => { cur = window.__ug = b.dataset.g; draw(); });
+        const sync = () => document.querySelectorAll('.lg').forEach((l) => { const c = [...document.querySelectorAll(`.un[data-gi="${l.dataset.gi}"]`)]; const n = c.filter((x) => x.checked).length; l.checked = n === c.length; l.indeterminate = n > 0 && n < c.length; });
+        document.querySelectorAll('.lg').forEach((l) => l.onchange = () => { document.querySelectorAll(`.un[data-gi="${l.dataset.gi}"]`).forEach((x) => x.checked = l.checked); sync(); });
+        document.querySelectorAll('.un').forEach((x) => x.onchange = sync); sync();
+        $('#all2').onclick = () => { document.querySelectorAll('.un').forEach((x) => x.checked = true); sync(); };
+        $('#none2').onclick = () => { document.querySelectorAll('.un').forEach((x) => x.checked = false); sync(); };
+        const save = async (units) => { try { await api('admin/setunits', { grade: cur, units }); if (units.length) d.selected[cur] = units; else delete d.selected[cur]; alert(units.length ? `${cur}: ${units.length}개 중단원만 출제돼요.` : `${cur}: 제한을 풀었어요. 모든 문제가 출제돼요.`); draw(); } catch (e) { showErr(e.message); } };
+        $('#sv').onclick = () => { const u = [...document.querySelectorAll('.un:checked')].map((x) => x.value); if (!u.length && !confirm('아무것도 체크하지 않으면 제한이 풀리고 모든 문제가 출제돼요. 계속할까요?')) return; save(u); };
+        $('#rel').onclick = () => { if (confirm(cur + ' 제한을 풀고 모든 문제를 출제할까요?')) save([]); };
+      };
+      draw();
     } else if (tab === 'log') {
       const log = await api('admin/log');
       app(`${tabs(tab)}<div class="card"><h2>최근 포인트 기록</h2><table><tr><th>시각</th><th>학생</th><th>변동</th><th>잔액</th><th>내용</th></tr>

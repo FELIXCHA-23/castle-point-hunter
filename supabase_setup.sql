@@ -61,6 +61,11 @@ create or replace function castle.cfg_all() returns jsonb language sql stable as
   select '{"START_POINTS":5000,"PREVIEW_COST":10,"PREVIEW_SEC":10,"ACCEPT_COST":100,"TIME_LIMIT_SEC":1800,"REWARD":500,"MORNING_FROM":7,"MORNING_TO":9,"DAILY_BONUS_COUNT":15}'::jsonb
          || coalesce((select data from castle.cfg where id = 1), '{}'::jsonb) $$;
 
+-- 학년별로 학생에게 보일 단원 (관리자 "출제 단원" 탭). 설정이 없는 학년은 모든 문제가 나옵니다.
+create or replace function castle.unit_ok(g text, subj text, ul text, u text) returns boolean language sql stable as $$
+  select case when jsonb_typeof(castle.cfg_all() -> 'UNITS' -> g) is distinct from 'array' then true
+              else (castle.cfg_all() -> 'UNITS' -> g) ? (subj || '|' || ul || '|' || u) end $$;
+
 create or replace function castle.c(k text) returns int language sql stable as $$
   select (castle.cfg_all() ->> k)::int $$;
 
@@ -261,11 +266,12 @@ begin
   if v_g is null or not (v_g = any (castle.grades())) then perform castle.fail(400, '학년을 선택해 주세요.'); end if;
   if st.points < castle.c('PREVIEW_COST') then perform castle.fail(400, '포인트가 부족해요.'); end if;
   select * into p from castle.problems where grade = v_g and active and not (id = any (st.done))
+    and castle.unit_ok(v_g, subject, unit_large, unit)
     and not exists (select 1 from castle.attempts x where x.sid = st.id and x.pid = problems.id) order by random() limit 1;
   if not found then
-    select * into p from castle.problems where grade = v_g and active and not (id = any (st.done)) order by random() limit 1;
+    select * into p from castle.problems where grade = v_g and active and not (id = any (st.done)) and castle.unit_ok(v_g, subject, unit_large, unit) order by random() limit 1;
   end if;
-  if not found then perform castle.fail(400, '이 학년에는 새로 풀 문제가 없어요. 다른 학년을 골라 보세요!'); end if;
+  if not found then perform castle.fail(400, '지금은 이 학년에 풀 수 있는 문제가 없어요. 다른 학년을 골라 보세요!'); end if;
   perform castle.add_pts(st.id, -castle.c('PREVIEW_COST'), '문제 미리보기');
   insert into castle.attempts (sid, pid, grade, state) values (st.id, p.id, p.grade, 'preview') returning * into a;
   return jsonb_build_object('points', (select points from castle.students where id = st.id), 'active', castle.active_view(a), 'serverNow', castle.ms(clock_timestamp()));
@@ -410,8 +416,32 @@ begin
     nxt := nxt || jsonb_build_object(r.k, v);
   end loop;
   if (nxt->>'MORNING_TO')::int <= (nxt->>'MORNING_FROM')::int then perform castle.fail(400, '아침 시간대의 끝은 시작보다 늦어야 해요.'); end if;
-  update castle.cfg set data = nxt where id = 1;
+  update castle.cfg set data = data || nxt where id = 1;
   return castle.cfg_all();
+end $$;
+
+create or replace function castle.r_admin_units(tok text) returns jsonb language plpgsql as $$
+begin
+  perform castle.auth(tok, 'admin');
+  return jsonb_build_object(
+    'selected', coalesce(castle.cfg_all() -> 'UNITS', '{}'::jsonb),
+    'units', coalesce((select jsonb_agg(jsonb_build_object('grade', grade, 'subject', subject, 'unit_large', unit_large, 'unit', unit, 'n', n) order by grade, ord)
+                       from (select grade, subject, unit_large, unit, count(*) as n, min(created_at) as ord
+                             from castle.problems group by grade, subject, unit_large, unit) s), '[]'::jsonb));
+end $$;
+
+create or replace function castle.r_admin_setunits(tok text, b jsonb) returns jsonb language plpgsql as $$
+declare g text := b->>'grade';
+begin
+  perform castle.auth(tok, 'admin');
+  if g is null or not (g = any (castle.grades())) then perform castle.fail(400, '학년이 올바르지 않아요.'); end if;
+  if jsonb_typeof(b->'units') is distinct from 'array' then perform castle.fail(400, '단원 목록이 필요해요.'); end if;
+  if jsonb_array_length(b->'units') = 0 then
+    update castle.cfg set data = data #- array['UNITS', g] where id = 1;
+  else
+    update castle.cfg set data = jsonb_set(data, '{UNITS}', coalesce(data->'UNITS', '{}'::jsonb) || jsonb_build_object(g, b->'units'), true) where id = 1;
+  end if;
+  return jsonb_build_object('ok', true);
 end $$;
 
 create or replace function castle.r_admin_problems(tok text) returns jsonb language plpgsql as $$
@@ -492,6 +522,8 @@ begin
     when 'admin/cfg' then return castle.r_admin_cfg(tok);
     when 'admin/setcfg' then return castle.r_admin_setcfg(tok, b);
     when 'admin/problems' then return castle.r_admin_problems(tok);
+    when 'admin/units' then return castle.r_admin_units(tok);
+    when 'admin/setunits' then return castle.r_admin_setunits(tok, b);
     when 'admin/problem' then return castle.r_admin_problem(tok, b);
     when 'admin/import' then return castle.r_admin_import(tok, b);
     when 'admin/deleteproblem' then return castle.r_admin_deleteproblem(tok, b);
