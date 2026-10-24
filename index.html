@@ -8,44 +8,46 @@
 <script defer src="https://cdnjs.cloudflare.com/ajax/libs/KaTeX/0.16.9/katex.min.js"></script>
 <script defer src="https://cdnjs.cloudflare.com/ajax/libs/KaTeX/0.16.9/contrib/auto-render.min.js"></script>
 <style>
-:root{--bg:#f6f7f9;--card:#ffffff;--ink:#14161a;--sub:#6b7280;--line:#e6e8ec;--main:#2b59ff;--main-ink:#ffffff;--tint:#eef2ff;--gold:#14161a;--ok:#0f9d58;--bad:#e5484d;--fire:#2b59ff;--shadow:0 1px 2px rgba(16,24,40,.04),0 4px 16px rgba(16,24,40,.05)}
-@media (prefers-color-scheme:dark){:root{--bg:#0c0e12;--card:#14171d;--ink:#eef0f4;--sub:#8b93a1;--line:#242934;--main:#6b8cff;--main-ink:#0c0e12;--tint:#1a2036;--gold:#eef0f4;--ok:#35c27a;--bad:#ff6b70;--fire:#8ea8ff;--shadow:none}}
+:root{--bg:#f3f7ff;--bg2:#e6efff;--card:#ffffff;--ink:#0f1b3d;--sub:#6b7a99;--line:#e3eaf7;--main:#2b6bff;--main-ink:#ffffff;--tint:#eaf1ff;--gold:#0f1b3d;--ok:#0f9d58;--bad:#e5484d;--fire:#2b6bff;--shadow:0 2px 6px rgba(43,107,255,.05),0 10px 28px rgba(43,107,255,.08);--glass:rgba(255,255,255,.92)}
+@media (prefers-color-scheme:dark){:root{--bg:#0b1020;--bg2:#10182f;--card:#141c33;--ink:#e9eefc;--sub:#8c9ac0;--line:#222c4a;--main:#5b8cff;--main-ink:#08122e;--tint:#18254d;--gold:#e9eefc;--ok:#35c27a;--bad:#ff6b70;--fire:#7ea3ff;--shadow:none;--glass:rgba(20,28,51,.94)}}
 *{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
 html{-webkit-text-size-adjust:100%}
-body{margin:0;background:var(--bg);color:var(--ink);font-family:'Pretendard Variable',Pretendard,-apple-system,BlinkMacSystemFont,'Apple SD Gothic Neo','Malgun Gothic',system-ui,sans-serif;line-height:1.55;letter-spacing:-.01em;font-size:16px}
-#app{max-width:560px;margin:0 auto;padding:20px 16px 48px}
-h1{font-size:24px;font-weight:800;letter-spacing:-.03em;margin:0}h2{font-size:17px;font-weight:700;letter-spacing:-.02em;margin:0 0 12px}
-.card{background:var(--card);border:1px solid var(--line);border-radius:16px;padding:20px;margin-bottom:12px;box-shadow:var(--shadow)}
-.top{display:flex;justify-content:space-between;align-items:center;gap:10px;margin-bottom:16px}
-.pts{font-size:34px;font-weight:800;letter-spacing:-.04em;font-variant-numeric:tabular-nums;color:var(--ink);line-height:1.1}
+body{margin:0;background:var(--bg);background-image:linear-gradient(180deg,var(--bg2) 0,var(--bg) 320px);background-repeat:no-repeat;color:var(--ink);font-family:'Pretendard Variable',Pretendard,-apple-system,BlinkMacSystemFont,'Apple SD Gothic Neo','Malgun Gothic',system-ui,sans-serif;line-height:1.55;letter-spacing:-.01em;font-size:16px;min-height:100vh}
+#app{max-width:520px;margin:0 auto;padding:18px 16px calc(96px + env(safe-area-inset-bottom,0px))}
+#app.nonav{padding-bottom:40px}
+h1{font-size:26px;font-weight:800;letter-spacing:-.04em;margin:0}h2{font-size:17px;font-weight:800;letter-spacing:-.03em;margin:0 0 12px}
+.card{background:var(--card);border:1px solid var(--line);border-radius:22px;padding:20px;margin-bottom:12px;box-shadow:var(--shadow)}
+.top{display:flex;justify-content:space-between;align-items:center;gap:10px;margin-bottom:14px}
+.pts{font-size:38px;font-weight:800;letter-spacing:-.05em;font-variant-numeric:tabular-nums;line-height:1.1}
 .sub{color:var(--sub);font-size:13.5px}
-button{font:inherit;font-weight:600;cursor:pointer;border:1px solid var(--line);background:var(--card);color:var(--ink);padding:10px 14px;border-radius:12px;transition:background .15s,transform .05s,opacity .15s}
+button{font:inherit;font-weight:700;cursor:pointer;border:1px solid var(--line);background:var(--card);color:var(--ink);padding:11px 15px;border-radius:14px;transition:background .15s,transform .05s,opacity .15s}
 button:active{transform:scale(.98)}
-button.primary{background:var(--main);color:var(--main-ink);border-color:var(--main)}
+button.primary{background:var(--main);color:var(--main-ink);border-color:var(--main);box-shadow:0 8px 20px rgba(43,107,255,.28)}
 button.danger{color:var(--bad)}
-button:disabled{opacity:.4;cursor:default}
-.btn-big{width:100%;padding:15px;font-size:16px;margin-top:10px;border-radius:14px}
-input,textarea,select{font:inherit;width:100%;padding:13px 14px;border:1px solid var(--line);border-radius:12px;background:var(--card);color:var(--ink);outline:none;transition:border-color .15s,box-shadow .15s}
+button.soft{background:var(--tint);color:var(--main);border-color:transparent}
+button:disabled{opacity:.45;cursor:default;box-shadow:none}
+.btn-big{width:100%;padding:17px;font-size:16.5px;margin-top:10px;border-radius:18px}
+input,textarea,select{font:inherit;width:100%;padding:14px 15px;border:1px solid var(--line);border-radius:14px;background:var(--card);color:var(--ink);outline:none;transition:border-color .15s,box-shadow .15s}
 input:focus,textarea:focus,select:focus{border-color:var(--main);box-shadow:0 0 0 3px color-mix(in srgb,var(--main) 18%,transparent)}
 textarea{min-height:90px;resize:vertical}
-label{display:block;font-size:13px;font-weight:600;color:var(--sub);margin:14px 0 6px}
+label{display:block;font-size:13px;font-weight:700;color:var(--sub);margin:14px 0 6px}
 .grades{display:grid;grid-template-columns:repeat(3,1fr);gap:8px}
-.grades button{padding:14px 0;font-size:16px;border-radius:12px;background:var(--bg);border-color:transparent}
-.grades button.on{background:var(--main);color:var(--main-ink)}
-.banner{background:var(--tint);color:var(--main);border:none;border-radius:12px;padding:10px 14px;margin-bottom:12px;font-weight:700;font-size:14px}
-.prob{white-space:pre-wrap;font-size:17.5px;line-height:1.75;padding:2px 0;word-break:keep-all;overflow-wrap:anywhere}
-.prob img{max-width:100%;display:block;margin:14px auto 4px;border-radius:8px;background:#fff}
+.grades button{padding:14px 0;font-size:16px;border-radius:14px;background:var(--bg);border-color:transparent;color:var(--ink)}
+.grades button.on{background:var(--main);color:var(--main-ink);box-shadow:0 6px 16px rgba(43,107,255,.25)}
+.banner{background:var(--tint);color:var(--main);border:none;border-radius:14px;padding:11px 14px;margin-bottom:12px;font-weight:700;font-size:14px}
+.prob{white-space:pre-wrap;font-size:17.5px;line-height:1.8;padding:2px 0;word-break:keep-all;overflow-wrap:anywhere}
+.prob img{max-width:100%;display:block;margin:14px auto 4px;border-radius:10px;background:#fff}
 .prob .katex-display{overflow-x:auto;overflow-y:hidden;padding:4px 0;margin:.5em 0}
 .katex{font-size:1.06em}
-.bar{height:6px;background:var(--line);border-radius:6px;overflow:hidden;margin:6px 0 14px}
-.bar>div{height:100%;background:var(--main);width:100%;border-radius:6px}
-.timer{font-size:26px;font-weight:800;font-variant-numeric:tabular-nums;letter-spacing:-.02em}
-.res{font-size:26px;font-weight:800;letter-spacing:-.03em}.ok{color:var(--ok)}.bad{color:var(--bad)}
-.expl{white-space:pre-wrap;border-left:3px solid var(--main);padding:8px 14px;margin:12px 0;background:var(--bg);border-radius:0 10px 10px 0;line-height:1.7;overflow-wrap:anywhere}
+.bar{height:8px;background:var(--line);border-radius:8px;overflow:hidden;margin:6px 0}
+.bar>div{height:100%;background:linear-gradient(90deg,#2b6bff,#5b9bff);width:100%;border-radius:8px}
+.timer{font-size:24px;font-weight:800;font-variant-numeric:tabular-nums;letter-spacing:-.02em}
+.res{font-size:28px;font-weight:800;letter-spacing:-.04em}.ok{color:var(--ok)}.bad{color:var(--bad)}
+.expl{white-space:pre-wrap;border-left:3px solid var(--main);padding:10px 14px;margin:12px 0;background:var(--bg);border-radius:0 12px 12px 0;line-height:1.75;overflow-wrap:anywhere}
 .err{color:var(--bad);min-height:20px;margin-top:8px;font-size:14px}
 table{width:100%;border-collapse:collapse;font-size:14px}
 th{color:var(--sub);font-weight:600;font-size:12.5px}
-th,td{border-bottom:1px solid var(--line);padding:9px 6px;text-align:left}
+th,td{border-bottom:1px solid var(--line);padding:10px 6px;text-align:left}
 tr:last-child td{border-bottom:none}
 .tabs{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:14px}
 .tabs button{padding:8px 13px;border-radius:999px}
@@ -55,8 +57,25 @@ tr:last-child td{border-bottom:none}
 .fire{color:var(--main);font-weight:700}
 .hist{border-top:1px solid var(--line);padding:10px 0}
 code{background:var(--bg);padding:1px 6px;border-radius:6px;font-size:.92em}
+.logo{display:block;height:24px;width:auto;max-width:60%}
+.logo-big{height:34px}
+.hello{margin:6px 0 16px}.hello h1{font-size:25px}.hello .sub{margin-top:2px}
+.pcard{display:flex;justify-content:space-between;align-items:center;gap:10px}
+.pcard .pts{font-size:36px}
+.tiles{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:12px}
+.tile{display:flex;flex-direction:column;align-items:center;gap:8px;padding:18px 10px;border-radius:20px;background:var(--card);border:1px solid var(--line);box-shadow:var(--shadow);font-weight:700;font-size:14.5px;color:var(--ink)}
+.tile svg{width:26px;height:26px;stroke:var(--main)}
+.prog{margin-top:10px}.prog .l{display:flex;justify-content:space-between;font-size:14px;font-weight:700}
+.prog .l span{font-variant-numeric:tabular-nums}
+.nav{position:fixed;left:0;right:0;bottom:0;background:var(--glass);backdrop-filter:blur(14px);-webkit-backdrop-filter:blur(14px);border-top:1px solid var(--line);display:flex;justify-content:center;z-index:20;padding-bottom:env(safe-area-inset-bottom,0px)}
+.nav>div{display:flex;width:100%;max-width:520px}
+.nav button{flex:1;border:none;background:none;border-radius:0;padding:9px 0 11px;font-size:11.5px;font-weight:600;color:var(--sub);display:flex;flex-direction:column;align-items:center;gap:3px;box-shadow:none}
+.nav button svg{width:23px;height:23px;stroke:currentColor}
+.nav button.on{color:var(--main)}
+.back{display:flex;align-items:center;gap:6px;border:none;background:none;padding:6px 4px;font-size:14px;color:var(--sub);font-weight:600}
+.back svg{width:20px;height:20px;stroke:currentColor}
 .chip{display:inline-block;padding:3px 9px;border-radius:999px;background:var(--bg);color:var(--sub);font-size:12px;font-weight:600}
-@media (min-width:700px){#app{max-width:680px}.card{padding:24px}}
+@media (min-width:700px){#app{max-width:600px}.card{padding:24px}}
 </style>
 </head>
 <body>
@@ -88,18 +107,34 @@ async function api(path, body) {
 function logout() { if (token) api('logout').catch(() => {}); token = null; role = null; localStorage.removeItem('tk'); localStorage.removeItem('role'); clearInterval(tick); renderLogin(); }
 function math(el) { if (window.renderMathInElement) try { renderMathInElement(el, { delimiters: [{ left: '$$', right: '$$', display: true }, { left: '$', right: '$', display: false }], throwOnError: false }); } catch (e) {} }
 window.addEventListener('load', () => math(document.body));
-const app = (html) => { clearInterval(tick); $('#app').innerHTML = html; math($('#app')); };
+const app = (html, nonav) => { clearInterval(tick); $('#app').className = nonav ? 'nonav' : ''; $('#app').innerHTML = html; math($('#app')); window.scrollTo(0, 0); };
 function showErr(m) { const e = $('#err'); if (e) e.textContent = m; }
+
+
+const IC = {
+  home: '<svg viewBox="0 0 24 24" fill="none" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M3.5 11 12 4l8.5 7"/><path d="M5.5 10v9.5h13V10"/><path d="M10 19.5v-5h4v5"/></svg>',
+  note: '<svg viewBox="0 0 24 24" fill="none" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M6 3.5h9l3.5 3.5v13.5H6z"/><path d="M14.5 3.5V7.5h4"/><path d="M9 12.5h6M9 16h4"/></svg>',
+  list: '<svg viewBox="0 0 24 24" fill="none" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="5" y="4" width="14" height="17" rx="2.5"/><path d="M9 4V2.8h6V4"/><path d="M8.5 10h7M8.5 13.5h7M8.5 17h4"/></svg>',
+  rank: '<svg viewBox="0 0 24 24" fill="none" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M8 4h8v5a4 4 0 0 1-8 0z"/><path d="M8 6H5v1.5A3 3 0 0 0 8 10.5M16 6h3v1.5a3 3 0 0 1-3 3"/><path d="M12 13v4M8.5 20h7"/></svg>',
+  back: '<svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 5l-7 7 7 7"/></svg>',
+  out: '<svg viewBox="0 0 24 24" fill="none" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M10 4.5H5.5v15H10"/><path d="M14 8l4 4-4 4M18 12H9.5"/></svg>'
+};
+function navBar(cur) {
+  const it = [['home', '홈', IC.home, () => loadMe()], ['nt', '오답노트', IC.note, renderNotes], ['hist', '기록', IC.list, renderHistory], ['rk', '순위', IC.rank, () => renderHome('', true)]];
+  return `<div class="nav"><div>${it.map(([k, n, ic]) => `<button data-n="${k}" class="${k === cur ? 'on' : ''}">${ic}${n}</button>`).join('')}</div></div>`;
+}
+function bindNav() {
+  const f = { home: () => loadMe(), nt: renderNotes, hist: renderHistory, rk: () => renderHome('', true) };
+  document.querySelectorAll('.nav button').forEach((b) => b.onclick = () => f[b.dataset.n]());
+}
 
 // ---------- 로그인 ----------
 function renderLogin(msg, signup) {
-  app(`<div class="card" style="margin-top:8vh"><h1>캐슬 포인트 헌터</h1>
-  <p class="sub">${signup ? '아이디와 비밀번호만 정하면 바로 시작해요!' : '문제를 풀고 포인트를 모아 보세요!'}</p>
-  <label>아이디${signup ? ' (한글·영문·숫자 2~20자)' : ''}</label><input id="id" autocomplete="username" autocapitalize="none" autocorrect="off">
+  app(`<div style="text-align:center;margin:9vh 0 26px"><img class="logo logo-big" src="logo.png" alt="캐슬수학" style="margin:0 auto 18px"><h1>캐슬 포인트 헌터</h1><p class="sub" style="margin-top:6px">${signup ? '아이디와 비밀번호만 정하면 바로 시작해요' : '문제를 풀고 포인트를 모아 보세요'}</p></div>
+  <div class="card"><label style="margin-top:0">아이디${signup ? ' (한글·영문·숫자 2~20자)' : ''}</label><input id="id" autocomplete="username" autocapitalize="none" autocorrect="off">
   <label>비밀번호${signup ? ' (4자 이상)' : ''}</label><input id="pw" type="password" autocomplete="${signup ? 'new-password' : 'current-password'}">
   <div class="err" id="err">${esc(msg || '')}</div>
-  <button class="primary btn-big" id="go">${signup ? '가입하고 시작하기' : '로그인'}</button>
-  </div>`);
+  <button class="primary btn-big" id="go" style="margin-top:6px">${signup ? '가입하고 시작하기' : '로그인'}</button></div>`, true);
   const go = async () => {
     try {
       const r = await api(signup ? 'register' : 'login', { id: $('#id').value, pw: $('#pw').value });
@@ -135,26 +170,31 @@ async function loadMe(notice) {
 }
 function head() {
   const m = me.mult;
-  const fire = m.value > 1 ? `<div class="banner">포인트 2배 적용 중 · ${m.morning ? '아침 7~9시 타임' : ''}${m.morning && m.daily ? ' · ' : ''}${m.daily ? `오늘 ${me.cfg.DAILY_BONUS_COUNT}문제 달성` : ''}</div>` : '';
-  return `<div class="top" style="align-items:flex-end"><div><div class="sub">${esc(me.name)}</div><div class="pts">${fmt(me.points)}<span style="font-size:16px;font-weight:600;color:var(--sub);margin-left:3px">P</span></div></div>
-  <button id="out" style="padding:7px 12px;font-size:13px;color:var(--sub)">로그아웃</button></div>
-  <div class="row" style="margin-bottom:12px;flex-wrap:nowrap"><button id="nt" style="flex:1">오답노트</button><button id="hist" style="flex:1">내 기록</button></div>${fire}`;
+  const fire = m.value > 1 ? `<div class="banner">포인트 2배 적용 중${m.morning ? ' · 아침 7~9시 타임' : ''}${m.daily ? ` · 오늘 ${me.cfg.DAILY_BONUS_COUNT}문제 달성` : ''}</div>` : '';
+  return `<div class="top"><img class="logo" src="logo.png" alt="캐슬수학"><button id="out" class="back" style="margin-right:-4px">${IC.out}로그아웃</button></div>
+  <div class="hello"><h1>${esc(me.name)}님</h1><div class="sub">오늘도 좋은 하루예요</div></div>
+  <div class="card pcard"><div><div class="sub">총 포인트</div><div class="pts">${fmt(me.points)}<span style="font-size:16px;font-weight:700;color:var(--sub);margin-left:3px">P</span></div></div></div>
+  <div class="tiles"><button class="tile" id="nt">${IC.note}오답노트</button><button class="tile" id="hist">${IC.list}내 기록</button></div>${fire}`;
 }
-function bindHead() { $('#out').onclick = logout; $('#hist').onclick = renderHistory; $('#nt').onclick = renderNotes; }
-function renderHome(notice) {
-  const c = me.cfg, left = Math.max(0, c.DAILY_BONUS_COUNT - me.todayCount);
+function bindHead() { $('#out').onclick = logout; $('#hist').onclick = renderHistory; $('#nt').onclick = renderNotes; bindNav(); }
+function renderHome(notice, toRank) {
+  const c = me.cfg, cnt = Math.min(me.todayCount, c.DAILY_BONUS_COUNT), left = Math.max(0, c.DAILY_BONUS_COUNT - me.todayCount);
   app(`${head()}
-  <div class="card"><h2>학년을 선택하세요</h2>
+  <div class="card"><h2>오늘의 학습</h2>
+  <div class="prog"><div class="l"><span>${me.todayCount} / ${c.DAILY_BONUS_COUNT}</span><span class="sub" style="font-weight:600">${left > 0 ? `${left}문제 더 풀면 포인트 2배` : '오늘은 포인트 2배 적용 중'}</span></div>
+  <div class="bar"><div style="width:${Math.round(cnt / c.DAILY_BONUS_COUNT * 100)}%"></div></div></div></div>
+  <div class="card"><h2>학년 선택</h2>
   <div class="grades">${me.grades.map((g) => `<button data-g="${g}" class="${g === pickedGrade ? 'on' : ''}">${g}</button>`).join('')}</div>
-  <p class="sub">미리보기 ${c.PREVIEW_SEC}초 (-${c.PREVIEW_COST}P) → 풀기를 선택하면 -${c.ACCEPT_COST}P, 제한시간 ${c.TIME_LIMIT_SEC / 60}분.<br>정답이면 +${c.REWARD}P!</p>
-  <div class="err" id="err">${esc(notice || '')}</div>
-  <button class="primary btn-big" id="pv" ${pickedGrade ? '' : 'disabled'}>${pickedGrade ? pickedGrade + ' 문제 미리보기 (-' + c.PREVIEW_COST + 'P)' : '학년을 먼저 골라 주세요'}</button></div>
-  <div class="card sub">오늘 푼 문제 <b>${me.todayCount}</b>개 · ${left > 0 ? `${left}문제 더 풀면 포인트 2배` : '오늘은 포인트 2배 적용 중'}</div>
-  <div class="card" id="rk"><h2>헌터 순위</h2><div class="sub">불러오는 중…</div></div>`);
+  <p class="sub" style="margin:12px 0 0">미리보기 ${c.PREVIEW_SEC}초 (-${c.PREVIEW_COST}P) · 풀기 -${c.ACCEPT_COST}P · 제한시간 ${c.TIME_LIMIT_SEC / 60}분 · 정답 +${c.REWARD}P</p>
+  <div class="err" id="err">${esc(notice || '')}</div></div>
+  <button class="primary btn-big" id="pv" ${pickedGrade ? '' : 'disabled'}>${pickedGrade ? '학습 시작하기 · ' + pickedGrade : '학년을 먼저 골라 주세요'}</button>
+  <div class="card" id="rk" style="margin-top:14px"><h2>헌터 순위</h2><div class="sub">불러오는 중…</div></div>
+  ${navBar(toRank ? 'rk' : 'home')}`);
   bindHead();
   api('rank').then((r) => {
     const el = $('#rk'); if (!el) return;
-    el.innerHTML = `<h2>헌터 순위 <span class="sub">(내 순위 ${r.myRank}위 / ${r.total}명)</span></h2><table>${r.top.map((x) => `<tr style="${x.me ? 'font-weight:700;color:var(--main)' : ''}"><td>${x.rank}</td><td>${esc(x.name)}</td><td style="text-align:right">${fmt(x.points)} P</td></tr>`).join('')}</table>`;
+    el.innerHTML = `<h2>헌터 순위 <span class="sub">(내 순위 ${r.myRank}위 / ${r.total}명)</span></h2><table>${r.top.map((x) => `<tr style="${x.me ? 'font-weight:800;color:var(--main)' : ''}"><td>${x.rank}</td><td>${esc(x.name)}</td><td style="text-align:right">${fmt(x.points)} P</td></tr>`).join('')}</table>`;
+    if (toRank) el.scrollIntoView({ block: 'center' });
   }).catch(() => {});
   document.querySelectorAll('.grades button').forEach((b) => b.onclick = () => { pickedGrade = b.dataset.g; renderHome(); });
   $('#pv').onclick = async () => {
@@ -172,11 +212,11 @@ async function nextPreview(g) {
 const dm = (s) => String(s ?? '').replace(/\$([^$]*\\begin\{cases\}[^$]*)\$/g, (m, f) => '$$' + f + '$$');
 const probHtml = (p) => `<div class="prob">${esc(dm(p.text))}${p.image ? `<img src="${esc(p.image)}" alt="">` : ''}</div>`;
 function renderPreview(a) {
-  app(`<div class="top"><div class="sub">${esc(a.problem.grade)} 미리보기</div><div class="timer" id="t"></div></div>
+  app(`<div class="top"><button class="back" id="hm">${IC.back}${esc(a.problem.grade)} 미리보기</button><div class="timer" id="t"></div></div>
   <div class="bar"><div id="b"></div></div>
-  <div class="card">${probHtml(a.problem)}</div>
+  <div class="card" style="margin-top:12px">${probHtml(a.problem)}</div>
   <button class="primary btn-big" id="ac">이 문제 풀기 (-${me.cfg.ACCEPT_COST}P)</button>
-  <button class="btn-big" id="sk">넘기기 (다음 문제)</button><button class="btn-big" id="hm" style="border:none;background:none;color:var(--sub)">홈으로</button><div class="err" id="err"></div>`);
+  <button class="btn-big soft" id="sk" style="border-color:transparent">넘기기 (다음 문제)</button><div class="err" id="err"></div>`, true);
   pickedGrade = a.problem.grade;
   const total = me.cfg.PREVIEW_SEC * 1000;
   const upd = () => {
@@ -194,11 +234,10 @@ function renderPreview(a) {
 }
 function renderSolve(a) {
   const isSet = a.problem.kind === 'set';
-  app(`<div class="top"><div class="sub">${esc(a.problem.grade)} · ${isSet ? '보기의 기호를 입력하세요' : '숫자만 입력하세요'}</div><div class="timer" id="t"></div></div>
+  app(`<div class="top"><button class="back" id="hm">${IC.back}${esc(a.problem.grade)} · ${isSet ? '보기의 기호를 입력' : '숫자만 입력'}</button><div class="timer" id="t"></div></div>
   <div class="card">${probHtml(a.problem)}</div>
   <div class="card">${isSet ? `<label>정답 (해당하는 보기의 기호를 모두 쓰세요. 예: ㄱ, ㄷ)</label><div class="row" style="flex-wrap:nowrap"><input id="ans" autocomplete="off" enterkeyhint="done" placeholder="예: ㄱ, ㄷ"></div>` : `<label>정답 (숫자만, 예: 12 / -3 / 0.5)</label><div class="row" style="flex-wrap:nowrap"><input id="ans" inputmode="decimal" autocomplete="off" enterkeyhint="done"><button id="neg" style="flex:0 0 64px" title="마이너스 부호 넣기/빼기">−</button></div>`}
-  <div class="err" id="err"></div><button class="primary btn-big" id="sub">답안 제출</button></div>
-  <button class="btn-big" id="hm" style="border:none;background:none;color:var(--sub)">홈으로 (이 문제는 포기)</button>`);
+  <div class="err" id="err"></div><button class="primary btn-big" id="sub">답안 제출</button></div>`, true);
   let done = false;
   const submit = async () => {
     if (done) return; done = true; clearInterval(tick);
@@ -227,9 +266,9 @@ function renderResult(r) {
   <p>정답: <b>${esc(fa(r.answer))}</b></p><p class="pts">${fmt(r.points)} P</p></div>
   <div class="card"><h2>해설</h2><div class="expl">${esc(dm(r.explanation)) || '(해설이 아직 없어요)'}</div>
   ${r.extra ? `<div class="expl">${esc(dm(r.extra))}</div>` : ''}</div>
-  <button class="btn-big" id="nb">오답노트에 담기</button>
+  <button class="btn-big soft" id="nb">오답노트에 담기</button>
   <button class="primary btn-big" id="nx">다음 문제 도전 (-${me.cfg.PREVIEW_COST}P)</button>
-  <button class="btn-big" id="hm">홈으로</button>`);
+  <button class="back" id="hm" style="margin:10px auto 0">${IC.home}홈으로</button>`, true);
   $('#nb').onclick = async () => { try { await api('note/add', { pid: r.pid }); $('#nb').textContent = '오답노트에 담았어요'; $('#nb').disabled = true; } catch (e) { alert(e.message); } };
   if (r.correct) $('#nb').textContent = '오답노트에 담기 (맞힌 문제)';
   $('#nx').onclick = () => nextPreview(pickedGrade);
@@ -237,12 +276,12 @@ function renderResult(r) {
 }
 async function renderHistory() {
   const h = await api('history');
-  app(`<div class="top"><h2>내 기록 (최근 30개)</h2><button id="bk">돌아가기</button></div>
+  app(`<div class="top"><h1 style="font-size:22px">내 기록 <span class="sub">최근 30개</span></h1></div>
   ${h.map((x) => `<div class="card"><div class="sub">${esc(x.grade)} · ${new Date(x.t).toLocaleString('ko-KR')} · <b class="${x.correct ? 'ok' : 'bad'}">${x.correct ? '정답 +' + x.reward : x.timeout ? '시간초과' : '오답'}</b></div>
   <div class="prob">${esc(dm(x.text))}${x.image ? `<img src="${esc(x.image)}" alt="">` : ''}</div>
   <p>내 답: ${esc(x.myAnswer || '-')} / 정답: <b>${esc(fa(x.answer))}</b></p>
-  <div class="expl">${esc(dm(x.explanation))}</div>${x.extra ? `<div class="expl">${esc(dm(x.extra))}</div>` : ''}${x.pid ? `<button class="nbh" data-p="${esc(x.pid)}">오답노트에 담기</button>` : ''}</div>`).join('') || '<div class="card sub">아직 푼 문제가 없어요.</div>'}`);
-  $('#bk').onclick = () => loadMe();
+  <div class="expl">${esc(dm(x.explanation))}</div>${x.extra ? `<div class="expl">${esc(dm(x.extra))}</div>` : ''}${x.pid ? `<button class="nbh" data-p="${esc(x.pid)}">오답노트에 담기</button>` : ''}</div>`).join('') || '<div class="card sub">아직 푼 문제가 없어요.</div>'}${navBar('hist')}`);
+  bindNav();
   document.querySelectorAll('.nbh').forEach((b) => b.onclick = async () => { try { await api('note/add', { pid: b.dataset.p }); b.textContent = '담았어요'; b.disabled = true; } catch (e) { alert(e.message); } });
 }
 // 오답노트: 학생마다 따로, 메모와 분류 이름을 직접 정리한다
@@ -251,7 +290,7 @@ async function renderNotes() {
   const list = await api('notes'), tags = [...new Set(list.map((n) => n.tag).filter(Boolean))];
   if (noteTag && !tags.includes(noteTag) && noteTag !== '__none') noteTag = '';
   const shown = list.filter((n) => !noteTag || (noteTag === '__none' ? !n.tag : n.tag === noteTag));
-  app(`<div class="top"><h2>내 오답노트 <span class="sub">(${list.length}개)</span></h2><button id="bk">홈으로</button></div>
+  app(`<div class="top"><h1 style="font-size:22px">내 오답노트 <span class="sub">${list.length}개</span></h1></div>
   ${list.length ? `<div class="row" style="margin-bottom:10px"><button data-t="" class="${noteTag === '' ? 'primary' : ''}" style="flex:0 0 auto">전체</button>${tags.map((t) => `<button data-t="${esc(t)}" class="${noteTag === t ? 'primary' : ''}" style="flex:0 0 auto">${esc(t)}</button>`).join('')}<button data-t="__none" class="${noteTag === '__none' ? 'primary' : ''}" style="flex:0 0 auto">분류 없음</button></div>` : ''}
   ${shown.map((n) => `<div class="card" data-p="${esc(n.pid)}"><div class="sub">${esc(n.grade)} · ${new Date(n.t).toLocaleDateString('ko-KR')}에 담음</div>
   <div class="prob">${esc(dm(n.text))}${n.image ? `<img src="${esc(n.image)}" alt="">` : ''}</div>
@@ -259,8 +298,8 @@ async function renderNotes() {
   <label>분류 이름 (예: 집합, 실수, 다시 풀기)</label><input class="ntg" maxlength="20" value="${esc(n.tag)}" list="tgl">
   <label>내 메모</label><textarea class="nmm" maxlength="1000" placeholder="왜 틀렸는지, 기억할 점을 적어 두세요">${esc(n.memo)}</textarea>
   <div class="row"><button class="primary nsv">저장</button><button class="danger ndl">오답노트에서 빼기</button></div></div>`).join('') || `<div class="card sub">${list.length ? '이 분류에는 문제가 없어요.' : '아직 담은 문제가 없어요. 결과 화면이나 내 기록에서 “오답노트에 담기”를 눌러 보세요.'}</div>`}
-  <datalist id="tgl">${tags.map((t) => `<option value="${esc(t)}">`).join('')}</datalist>`);
-  $('#bk').onclick = () => loadMe();
+  <datalist id="tgl">${tags.map((t) => `<option value="${esc(t)}">`).join('')}</datalist>${navBar('nt')}`);
+  bindNav();
   document.querySelectorAll('[data-t]').forEach((b) => b.onclick = () => { noteTag = b.dataset.t; renderNotes(); });
   document.querySelectorAll('.card[data-p]').forEach((c) => {
     const pid = c.dataset.p;
