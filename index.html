@@ -47,6 +47,8 @@ th,td{border-bottom:1px solid var(--line);padding:7px 6px;text-align:left}
 .row>*{flex:1 1 140px}.row>button{flex:0 0 auto}
 .fire{color:var(--fire);font-weight:700}
 .hist{border-top:1px solid var(--line);padding:10px 0}
+.katex{font-size:1.1em}.expl .katex-display,.prob .katex-display{margin:.6em 0}
+code{background:rgba(127,127,127,.15);padding:1px 5px;border-radius:5px}
 </style>
 </head>
 <body>
@@ -241,16 +243,19 @@ async function renderAdmin(tab) {
       app(`${tabs(tab)}
       <div class="card"><h2 id="ft">문제 추가</h2><input type="hidden" id="pid">
       <div class="row"><div><label>학년</label><select id="gr">${G.map((g) => `<option>${g}</option>`).join('')}</select></div><div><label>정답 (숫자만)</label><input id="an"></div></div>
-      <label>문제 (수식은 $...$ 로 쓰면 예쁘게 보여요)</label><textarea id="tx"></textarea>
+      <p class="sub">수식은 모두 LaTeX 로 <b>$ $</b> 안에 씁니다. 예) 루트 <code>$\sqrt{8}$</code>, 분수 <code>$\dfrac{1}{2}$</code>, 제곱 <code>$x^2$</code>, 파이 <code>$\pi$</code>. 아래 미리보기로 확인하세요.</p>
+      <label>문제</label><textarea id="tx"></textarea><div class="expl pvw" id="pv_tx"></div>
       <label>그림 (선택)</label><input type="file" id="im" accept="image/*"><div class="sub" id="imn"></div>
-      <label>해설</label><textarea id="ex"></textarea>
-      <label>변형 풀이 (문제를 숫자 답으로 바꿨을 때 해설 뒤에 덧붙을 내용, 선택)</label><textarea id="xt"></textarea>
+      <label>해설</label><textarea id="ex"></textarea><div class="expl pvw" id="pv_ex"></div>
+      <label>변형 풀이 (문제를 숫자 답으로 바꿨을 때 해설 뒤에 덧붙을 내용, 선택)</label><textarea id="xt"></textarea><div class="expl pvw" id="pv_xt"></div>
       <label><input type="checkbox" id="ac" checked style="width:auto"> 출제에 사용 (끄면 학생에게 나오지 않아요)</label>
       <div class="err" id="err"></div><div class="row"><button class="primary" id="sv">저장</button><button id="cl">새로 쓰기</button></div></div>
       <div class="card"><h2>문제 일괄 등록 (JSON)</h2><p class="sub">[{"grade":"중1","text":"...","answer":"11","explanation":"...","extra":"..."}, ...]</p><textarea id="js"></textarea><div class="err" id="err3"></div><button id="imp">일괄 등록</button></div>
       <div class="card"><h2>문제 ${list.length}개</h2><table><tr><th>학년</th><th>문제</th><th>정답</th><th></th></tr>
       ${list.map((p, i) => `<tr><td>${p.grade}${p.active === false ? ' <span class="sub">(끔)</span>' : ''}</td><td>${esc(p.text.slice(0, 40))}${p.text.length > 40 ? '…' : ''}</td><td>${esc(p.answer)}</td><td><button class="ed" data-i="${i}">수정</button> <button class="danger dp" data-id="${p.id}">삭제</button></td></tr>`).join('')}</table></div>`);
       bindTabs(); let img = '';
+      const pvw = () => [['tx', 'pv_tx'], ['ex', 'pv_ex'], ['xt', 'pv_xt']].forEach(([a, b]) => { const el = $('#' + b); el.style.display = $('#' + a).value.trim() ? '' : 'none'; el.innerHTML = esc($('#' + a).value); math(el); });
+      ['tx', 'ex', 'xt'].forEach((k) => $('#' + k).oninput = pvw); pvw();
       $('#im').onchange = (e) => {
         const f = e.target.files[0]; if (!f) return;
         const im = new Image(), u = URL.createObjectURL(f);
@@ -267,7 +272,7 @@ async function renderAdmin(tab) {
       $('#sv').onclick = async () => { try { await api('admin/problem', { id: $('#pid').value || undefined, grade: $('#gr').value, answer: $('#an').value, text: $('#tx').value, explanation: $('#ex').value, extra: $('#xt').value, image: img, active: $('#ac').checked }); renderAdmin(tab); } catch (e) { showErr(e.message); } };
       $('#cl').onclick = () => renderAdmin(tab);
       $('#imp').onclick = async () => { try { const r = await api('admin/import', { items: JSON.parse($('#js').value) }); alert(`등록 ${r.count}개` + (r.errors.length ? '\n' + r.errors.join('\n') : '')); renderAdmin(tab); } catch (e) { $('#err3').textContent = e.message; } };
-      document.querySelectorAll('.ed').forEach((b) => b.onclick = () => { const p = list[b.dataset.i]; $('#ft').textContent = '문제 수정'; $('#pid').value = p.id; $('#gr').value = p.grade; $('#an').value = p.answer; $('#tx').value = p.text; $('#ex').value = p.explanation; $('#xt').value = p.extra; $('#ac').checked = p.active !== false; img = p.image || ''; $('#imn').textContent = img ? '그림이 붙어 있어요 (새 그림을 고르면 바뀌어요)' : ''; scrollTo(0, 0); });
+      document.querySelectorAll('.ed').forEach((b) => b.onclick = () => { const p = list[b.dataset.i]; $('#ft').textContent = '문제 수정'; $('#pid').value = p.id; $('#gr').value = p.grade; $('#an').value = p.answer; $('#tx').value = p.text; $('#ex').value = p.explanation; $('#xt').value = p.extra; $('#ac').checked = p.active !== false; pvw(); img = p.image || ''; $('#imn').textContent = img ? '그림이 붙어 있어요 (새 그림을 고르면 바뀌어요)' : ''; scrollTo(0, 0); });
       document.querySelectorAll('.dp').forEach((b) => b.onclick = async () => { if (confirm('이 문제를 삭제할까요?')) { await api('admin/deleteproblem', { id: b.dataset.id }); renderAdmin(tab); } });
     } else if (tab === 'log') {
       const log = await api('admin/log');
