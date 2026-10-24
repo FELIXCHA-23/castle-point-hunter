@@ -439,7 +439,7 @@ create or replace function castle.r_admin_deleteall(tok text, b jsonb) returns j
 declare n int;
 begin
   perform castle.auth(tok, 'admin');
-  delete from castle.problems;
+  delete from castle.problems where true;
   get diagnostics n = row_count;
   return jsonb_build_object('deleted', n);
 end $$;
