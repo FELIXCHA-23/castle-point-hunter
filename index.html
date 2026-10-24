@@ -8,47 +8,55 @@
 <script defer src="https://cdnjs.cloudflare.com/ajax/libs/KaTeX/0.16.9/katex.min.js"></script>
 <script defer src="https://cdnjs.cloudflare.com/ajax/libs/KaTeX/0.16.9/contrib/auto-render.min.js"></script>
 <style>
-:root{--bg:#f4f1ea;--card:#fff;--ink:#1d2433;--sub:#667085;--line:#e4dfd3;--main:#1f3a68;--gold:#c8962b;--ok:#1a8a4a;--bad:#c23b3b;--fire:#e8590c}
-@media (prefers-color-scheme:dark){:root{--bg:#141821;--card:#1e2430;--ink:#eef0f5;--sub:#9aa3b5;--line:#2e3646;--main:#7fa6e8;--gold:#e5b24a;--ok:#4cc27f;--bad:#ef7676;--fire:#ff8a4c}}
-*{box-sizing:border-box}
-body{margin:0;background:var(--bg);color:var(--ink);font-family:'Malgun Gothic','Apple SD Gothic Neo',system-ui,sans-serif;line-height:1.6}
-#app{max-width:760px;margin:0 auto;padding:16px}
-h1{font-size:22px;margin:0}h2{font-size:18px;margin:0 0 10px}
-.card{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:18px;margin-bottom:14px}
-.top{display:flex;justify-content:space-between;align-items:center;gap:10px;margin-bottom:12px}
-.pts{font-size:30px;font-weight:700;color:var(--gold)}
-.sub{color:var(--sub);font-size:14px}
-button{font:inherit;cursor:pointer;border:1px solid var(--line);background:var(--card);color:var(--ink);padding:10px 16px;border-radius:10px}
-button.primary{background:var(--main);color:#fff;border-color:var(--main)}
+:root{--bg:#f6f7f9;--card:#ffffff;--ink:#14161a;--sub:#6b7280;--line:#e6e8ec;--main:#2b59ff;--main-ink:#ffffff;--tint:#eef2ff;--gold:#14161a;--ok:#0f9d58;--bad:#e5484d;--fire:#2b59ff;--shadow:0 1px 2px rgba(16,24,40,.04),0 4px 16px rgba(16,24,40,.05)}
+@media (prefers-color-scheme:dark){:root{--bg:#0c0e12;--card:#14171d;--ink:#eef0f4;--sub:#8b93a1;--line:#242934;--main:#6b8cff;--main-ink:#0c0e12;--tint:#1a2036;--gold:#eef0f4;--ok:#35c27a;--bad:#ff6b70;--fire:#8ea8ff;--shadow:none}}
+*{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+html{-webkit-text-size-adjust:100%}
+body{margin:0;background:var(--bg);color:var(--ink);font-family:'Pretendard Variable',Pretendard,-apple-system,BlinkMacSystemFont,'Apple SD Gothic Neo','Malgun Gothic',system-ui,sans-serif;line-height:1.55;letter-spacing:-.01em;font-size:16px}
+#app{max-width:560px;margin:0 auto;padding:20px 16px 48px}
+h1{font-size:24px;font-weight:800;letter-spacing:-.03em;margin:0}h2{font-size:17px;font-weight:700;letter-spacing:-.02em;margin:0 0 12px}
+.card{background:var(--card);border:1px solid var(--line);border-radius:16px;padding:20px;margin-bottom:12px;box-shadow:var(--shadow)}
+.top{display:flex;justify-content:space-between;align-items:center;gap:10px;margin-bottom:16px}
+.pts{font-size:34px;font-weight:800;letter-spacing:-.04em;font-variant-numeric:tabular-nums;color:var(--ink);line-height:1.1}
+.sub{color:var(--sub);font-size:13.5px}
+button{font:inherit;font-weight:600;cursor:pointer;border:1px solid var(--line);background:var(--card);color:var(--ink);padding:10px 14px;border-radius:12px;transition:background .15s,transform .05s,opacity .15s}
+button:active{transform:scale(.98)}
+button.primary{background:var(--main);color:var(--main-ink);border-color:var(--main)}
 button.danger{color:var(--bad)}
-button:disabled{opacity:.45;cursor:default}
-.btn-big{width:100%;padding:14px;font-size:17px;margin-top:10px}
-input,textarea,select{font:inherit;width:100%;padding:10px 12px;border:1px solid var(--line);border-radius:10px;background:var(--card);color:var(--ink)}
-textarea{min-height:90px}
-label{display:block;font-size:14px;color:var(--sub);margin:10px 0 4px}
+button:disabled{opacity:.4;cursor:default}
+.btn-big{width:100%;padding:15px;font-size:16px;margin-top:10px;border-radius:14px}
+input,textarea,select{font:inherit;width:100%;padding:13px 14px;border:1px solid var(--line);border-radius:12px;background:var(--card);color:var(--ink);outline:none;transition:border-color .15s,box-shadow .15s}
+input:focus,textarea:focus,select:focus{border-color:var(--main);box-shadow:0 0 0 3px color-mix(in srgb,var(--main) 18%,transparent)}
+textarea{min-height:90px;resize:vertical}
+label{display:block;font-size:13px;font-weight:600;color:var(--sub);margin:14px 0 6px}
 .grades{display:grid;grid-template-columns:repeat(3,1fr);gap:8px}
-.grades button{padding:14px 0;font-size:17px}
-.grades button.on{background:var(--main);color:#fff;border-color:var(--main)}
-.banner{background:linear-gradient(90deg,#fff1e0,#ffe3cf);color:#8a3b00;border:1px solid #ffc999;border-radius:12px;padding:10px 14px;margin-bottom:10px;font-weight:700}
-@media (prefers-color-scheme:dark){.banner{background:#3a2616;color:#ffb07c;border-color:#6b4423}}
-.prob{white-space:pre-wrap;font-size:18px;padding:6px 2px}
-.prob img{max-width:100%;display:block;margin:10px 0}
-.bar{height:10px;background:var(--line);border-radius:6px;overflow:hidden;margin:8px 0}
-.bar>div{height:100%;background:var(--main);width:100%}
-.timer{font-size:28px;font-weight:700;font-variant-numeric:tabular-nums}
-.res{font-size:24px;font-weight:700}.ok{color:var(--ok)}.bad{color:var(--bad)}
-.expl{white-space:pre-wrap;border-left:4px solid var(--gold);padding:4px 12px;margin:10px 0;background:rgba(200,150,43,.08)}
-.err{color:var(--bad);min-height:22px;margin-top:8px}
+.grades button{padding:14px 0;font-size:16px;border-radius:12px;background:var(--bg);border-color:transparent}
+.grades button.on{background:var(--main);color:var(--main-ink)}
+.banner{background:var(--tint);color:var(--main);border:none;border-radius:12px;padding:10px 14px;margin-bottom:12px;font-weight:700;font-size:14px}
+.prob{white-space:pre-wrap;font-size:17.5px;line-height:1.75;padding:2px 0;word-break:keep-all;overflow-wrap:anywhere}
+.prob img{max-width:100%;display:block;margin:14px auto 4px;border-radius:8px;background:#fff}
+.prob .katex-display{overflow-x:auto;overflow-y:hidden;padding:4px 0;margin:.5em 0}
+.katex{font-size:1.06em}
+.bar{height:6px;background:var(--line);border-radius:6px;overflow:hidden;margin:6px 0 14px}
+.bar>div{height:100%;background:var(--main);width:100%;border-radius:6px}
+.timer{font-size:26px;font-weight:800;font-variant-numeric:tabular-nums;letter-spacing:-.02em}
+.res{font-size:26px;font-weight:800;letter-spacing:-.03em}.ok{color:var(--ok)}.bad{color:var(--bad)}
+.expl{white-space:pre-wrap;border-left:3px solid var(--main);padding:8px 14px;margin:12px 0;background:var(--bg);border-radius:0 10px 10px 0;line-height:1.7;overflow-wrap:anywhere}
+.err{color:var(--bad);min-height:20px;margin-top:8px;font-size:14px}
 table{width:100%;border-collapse:collapse;font-size:14px}
-th,td{border-bottom:1px solid var(--line);padding:7px 6px;text-align:left}
-.tabs{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:12px}
-.tabs button.on{background:var(--main);color:#fff;border-color:var(--main)}
+th{color:var(--sub);font-weight:600;font-size:12.5px}
+th,td{border-bottom:1px solid var(--line);padding:9px 6px;text-align:left}
+tr:last-child td{border-bottom:none}
+.tabs{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:14px}
+.tabs button{padding:8px 13px;border-radius:999px}
+.tabs button.on{background:var(--ink);color:var(--bg);border-color:var(--ink)}
 .row{display:flex;gap:8px;flex-wrap:wrap;align-items:center}
 .row>*{flex:1 1 140px}.row>button{flex:0 0 auto}
-.fire{color:var(--fire);font-weight:700}
+.fire{color:var(--main);font-weight:700}
 .hist{border-top:1px solid var(--line);padding:10px 0}
-.katex{font-size:1.1em}.expl .katex-display,.prob .katex-display{margin:.6em 0}
-code{background:rgba(127,127,127,.15);padding:1px 5px;border-radius:5px}
+code{background:var(--bg);padding:1px 6px;border-radius:6px;font-size:.92em}
+.chip{display:inline-block;padding:3px 9px;border-radius:999px;background:var(--bg);color:var(--sub);font-size:12px;font-weight:600}
+@media (min-width:700px){#app{max-width:680px}.card{padding:24px}}
 </style>
 </head>
 <body>
@@ -85,7 +93,7 @@ function showErr(m) { const e = $('#err'); if (e) e.textContent = m; }
 
 // ---------- 로그인 ----------
 function renderLogin(msg, signup) {
-  app(`<div class="card" style="margin-top:8vh"><h1>🏰 캐슬 포인트 헌터</h1>
+  app(`<div class="card" style="margin-top:8vh"><h1>캐슬 포인트 헌터</h1>
   <p class="sub">${signup ? '아이디와 비밀번호만 정하면 바로 시작해요!' : '문제를 풀고 포인트를 모아 보세요!'}</p>
   <label>아이디${signup ? ' (한글·영문·숫자 2~20자)' : ''}</label><input id="id" autocomplete="username" autocapitalize="none" autocorrect="off">
   <label>비밀번호${signup ? ' (4자 이상)' : ''}</label><input id="pw" type="password" autocomplete="${signup ? 'new-password' : 'current-password'}">
@@ -127,9 +135,10 @@ async function loadMe(notice) {
 }
 function head() {
   const m = me.mult;
-  const fire = m.value > 1 ? `<div class="banner">🔥 포인트 2배! ${m.morning ? '아침 7~9시 타임' : ''}${m.morning && m.daily ? ' · ' : ''}${m.daily ? `오늘 ${me.cfg.DAILY_BONUS_COUNT}문제 달성` : ''}</div>` : '';
-  return `<div class="top"><div><div class="sub">${esc(me.name)} (${esc(me.id)})</div><div class="pts">${fmt(me.points)} P</div></div>
-  <div class="row" style="flex:0 0 auto"><button id="nt">📓 오답노트</button><button id="hist">내 기록</button><button id="out">로그아웃</button></div></div>${fire}`;
+  const fire = m.value > 1 ? `<div class="banner">포인트 2배 적용 중 · ${m.morning ? '아침 7~9시 타임' : ''}${m.morning && m.daily ? ' · ' : ''}${m.daily ? `오늘 ${me.cfg.DAILY_BONUS_COUNT}문제 달성` : ''}</div>` : '';
+  return `<div class="top" style="align-items:flex-end"><div><div class="sub">${esc(me.name)}</div><div class="pts">${fmt(me.points)}<span style="font-size:16px;font-weight:600;color:var(--sub);margin-left:3px">P</span></div></div>
+  <button id="out" style="padding:7px 12px;font-size:13px;color:var(--sub)">로그아웃</button></div>
+  <div class="row" style="margin-bottom:12px;flex-wrap:nowrap"><button id="nt" style="flex:1">오답노트</button><button id="hist" style="flex:1">내 기록</button></div>${fire}`;
 }
 function bindHead() { $('#out').onclick = logout; $('#hist').onclick = renderHistory; $('#nt').onclick = renderNotes; }
 function renderHome(notice) {
@@ -140,12 +149,12 @@ function renderHome(notice) {
   <p class="sub">미리보기 ${c.PREVIEW_SEC}초 (-${c.PREVIEW_COST}P) → 풀기를 선택하면 -${c.ACCEPT_COST}P, 제한시간 ${c.TIME_LIMIT_SEC / 60}분.<br>정답이면 +${c.REWARD}P!</p>
   <div class="err" id="err">${esc(notice || '')}</div>
   <button class="primary btn-big" id="pv" ${pickedGrade ? '' : 'disabled'}>${pickedGrade ? pickedGrade + ' 문제 미리보기 (-' + c.PREVIEW_COST + 'P)' : '학년을 먼저 골라 주세요'}</button></div>
-  <div class="card sub">오늘 푼 문제 <b>${me.todayCount}</b>개 · ${left > 0 ? `${left}문제 더 풀면 🔥 포인트 2배!` : '🔥 오늘은 포인트 2배 적용 중!'}</div>
-  <div class="card" id="rk"><h2>🏆 헌터 순위</h2><div class="sub">불러오는 중…</div></div>`);
+  <div class="card sub">오늘 푼 문제 <b>${me.todayCount}</b>개 · ${left > 0 ? `${left}문제 더 풀면 포인트 2배` : '오늘은 포인트 2배 적용 중'}</div>
+  <div class="card" id="rk"><h2>헌터 순위</h2><div class="sub">불러오는 중…</div></div>`);
   bindHead();
   api('rank').then((r) => {
     const el = $('#rk'); if (!el) return;
-    el.innerHTML = `<h2>🏆 헌터 순위 <span class="sub">(내 순위 ${r.myRank}위 / ${r.total}명)</span></h2><table>${r.top.map((x) => `<tr style="${x.me ? 'font-weight:700;color:var(--gold)' : ''}"><td>${x.rank}</td><td>${esc(x.name)}</td><td style="text-align:right">${fmt(x.points)} P</td></tr>`).join('')}</table>`;
+    el.innerHTML = `<h2>헌터 순위 <span class="sub">(내 순위 ${r.myRank}위 / ${r.total}명)</span></h2><table>${r.top.map((x) => `<tr style="${x.me ? 'font-weight:700;color:var(--main)' : ''}"><td>${x.rank}</td><td>${esc(x.name)}</td><td style="text-align:right">${fmt(x.points)} P</td></tr>`).join('')}</table>`;
   }).catch(() => {});
   document.querySelectorAll('.grades button').forEach((b) => b.onclick = () => { pickedGrade = b.dataset.g; renderHome(); });
   $('#pv').onclick = async () => {
@@ -159,13 +168,15 @@ async function nextPreview(g) {
   try { const r = await api('preview', { grade: g }); skew = r.serverNow - Date.now(); me.points = r.points; renderPreview(r.active); }
   catch (e) { loadMe(e.message); }
 }
-const probHtml = (p) => `<div class="prob">${esc(p.text)}${p.image ? `<img src="${esc(p.image)}" alt="">` : ''}</div>`;
+// 줄바꿈이 필요한 수식(경우 나누기 등)은 가운데 정렬된 별도 줄로 보여 준다
+const dm = (s) => String(s ?? '').replace(/\$([^$]*\\begin\{cases\}[^$]*)\$/g, (m, f) => '$$' + f + '$$');
+const probHtml = (p) => `<div class="prob">${esc(dm(p.text))}${p.image ? `<img src="${esc(p.image)}" alt="">` : ''}</div>`;
 function renderPreview(a) {
   app(`<div class="top"><div class="sub">${esc(a.problem.grade)} 미리보기</div><div class="timer" id="t"></div></div>
   <div class="bar"><div id="b"></div></div>
   <div class="card">${probHtml(a.problem)}</div>
   <button class="primary btn-big" id="ac">이 문제 풀기 (-${me.cfg.ACCEPT_COST}P)</button>
-  <button class="btn-big" id="sk">넘기기 (다음 문제)</button><button class="btn-big" id="hm" style="border:none;background:none;color:var(--sub)">🏠 홈으로</button><div class="err" id="err"></div>`);
+  <button class="btn-big" id="sk">넘기기 (다음 문제)</button><button class="btn-big" id="hm" style="border:none;background:none;color:var(--sub)">홈으로</button><div class="err" id="err"></div>`);
   pickedGrade = a.problem.grade;
   const total = me.cfg.PREVIEW_SEC * 1000;
   const upd = () => {
@@ -187,7 +198,7 @@ function renderSolve(a) {
   <div class="card">${probHtml(a.problem)}</div>
   <div class="card">${isSet ? `<label>정답 (해당하는 보기의 기호를 모두 쓰세요. 예: ㄱ, ㄷ)</label><div class="row" style="flex-wrap:nowrap"><input id="ans" autocomplete="off" enterkeyhint="done" placeholder="예: ㄱ, ㄷ"></div>` : `<label>정답 (숫자만, 예: 12 / -3 / 0.5)</label><div class="row" style="flex-wrap:nowrap"><input id="ans" inputmode="decimal" autocomplete="off" enterkeyhint="done"><button id="neg" style="flex:0 0 64px" title="마이너스 부호 넣기/빼기">−</button></div>`}
   <div class="err" id="err"></div><button class="primary btn-big" id="sub">답안 제출</button></div>
-  <button class="btn-big" id="hm" style="border:none;background:none;color:var(--sub)">🏠 홈으로 (이 문제는 포기)</button>`);
+  <button class="btn-big" id="hm" style="border:none;background:none;color:var(--sub)">홈으로 (이 문제는 포기)</button>`);
   let done = false;
   const submit = async () => {
     if (done) return; done = true; clearInterval(tick);
@@ -211,16 +222,16 @@ function renderSolve(a) {
 }
 function renderResult(r) {
   me.points = r.points;
-  app(`<div class="card"><div class="res ${r.correct ? 'ok' : 'bad'}">${r.correct ? '🎉 정답!' : r.timeout ? '⏰ 시간 초과' : '😢 오답'}</div>
-  ${r.correct ? `<p class="fire">+${fmt(r.reward)}P ${r.mult > 1 ? '(🔥 2배 적용)' : ''}</p>` : ''}
+  app(`<div class="card"><div class="res ${r.correct ? 'ok' : 'bad'}">${r.correct ? '정답이에요' : r.timeout ? '시간 초과' : '오답이에요'}</div>
+  ${r.correct ? `<p class="fire">+${fmt(r.reward)}P ${r.mult > 1 ? '(2배 적용)' : ''}</p>` : ''}
   <p>정답: <b>${esc(fa(r.answer))}</b></p><p class="pts">${fmt(r.points)} P</p></div>
-  <div class="card"><h2>해설</h2><div class="expl">${esc(r.explanation) || '(해설이 아직 없어요)'}</div>
-  ${r.extra ? `<div class="expl">${esc(r.extra)}</div>` : ''}</div>
-  <button class="btn-big" id="nb">📓 오답노트에 담기</button>
+  <div class="card"><h2>해설</h2><div class="expl">${esc(dm(r.explanation)) || '(해설이 아직 없어요)'}</div>
+  ${r.extra ? `<div class="expl">${esc(dm(r.extra))}</div>` : ''}</div>
+  <button class="btn-big" id="nb">오답노트에 담기</button>
   <button class="primary btn-big" id="nx">다음 문제 도전 (-${me.cfg.PREVIEW_COST}P)</button>
-  <button class="btn-big" id="hm">🏠 홈으로</button>`);
-  $('#nb').onclick = async () => { try { await api('note/add', { pid: r.pid }); $('#nb').textContent = '✅ 오답노트에 담았어요'; $('#nb').disabled = true; } catch (e) { alert(e.message); } };
-  if (r.correct) $('#nb').textContent = '📓 오답노트에 담기 (맞힌 문제)';
+  <button class="btn-big" id="hm">홈으로</button>`);
+  $('#nb').onclick = async () => { try { await api('note/add', { pid: r.pid }); $('#nb').textContent = '오답노트에 담았어요'; $('#nb').disabled = true; } catch (e) { alert(e.message); } };
+  if (r.correct) $('#nb').textContent = '오답노트에 담기 (맞힌 문제)';
   $('#nx').onclick = () => nextPreview(pickedGrade);
   $('#hm').onclick = () => loadMe();
 }
@@ -228,11 +239,11 @@ async function renderHistory() {
   const h = await api('history');
   app(`<div class="top"><h2>내 기록 (최근 30개)</h2><button id="bk">돌아가기</button></div>
   ${h.map((x) => `<div class="card"><div class="sub">${esc(x.grade)} · ${new Date(x.t).toLocaleString('ko-KR')} · <b class="${x.correct ? 'ok' : 'bad'}">${x.correct ? '정답 +' + x.reward : x.timeout ? '시간초과' : '오답'}</b></div>
-  <div class="prob">${esc(x.text)}${x.image ? `<img src="${esc(x.image)}" alt="">` : ''}</div>
+  <div class="prob">${esc(dm(x.text))}${x.image ? `<img src="${esc(x.image)}" alt="">` : ''}</div>
   <p>내 답: ${esc(x.myAnswer || '-')} / 정답: <b>${esc(fa(x.answer))}</b></p>
-  <div class="expl">${esc(x.explanation)}</div>${x.extra ? `<div class="expl">${esc(x.extra)}</div>` : ''}${x.pid ? `<button class="nbh" data-p="${esc(x.pid)}">📓 오답노트에 담기</button>` : ''}</div>`).join('') || '<div class="card sub">아직 푼 문제가 없어요.</div>'}`);
+  <div class="expl">${esc(dm(x.explanation))}</div>${x.extra ? `<div class="expl">${esc(dm(x.extra))}</div>` : ''}${x.pid ? `<button class="nbh" data-p="${esc(x.pid)}">오답노트에 담기</button>` : ''}</div>`).join('') || '<div class="card sub">아직 푼 문제가 없어요.</div>'}`);
   $('#bk').onclick = () => loadMe();
-  document.querySelectorAll('.nbh').forEach((b) => b.onclick = async () => { try { await api('note/add', { pid: b.dataset.p }); b.textContent = '✅ 담았어요'; b.disabled = true; } catch (e) { alert(e.message); } });
+  document.querySelectorAll('.nbh').forEach((b) => b.onclick = async () => { try { await api('note/add', { pid: b.dataset.p }); b.textContent = '담았어요'; b.disabled = true; } catch (e) { alert(e.message); } });
 }
 // 오답노트: 학생마다 따로, 메모와 분류 이름을 직접 정리한다
 let noteTag = '';
@@ -240,11 +251,11 @@ async function renderNotes() {
   const list = await api('notes'), tags = [...new Set(list.map((n) => n.tag).filter(Boolean))];
   if (noteTag && !tags.includes(noteTag) && noteTag !== '__none') noteTag = '';
   const shown = list.filter((n) => !noteTag || (noteTag === '__none' ? !n.tag : n.tag === noteTag));
-  app(`<div class="top"><h2>📓 내 오답노트 <span class="sub">(${list.length}개)</span></h2><button id="bk">🏠 홈으로</button></div>
+  app(`<div class="top"><h2>내 오답노트 <span class="sub">(${list.length}개)</span></h2><button id="bk">홈으로</button></div>
   ${list.length ? `<div class="row" style="margin-bottom:10px"><button data-t="" class="${noteTag === '' ? 'primary' : ''}" style="flex:0 0 auto">전체</button>${tags.map((t) => `<button data-t="${esc(t)}" class="${noteTag === t ? 'primary' : ''}" style="flex:0 0 auto">${esc(t)}</button>`).join('')}<button data-t="__none" class="${noteTag === '__none' ? 'primary' : ''}" style="flex:0 0 auto">분류 없음</button></div>` : ''}
   ${shown.map((n) => `<div class="card" data-p="${esc(n.pid)}"><div class="sub">${esc(n.grade)} · ${new Date(n.t).toLocaleDateString('ko-KR')}에 담음</div>
-  <div class="prob">${esc(n.text)}${n.image ? `<img src="${esc(n.image)}" alt="">` : ''}</div>
-  <button class="sh">정답·해설 보기</button><div class="shw" style="display:none"><p>정답: <b>${esc(fa(n.answer))}</b></p><div class="expl">${esc(n.explanation) || '(해설이 아직 없어요)'}</div>${n.extra ? `<div class="expl">${esc(n.extra)}</div>` : ''}</div>
+  <div class="prob">${esc(dm(n.text))}${n.image ? `<img src="${esc(n.image)}" alt="">` : ''}</div>
+  <button class="sh">정답·해설 보기</button><div class="shw" style="display:none"><p>정답: <b>${esc(fa(n.answer))}</b></p><div class="expl">${esc(dm(n.explanation)) || '(해설이 아직 없어요)'}</div>${n.extra ? `<div class="expl">${esc(dm(n.extra))}</div>` : ''}</div>
   <label>분류 이름 (예: 집합, 실수, 다시 풀기)</label><input class="ntg" maxlength="20" value="${esc(n.tag)}" list="tgl">
   <label>내 메모</label><textarea class="nmm" maxlength="1000" placeholder="왜 틀렸는지, 기억할 점을 적어 두세요">${esc(n.memo)}</textarea>
   <div class="row"><button class="primary nsv">저장</button><button class="danger ndl">오답노트에서 빼기</button></div></div>`).join('') || `<div class="card sub">${list.length ? '이 분류에는 문제가 없어요.' : '아직 담은 문제가 없어요. 결과 화면이나 내 기록에서 “오답노트에 담기”를 눌러 보세요.'}</div>`}
@@ -261,7 +272,7 @@ async function renderNotes() {
 
 // ---------- 관리자 ----------
 function tabs(cur) {
-  return `<div class="top"><h1>🏰 관리자</h1><button id="out">로그아웃</button></div><div class="tabs">${[['students', '학생·포인트'], ['problems', '문제'], ['units', '출제 단원'], ['log', '포인트 기록'], ['rules', '규칙 값'], ['settings', '비밀번호']].map(([k, n]) => `<button data-t="${k}" class="${k === cur ? 'on' : ''}">${n}</button>`).join('')}</div>`;
+  return `<div class="top"><h1>관리자</h1><button id="out">로그아웃</button></div><div class="tabs">${[['students', '학생·포인트'], ['problems', '문제'], ['units', '출제 단원'], ['log', '포인트 기록'], ['rules', '규칙 값'], ['settings', '비밀번호']].map(([k, n]) => `<button data-t="${k}" class="${k === cur ? 'on' : ''}">${n}</button>`).join('')}</div>`;
 }
 function bindTabs() { $('#out').onclick = logout; document.querySelectorAll('.tabs button').forEach((b) => b.onclick = () => renderAdmin(b.dataset.t)); }
 async function renderAdmin(tab) {
@@ -334,7 +345,7 @@ async function renderAdmin(tab) {
         app(`${tabs('units')}<div class="card"><h2>학생에게 보여줄 단원</h2>
         <p class="sub">학년을 고르고, 지금 학생들에게 출제할 <b>대단원·중단원</b>에 체크한 뒤 저장하세요. 시험 시기에 맞춰 바꾸면 돼요. 체크한 단원의 문제만 나오고, <b>아무것도 저장하지 않은 학년은 모든 문제가 나와요.</b> 단원이 비어 있는 문제는 제한을 걸면 나오지 않아요.</p>
         <div class="grades" style="grid-template-columns:repeat(6,1fr);margin:10px 0">${G.map((g) => `<button data-g="${g}" class="${g === cur ? 'on' : ''}">${g}${Array.isArray(d.selected[g]) ? ' ✓' : ''}</button>`).join('')}</div>
-        <div class="banner" style="${limited ? '' : 'background:#eef3ff;color:#1f3a68;border-color:#c9d6f5'}">${cur}: ${limited ? `선택한 ${sel.length}개 중단원의 문제만 출제 중` : '제한 없음 (등록된 모든 문제가 출제돼요)'}</div>
+        <div class="banner" >${cur}: ${limited ? `선택한 ${sel.length}개 중단원의 문제만 출제 중` : '제한 없음 (등록된 모든 문제가 출제돼요)'}</div>
         ${us.length ? groups.map((g, gi) => `<div class="hist"><label style="margin:0;color:var(--ink)"><input type="checkbox" class="lg" data-gi="${gi}" style="width:auto"> <b>${esc(g.subject ? g.subject + ' · ' : '')}${esc(g.large || '(대단원 없음)')}</b> <span class="sub">${g.items.reduce((a, u) => a + u.n, 0)}문제</span></label>
           ${g.items.map((u) => `<label style="margin:2px 0 2px 26px;color:var(--ink)"><input type="checkbox" class="un" data-gi="${gi}" value="${esc(key(u))}" ${limited && sel.includes(key(u)) ? 'checked' : ''} style="width:auto"> ${esc(u.unit || '(중단원 없음)')} <span class="sub">${u.n}문제</span></label>`).join('')}</div>`).join('') : '<p class="sub">이 학년에는 등록된 문제가 없어요.</p>'}
         <div class="row" style="margin-top:12px"><button class="primary" id="sv" ${us.length ? '' : 'disabled'}>저장</button><button id="all2">모두 체크</button><button id="none2">모두 해제</button><button class="danger" id="rel" ${limited ? '' : 'disabled'}>제한 풀기</button></div><div class="err" id="err"></div></div>`);
