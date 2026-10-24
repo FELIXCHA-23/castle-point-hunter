@@ -60,6 +60,7 @@ const esc = (s) => String(s ?? '').replace(/[&<>"']/g, (c) => ({'&':'&amp;','<':
 let token = localStorage.getItem('tk'), role = localStorage.getItem('role'), skew = 0, tick = null, me = null, pickedGrade = null;
 const nowS = () => Date.now() + skew;
 const fmt = (n) => Number(n).toLocaleString('ko-KR');
+const fa = (s) => /^[ㄱ-ㅎ]+$/.test(String(s)) ? String(s).split('').join(', ') : s;
 
 // 모든 기능은 Supabase 함수 castle_api 하나로 갑니다 (규칙·정답·비밀번호 검사는 Supabase 안에서 해요).
 async function api(path, body) {
@@ -172,9 +173,10 @@ function renderPreview(a) {
   $('#sk').onclick = async () => { await api('skip', {}).catch(() => {}); loadMe('문제를 넘겼어요.'); };
 }
 function renderSolve(a) {
-  app(`<div class="top"><div class="sub">${esc(a.problem.grade)} · 숫자만 입력하세요</div><div class="timer" id="t"></div></div>
+  const isSet = a.problem.kind === 'set';
+  app(`<div class="top"><div class="sub">${esc(a.problem.grade)} · ${isSet ? '보기의 기호를 입력하세요' : '숫자만 입력하세요'}</div><div class="timer" id="t"></div></div>
   <div class="card">${probHtml(a.problem)}</div>
-  <div class="card"><label>정답 (숫자만, 예: 12 / -3 / 0.5)</label><div class="row" style="flex-wrap:nowrap"><input id="ans" inputmode="decimal" autocomplete="off" enterkeyhint="done"><button id="neg" style="flex:0 0 64px" title="마이너스 부호 넣기/빼기">−</button></div>
+  <div class="card">${isSet ? `<label>정답 (해당하는 보기의 기호를 모두 쓰세요. 예: ㄱ, ㄷ)</label><div class="row" style="flex-wrap:nowrap"><input id="ans" autocomplete="off" enterkeyhint="done" placeholder="예: ㄱ, ㄷ"></div>` : `<label>정답 (숫자만, 예: 12 / -3 / 0.5)</label><div class="row" style="flex-wrap:nowrap"><input id="ans" inputmode="decimal" autocomplete="off" enterkeyhint="done"><button id="neg" style="flex:0 0 64px" title="마이너스 부호 넣기/빼기">−</button></div>`}
   <div class="err" id="err"></div><button class="primary btn-big" id="sub">답안 제출</button></div>`);
   let done = false;
   const submit = async () => {
@@ -189,13 +191,13 @@ function renderSolve(a) {
   upd(); tick = setInterval(upd, 500);
   $('#sub').onclick = () => { if ($('#ans').value.trim()) submit(); else showErr('정답을 입력해 주세요.'); };
   $('#ans').onkeydown = (e) => { if (e.key === 'Enter') $('#sub').click(); };
-  $('#neg').onclick = () => { const i = $('#ans'); i.value = i.value.startsWith('-') ? i.value.slice(1) : '-' + i.value; i.focus(); };
+  if ($('#neg')) $('#neg').onclick = () => { const i = $('#ans'); i.value = i.value.startsWith('-') ? i.value.slice(1) : '-' + i.value; i.focus(); };
 }
 function renderResult(r) {
   me.points = r.points;
   app(`<div class="card"><div class="res ${r.correct ? 'ok' : 'bad'}">${r.correct ? '🎉 정답!' : r.timeout ? '⏰ 시간 초과' : '😢 오답'}</div>
   ${r.correct ? `<p class="fire">+${fmt(r.reward)}P ${r.mult > 1 ? '(🔥 2배 적용)' : ''}</p>` : ''}
-  <p>정답: <b>${esc(r.answer)}</b></p><p class="pts">${fmt(r.points)} P</p></div>
+  <p>정답: <b>${esc(fa(r.answer))}</b></p><p class="pts">${fmt(r.points)} P</p></div>
   <div class="card"><h2>해설</h2><div class="expl">${esc(r.explanation) || '(해설이 아직 없어요)'}</div>
   ${r.extra ? `<div class="expl">${esc(r.extra)}</div>` : ''}</div>
   <button class="primary btn-big" id="nx">다음 문제 도전</button>`);
@@ -206,7 +208,7 @@ async function renderHistory() {
   app(`<div class="top"><h2>내 기록 (최근 30개)</h2><button id="bk">돌아가기</button></div>
   ${h.map((x) => `<div class="card"><div class="sub">${esc(x.grade)} · ${new Date(x.t).toLocaleString('ko-KR')} · <b class="${x.correct ? 'ok' : 'bad'}">${x.correct ? '정답 +' + x.reward : x.timeout ? '시간초과' : '오답'}</b></div>
   <div class="prob">${esc(x.text)}${x.image ? `<img src="${esc(x.image)}" alt="">` : ''}</div>
-  <p>내 답: ${esc(x.myAnswer || '-')} / 정답: <b>${esc(x.answer)}</b></p>
+  <p>내 답: ${esc(x.myAnswer || '-')} / 정답: <b>${esc(fa(x.answer))}</b></p>
   <div class="expl">${esc(x.explanation)}</div>${x.extra ? `<div class="expl">${esc(x.extra)}</div>` : ''}</div>`).join('') || '<div class="card sub">아직 푼 문제가 없어요.</div>'}`);
   $('#bk').onclick = () => loadMe();
 }

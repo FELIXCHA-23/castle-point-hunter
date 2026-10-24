@@ -72,10 +72,17 @@ create or replace function castle.c(k text) returns int language sql stable as $
 create or replace function castle.kst_today() returns date language sql stable as $$
   select (now() at time zone 'Asia/Seoul')::date $$;
 
-create or replace function castle.norm(s text) returns text language sql immutable as $$
-  select regexp_replace(
-           regexp_replace(translate(normalize(coalesce(s, ''), NFKC), '−–—‐', '----'), '[\s,]', '', 'g'),
-           '^\+', '') $$;
+create or replace function castle.norm(s text) returns text language plpgsql immutable as $$
+declare t text := normalize(coalesce(s, ''), NFKC); u text;
+begin
+  -- 한글 초성(U+1100대)으로 입력된 ㄱㄴㄷ 도 호환 자모로 맞춘다
+  u := translate(t, 'ᄀᄁᄂᄃᄄᄅᄆᄇᄈᄉᄊᄋᄌᄍᄎᄏᄐᄑᄒ', 'ㄱㄲㄴㄷㄸㄹㅁㅂㅃㅅㅆㅇㅈㅉㅊㅋㅌㅍㅎ');
+  u := regexp_replace(u, '[\s,.·・/、;:]', '', 'g');
+  if u ~ '^[ㄱ-ㅎ]+$' then
+    return (select string_agg(c, '' order by c) from (select distinct regexp_split_to_table(u, '') as c) x);
+  end if;
+  return regexp_replace(regexp_replace(translate(t, '−–—‐', '----'), '[\s,]', '', 'g'), '^\+', '');
+end $$;
 
 create or replace function castle.same(a text, b text) returns boolean language plpgsql immutable as $$
 declare na text := castle.norm(a); nb text := castle.norm(b);
@@ -160,7 +167,7 @@ begin
   select * into p from castle.problems where id = a.pid;
   if not found then return null; end if;
   return jsonb_build_object('state', a.state,
-    'problem', jsonb_build_object('id', p.id, 'grade', p.grade, 'text', p.text, 'image', p.image),
+    'problem', jsonb_build_object('id', p.id, 'grade', p.grade, 'text', p.text, 'image', p.image, 'kind', case when p.answer ~ '^[ㄱ-ㅎ]+$' then 'set' else 'num' end),
     'previewEndsAt', castle.ms(a.preview_at + make_interval(secs => castle.c('PREVIEW_SEC')::double precision)),
     'deadline', coalesce(castle.ms(a.deadline), 0));
 end $$;
@@ -175,7 +182,7 @@ declare v_id text := nullif(b->>'id', ''); v_ans text := castle.norm(b->>'answer
 begin
   if not ((b->>'grade') = any (castle.grades())) then perform castle.fail(400, '학년이 올바르지 않아요.'); end if;
   if v_txt = '' then perform castle.fail(400, '문제 내용을 입력해 주세요.'); end if;
-  if v_ans !~ '^-?[0-9]+(\.[0-9]+)?$' then perform castle.fail(400, '정답은 숫자만 쓸 수 있어요 (예: 12, -3, 0.5).'); end if;
+  if v_ans !~ '^-?[0-9]+(\.[0-9]+)?$' and v_ans !~ '^[ㄱ-ㅎ]+$' then perform castle.fail(400, '정답은 숫자(예: 12, -3, 0.5) 또는 보기 기호(예: ㄱ, ㄷ)만 쓸 수 있어요.'); end if;
   if v_img <> '' and (v_img !~ '^data:image/(jpeg|png|webp|gif);base64,[A-Za-z0-9+/=]+$' or length(v_img) > 600000) then
     perform castle.fail(400, '그림이 올바르지 않거나 너무 커요.');
   end if;
