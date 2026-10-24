@@ -435,6 +435,15 @@ begin
   return jsonb_build_object('ok', true);
 end $$;
 
+create or replace function castle.r_admin_deleteall(tok text, b jsonb) returns jsonb language plpgsql as $$
+declare n int;
+begin
+  perform castle.auth(tok, 'admin');
+  delete from castle.problems;
+  get diagnostics n = row_count;
+  return jsonb_build_object('deleted', n);
+end $$;
+
 create or replace function castle.r_admin_import(tok text, b jsonb) returns jsonb language plpgsql as $$
 declare it jsonb; n int := 0; i int := 0; errs jsonb := '[]';
 begin
@@ -486,6 +495,7 @@ begin
     when 'admin/problem' then return castle.r_admin_problem(tok, b);
     when 'admin/import' then return castle.r_admin_import(tok, b);
     when 'admin/deleteproblem' then return castle.r_admin_deleteproblem(tok, b);
+    when 'admin/deleteall' then return castle.r_admin_deleteall(tok, b);
     when 'admin/log' then return castle.r_admin_log(tok);
     else perform castle.fail(404, '없는 기능이에요.');
   end case;

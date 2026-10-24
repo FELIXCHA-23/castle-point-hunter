@@ -251,7 +251,7 @@ async function renderAdmin(tab) {
       <label><input type="checkbox" id="ac" checked style="width:auto"> 출제에 사용 (끄면 학생에게 나오지 않아요)</label>
       <div class="err" id="err"></div><div class="row"><button class="primary" id="sv">저장</button><button id="cl">새로 쓰기</button></div></div>
       <div class="card"><h2>문제 일괄 등록 (JSON)</h2><p class="sub">[{"grade":"중1","text":"...","answer":"11","explanation":"...","extra":"..."}, ...]</p><textarea id="js"></textarea><div class="err" id="err3"></div><button id="imp">일괄 등록</button></div>
-      <div class="card"><h2>문제 ${list.length}개</h2><table><tr><th>분류</th><th>문제</th><th>정답</th><th></th></tr>
+      <div class="card"><div class="top"><h2>문제 ${list.length}개</h2><button class="danger" id="dall" ${list.length ? '' : 'disabled'}>전체 삭제</button></div><table><tr><th>분류</th><th>문제</th><th>정답</th><th></th></tr>
       ${list.map((p, i) => `<tr><td>${p.grade}${p.active === false ? ' <span class="sub">(끔)</span>' : ''}<div class="sub">${esc([p.term, p.subject, p.unit_large, p.unit].filter(Boolean).join(' · '))}</div></td><td>${esc(p.text.slice(0, 40))}${p.text.length > 40 ? '…' : ''}</td><td>${esc(p.answer)}</td><td><button class="ed" data-i="${i}">수정</button> <button class="danger dp" data-id="${p.id}">삭제</button></td></tr>`).join('')}</table></div>`);
       bindTabs(); let img = '';
       const pvw = () => [['tx', 'pv_tx'], ['ex', 'pv_ex'], ['xt', 'pv_xt']].forEach(([a, b]) => { const el = $('#' + b); el.style.display = $('#' + a).value.trim() ? '' : 'none'; el.innerHTML = esc($('#' + a).value); math(el); });
@@ -273,6 +273,8 @@ async function renderAdmin(tab) {
       $('#cl').onclick = () => renderAdmin(tab);
       $('#imp').onclick = async () => { try { const r = await api('admin/import', { items: JSON.parse($('#js').value) }); alert(`등록 ${r.count}개` + (r.errors.length ? '\n' + r.errors.join('\n') : '')); renderAdmin(tab); } catch (e) { $('#err3').textContent = e.message; } };
       document.querySelectorAll('.ed').forEach((b) => b.onclick = () => { const p = list[b.dataset.i]; $('#ft').textContent = '문제 수정'; $('#pid').value = p.id; $('#gr').value = p.grade; $('#an').value = p.answer; $('#tx').value = p.text; $('#ex').value = p.explanation; $('#xt').value = p.extra; $('#ac').checked = p.active !== false; pvw(); img = p.image || ''; $('#imn').textContent = img ? '그림이 붙어 있어요 (새 그림을 고르면 바뀌어요)' : ''; scrollTo(0, 0); });
+      $('#dall').onclick = async () => { if (!confirm(`등록된 문제 ${list.length}개를 전부 삭제할까요?
+되돌릴 수 없어요.`)) return; if (prompt('정말 전부 삭제하려면 "삭제"라고 입력하세요.') !== '삭제') return; try { const r = await api('admin/deleteall'); alert(`${r.deleted}개 삭제했어요.`); renderAdmin(tab); } catch (e) { alert(e.message); } };
       document.querySelectorAll('.dp').forEach((b) => b.onclick = async () => { if (confirm('이 문제를 삭제할까요?')) { await api('admin/deleteproblem', { id: b.dataset.id }); renderAdmin(tab); } });
     } else if (tab === 'log') {
       const log = await api('admin/log');
