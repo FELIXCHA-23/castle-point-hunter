@@ -18,6 +18,13 @@ create table if not exists castle.problems (
   id text primary key, grade text not null, text text not null, answer text not null,
   image text not null default '', explanation text not null default '', extra text not null default '',
   active boolean not null default true, created_at timestamptz not null default now());
+-- 관리용 분류 (학생 화면에는 보이지 않음)
+alter table castle.problems add column if not exists term text not null default '';      -- 예: 2학기 기말
+alter table castle.problems add column if not exists subject text not null default '';   -- 예: 공통수학2 (고등만)
+alter table castle.problems add column if not exists unit_large text not null default ''; -- 대단원 (2022 개정)
+alter table castle.problems add column if not exists unit text not null default '';       -- 중단원 (2022 개정)
+alter table castle.problems add column if not exists src text not null default '';        -- 출처 (예: RPM 공통수학2 0312). 같은 출처로 다시 올리면 덮어씀
+create unique index if not exists problems_src_uq on castle.problems (src) where src <> '';
 create table if not exists castle.attempts (
   id bigserial primary key, sid text not null references castle.students(id) on delete cascade,
   pid text not null, grade text not null, state text not null,
@@ -159,7 +166,7 @@ create or replace function castle.mask_name(n text) returns text language sql im
 
 create or replace function castle.upsert_problem(b jsonb) returns jsonb language plpgsql as $$
 declare v_id text := nullif(b->>'id', ''); v_ans text := castle.norm(b->>'answer'); v_txt text := left(btrim(coalesce(b->>'text', '')), 4000);
-        v_img text := coalesce(b->>'image', '');
+        v_img text := coalesce(b->>'image', ''); v_src text := left(btrim(coalesce(b->>'src', '')), 200);
 begin
   if not ((b->>'grade') = any (castle.grades())) then perform castle.fail(400, '학년이 올바르지 않아요.'); end if;
   if v_txt = '' then perform castle.fail(400, '문제 내용을 입력해 주세요.'); end if;
@@ -167,15 +174,20 @@ begin
   if v_img <> '' and (v_img !~ '^data:image/(jpeg|png|webp|gif);base64,[A-Za-z0-9+/=]+$' or length(v_img) > 600000) then
     perform castle.fail(400, '그림이 올바르지 않거나 너무 커요.');
   end if;
+  if v_id is null and v_src <> '' then select id into v_id from castle.problems where src = v_src; end if;
   if v_id is null or not exists (select 1 from castle.problems where id = v_id) then
     v_id := encode(extensions.gen_random_bytes(5), 'hex');
-    insert into castle.problems (id, grade, text, answer, image, explanation, extra, active)
+    insert into castle.problems (id, grade, text, answer, image, explanation, extra, active, term, subject, unit_large, unit, src)
     values (v_id, b->>'grade', v_txt, v_ans, v_img, left(coalesce(b->>'explanation', ''), 6000), left(coalesce(b->>'extra', ''), 6000),
-            coalesce((b->>'active')::boolean, true));
+            coalesce((b->>'active')::boolean, true), left(coalesce(b->>'term', ''), 40), left(coalesce(b->>'subject', ''), 40),
+            left(coalesce(b->>'unit_large', ''), 60), left(coalesce(b->>'unit', ''), 60), v_src);
   else
     update castle.problems set grade = b->>'grade', text = v_txt, answer = v_ans, image = v_img,
            explanation = left(coalesce(b->>'explanation', ''), 6000), extra = left(coalesce(b->>'extra', ''), 6000),
-           active = coalesce((b->>'active')::boolean, true) where id = v_id;
+           active = coalesce((b->>'active')::boolean, true),
+           term = left(coalesce(b->>'term', term), 40), subject = left(coalesce(b->>'subject', subject), 40),
+           unit_large = left(coalesce(b->>'unit_large', unit_large), 60), unit = left(coalesce(b->>'unit', unit), 60),
+           src = case when b ? 'src' then v_src else src end where id = v_id;
   end if;
   return jsonb_build_object('id', v_id);
 end $$;
@@ -406,7 +418,8 @@ create or replace function castle.r_admin_problems(tok text) returns jsonb langu
 begin
   perform castle.auth(tok, 'admin');
   return (select coalesce(jsonb_agg(jsonb_build_object('id', id, 'grade', grade, 'text', text, 'answer', answer, 'image', image,
-            'explanation', explanation, 'extra', extra, 'active', active) order by created_at, id), '[]') from castle.problems);
+            'explanation', explanation, 'extra', extra, 'active', active,
+            'term', term, 'subject', subject, 'unit_large', unit_large, 'unit', unit, 'src', src) order by created_at, id), '[]') from castle.problems);
 end $$;
 
 create or replace function castle.r_admin_problem(tok text, b jsonb) returns jsonb language plpgsql as $$
