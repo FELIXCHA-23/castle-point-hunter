@@ -97,7 +97,7 @@ function renderLogin(msg) {
       start();
     } catch (e) { showErr(e.message); }
   };
-  $('#go').onclick = go; $('#pw').onkeydown = (e) => e.key === 'Enter' && go();
+  $('#go').onclick = go; $('#pw').onkeydown = (e) => { if (e.key === 'Enter') go(); };
 }
 function renderSetPw() {
   app(`<div class="card" style="margin-top:8vh"><h1>비밀번호 설정</h1>
@@ -188,7 +188,7 @@ function renderSolve(a) {
   };
   upd(); tick = setInterval(upd, 500);
   $('#sub').onclick = () => { if ($('#ans').value.trim()) submit(); else showErr('정답을 입력해 주세요.'); };
-  $('#ans').onkeydown = (e) => e.key === 'Enter' && $('#sub').click();
+  $('#ans').onkeydown = (e) => { if (e.key === 'Enter') $('#sub').click(); };
   $('#neg').onclick = () => { const i = $('#ans'); i.value = i.value.startsWith('-') ? i.value.slice(1) : '-' + i.value; i.focus(); };
 }
 function renderResult(r) {
