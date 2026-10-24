@@ -1,0 +1,294 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>캐슬 포인트 헌터</title>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/KaTeX/0.16.9/katex.min.css">
+<script defer src="https://cdnjs.cloudflare.com/ajax/libs/KaTeX/0.16.9/katex.min.js"></script>
+<script defer src="https://cdnjs.cloudflare.com/ajax/libs/KaTeX/0.16.9/contrib/auto-render.min.js"></script>
+<style>
+:root{--bg:#f4f1ea;--card:#fff;--ink:#1d2433;--sub:#667085;--line:#e4dfd3;--main:#1f3a68;--gold:#c8962b;--ok:#1a8a4a;--bad:#c23b3b;--fire:#e8590c}
+@media (prefers-color-scheme:dark){:root{--bg:#141821;--card:#1e2430;--ink:#eef0f5;--sub:#9aa3b5;--line:#2e3646;--main:#7fa6e8;--gold:#e5b24a;--ok:#4cc27f;--bad:#ef7676;--fire:#ff8a4c}}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--ink);font-family:'Malgun Gothic','Apple SD Gothic Neo',system-ui,sans-serif;line-height:1.6}
+#app{max-width:760px;margin:0 auto;padding:16px}
+h1{font-size:22px;margin:0}h2{font-size:18px;margin:0 0 10px}
+.card{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:18px;margin-bottom:14px}
+.top{display:flex;justify-content:space-between;align-items:center;gap:10px;margin-bottom:12px}
+.pts{font-size:30px;font-weight:700;color:var(--gold)}
+.sub{color:var(--sub);font-size:14px}
+button{font:inherit;cursor:pointer;border:1px solid var(--line);background:var(--card);color:var(--ink);padding:10px 16px;border-radius:10px}
+button.primary{background:var(--main);color:#fff;border-color:var(--main)}
+button.danger{color:var(--bad)}
+button:disabled{opacity:.45;cursor:default}
+.btn-big{width:100%;padding:14px;font-size:17px;margin-top:10px}
+input,textarea,select{font:inherit;width:100%;padding:10px 12px;border:1px solid var(--line);border-radius:10px;background:var(--card);color:var(--ink)}
+textarea{min-height:90px}
+label{display:block;font-size:14px;color:var(--sub);margin:10px 0 4px}
+.grades{display:grid;grid-template-columns:repeat(3,1fr);gap:8px}
+.grades button{padding:14px 0;font-size:17px}
+.grades button.on{background:var(--main);color:#fff;border-color:var(--main)}
+.banner{background:linear-gradient(90deg,#fff1e0,#ffe3cf);color:#8a3b00;border:1px solid #ffc999;border-radius:12px;padding:10px 14px;margin-bottom:10px;font-weight:700}
+@media (prefers-color-scheme:dark){.banner{background:#3a2616;color:#ffb07c;border-color:#6b4423}}
+.prob{white-space:pre-wrap;font-size:18px;padding:6px 2px}
+.prob img{max-width:100%;display:block;margin:10px 0}
+.bar{height:10px;background:var(--line);border-radius:6px;overflow:hidden;margin:8px 0}
+.bar>div{height:100%;background:var(--main);width:100%}
+.timer{font-size:28px;font-weight:700;font-variant-numeric:tabular-nums}
+.res{font-size:24px;font-weight:700}.ok{color:var(--ok)}.bad{color:var(--bad)}
+.expl{white-space:pre-wrap;border-left:4px solid var(--gold);padding:4px 12px;margin:10px 0;background:rgba(200,150,43,.08)}
+.err{color:var(--bad);min-height:22px;margin-top:8px}
+table{width:100%;border-collapse:collapse;font-size:14px}
+th,td{border-bottom:1px solid var(--line);padding:7px 6px;text-align:left}
+.tabs{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:12px}
+.tabs button.on{background:var(--main);color:#fff;border-color:var(--main)}
+.row{display:flex;gap:8px;flex-wrap:wrap;align-items:center}
+.row>*{flex:1 1 140px}.row>button{flex:0 0 auto}
+.fire{color:var(--fire);font-weight:700}
+.hist{border-top:1px solid var(--line);padding:10px 0}
+</style>
+</head>
+<body>
+<div id="app"></div>
+<script>
+const $ = (s) => document.querySelector(s);
+const esc = (s) => String(s ?? '').replace(/[&<>"']/g, (c) => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+let token = localStorage.getItem('tk'), role = localStorage.getItem('role'), skew = 0, tick = null, me = null, pickedGrade = null;
+const nowS = () => Date.now() + skew;
+const fmt = (n) => Number(n).toLocaleString('ko-KR');
+
+async function api(path, body) {
+  const r = await fetch('/api/' + path, {
+    method: body === undefined ? 'GET' : 'POST',
+    headers: { 'Content-Type': 'application/json', ...(token ? { Authorization: 'Bearer ' + token } : {}) },
+    body: body === undefined ? undefined : JSON.stringify(body),
+  });
+  const j = await r.json().catch(() => ({}));
+  if (r.status === 401 && token) { logout(); throw new Error(j.error || '다시 로그인해 주세요.'); }
+  if (!r.ok) throw new Error(j.error || '오류가 났어요.');
+  return j;
+}
+function logout() { if (token) fetch('/api/logout', { method: 'POST', headers: { Authorization: 'Bearer ' + token } }).catch(() => {}); token = null; role = null; localStorage.removeItem('tk'); localStorage.removeItem('role'); clearInterval(tick); renderLogin(); }
+function math(el) { if (window.renderMathInElement) try { renderMathInElement(el, { delimiters: [{ left: '$$', right: '$$', display: true }, { left: '$', right: '$', display: false }], throwOnError: false }); } catch (e) {} }
+window.addEventListener('load', () => math(document.body));
+const app = (html) => { clearInterval(tick); $('#app').innerHTML = html; math($('#app')); };
+function showErr(m) { const e = $('#err'); if (e) e.textContent = m; }
+
+// ---------- 로그인 ----------
+function renderLogin(msg) {
+  app(`<div class="card" style="margin-top:8vh"><h1>🏰 캐슬 포인트 헌터</h1>
+  <p class="sub">문제를 풀고 포인트를 모아 보세요!</p>
+  <label>아이디 (이름 + 전화번호 뒷 4자리, 예: 김도윤2364)</label><input id="id" autocomplete="username">
+  <label>비밀번호 (처음에는 0000)</label><input id="pw" type="password" inputmode="numeric" autocomplete="current-password">
+  <div class="err" id="err">${esc(msg || '')}</div>
+  <button class="primary btn-big" id="go">로그인</button></div>`);
+  const go = async () => {
+    try {
+      const r = await api('login', { id: $('#id').value, pw: $('#pw').value });
+      token = r.token; role = r.role; localStorage.setItem('tk', token); localStorage.setItem('role', role);
+      start();
+    } catch (e) { showErr(e.message); }
+  };
+  $('#go').onclick = go; $('#pw').onkeydown = (e) => e.key === 'Enter' && go();
+}
+function renderSetPw() {
+  app(`<div class="card" style="margin-top:8vh"><h1>비밀번호 설정</h1>
+  <p class="sub">처음 로그인했어요! 나만 아는 숫자 4자리 비밀번호를 정해 주세요. (0000은 사용할 수 없어요)</p>
+  <label>새 비밀번호 (숫자 4자리)</label><input id="p1" type="password" inputmode="numeric" maxlength="4">
+  <label>한 번 더 입력</label><input id="p2" type="password" inputmode="numeric" maxlength="4">
+  <div class="err" id="err"></div><button class="primary btn-big" id="go">저장하고 시작하기</button></div>`);
+  $('#go').onclick = async () => {
+    if ($('#p1').value !== $('#p2').value) return showErr('두 번 입력한 비밀번호가 달라요.');
+    try { await api('setpw', { pw: $('#p1').value }); start(); } catch (e) { showErr(e.message); }
+  };
+}
+
+// ---------- 학생 ----------
+async function start() {
+  if (!token) return renderLogin();
+  if (role === 'admin') return renderAdmin('students');
+  try { await loadMe(); } catch (e) { return renderLogin(e.message); }
+}
+async function loadMe(notice) {
+  me = await api('me'); skew = me.serverNow - Date.now();
+  if (me.mustChange) return renderSetPw();
+  if (me.active) return me.active.state === 'preview' ? renderPreview(me.active) : renderSolve(me.active);
+  renderHome(notice);
+}
+function head() {
+  const m = me.mult;
+  const fire = m.value > 1 ? `<div class="banner">🔥 포인트 2배! ${m.morning ? '아침 7~9시 타임' : ''}${m.morning && m.daily ? ' · ' : ''}${m.daily ? `오늘 ${me.cfg.DAILY_BONUS_COUNT}문제 달성` : ''}</div>` : '';
+  return `<div class="top"><div><div class="sub">${esc(me.name)} (${esc(me.id)})</div><div class="pts">${fmt(me.points)} P</div></div>
+  <div class="row" style="flex:0 0 auto"><button id="hist">내 기록</button><button id="out">로그아웃</button></div></div>${fire}`;
+}
+function bindHead() { $('#out').onclick = logout; $('#hist').onclick = renderHistory; }
+function renderHome(notice) {
+  const c = me.cfg, left = Math.max(0, c.DAILY_BONUS_COUNT - me.todayCount);
+  app(`${head()}
+  <div class="card"><h2>학년을 선택하세요</h2>
+  <div class="grades">${me.grades.map((g) => `<button data-g="${g}" class="${g === pickedGrade ? 'on' : ''}">${g}</button>`).join('')}</div>
+  <p class="sub">미리보기 ${c.PREVIEW_SEC}초 (-${c.PREVIEW_COST}P) → 풀기를 선택하면 -${c.ACCEPT_COST}P, 제한시간 ${c.TIME_LIMIT_SEC / 60}분.<br>정답이면 +${c.REWARD}P!</p>
+  <div class="err" id="err">${esc(notice || '')}</div>
+  <button class="primary btn-big" id="pv" ${pickedGrade ? '' : 'disabled'}>${pickedGrade ? pickedGrade + ' 문제 미리보기 (-' + c.PREVIEW_COST + 'P)' : '학년을 먼저 골라 주세요'}</button></div>
+  <div class="card sub">오늘 푼 문제 <b>${me.todayCount}</b>개 · ${left > 0 ? `${left}문제 더 풀면 🔥 포인트 2배!` : '🔥 오늘은 포인트 2배 적용 중!'}</div>
+  <div class="card" id="rk"><h2>🏆 헌터 순위</h2><div class="sub">불러오는 중…</div></div>`);
+  bindHead();
+  api('rank').then((r) => {
+    const el = $('#rk'); if (!el) return;
+    el.innerHTML = `<h2>🏆 헌터 순위 <span class="sub">(내 순위 ${r.myRank}위 / ${r.total}명)</span></h2><table>${r.top.map((x) => `<tr style="${x.me ? 'font-weight:700;color:var(--gold)' : ''}"><td>${x.rank}</td><td>${esc(x.name)}</td><td style="text-align:right">${fmt(x.points)} P</td></tr>`).join('')}</table>`;
+  }).catch(() => {});
+  document.querySelectorAll('.grades button').forEach((b) => b.onclick = () => { pickedGrade = b.dataset.g; renderHome(); });
+  $('#pv').onclick = async () => {
+    try { const r = await api('preview', { grade: pickedGrade }); skew = r.serverNow - Date.now(); me.points = r.points; renderPreview(r.active); }
+    catch (e) { showErr(e.message); }
+  };
+}
+const probHtml = (p) => `<div class="prob">${esc(p.text)}${p.image ? `<img src="${esc(p.image)}" alt="">` : ''}</div>`;
+function renderPreview(a) {
+  app(`<div class="top"><div class="sub">${esc(a.problem.grade)} 미리보기</div><div class="timer" id="t"></div></div>
+  <div class="bar"><div id="b"></div></div>
+  <div class="card">${probHtml(a.problem)}</div>
+  <button class="primary btn-big" id="ac">이 문제 풀기 (-${me.cfg.ACCEPT_COST}P)</button>
+  <button class="btn-big" id="sk">넘기기</button><div class="err" id="err"></div>`);
+  const total = me.cfg.PREVIEW_SEC * 1000;
+  const upd = () => {
+    const left = a.previewEndsAt - nowS();
+    if (left <= 0) { clearInterval(tick); api('skip').then(() => loadMe('선택하지 않아 문제를 넘겼어요. 다음 문제를 골라 보세요!')).catch(() => loadMe()); return; }
+    $('#t').textContent = Math.ceil(left / 1000) + '초'; $('#b').style.width = (left / total * 100) + '%';
+  };
+  upd(); tick = setInterval(upd, 200);
+  $('#ac').onclick = async () => {
+    try { const r = await api('accept', {}); skew = r.serverNow - Date.now(); me.points = r.points; renderSolve(r.active); }
+    catch (e) { showErr(e.message); setTimeout(() => loadMe(e.message), 1200); }
+  };
+  $('#sk').onclick = async () => { await api('skip', {}).catch(() => {}); loadMe('문제를 넘겼어요.'); };
+}
+function renderSolve(a) {
+  app(`<div class="top"><div class="sub">${esc(a.problem.grade)} · 숫자만 입력하세요</div><div class="timer" id="t"></div></div>
+  <div class="card">${probHtml(a.problem)}</div>
+  <div class="card"><label>정답 (숫자만, 예: 12 / -3 / 0.5)</label><div class="row" style="flex-wrap:nowrap"><input id="ans" inputmode="decimal" autocomplete="off" enterkeyhint="done"><button id="neg" style="flex:0 0 64px" title="마이너스 부호 넣기/빼기">−</button></div>
+  <div class="err" id="err"></div><button class="primary btn-big" id="sub">답안 제출</button></div>`);
+  let done = false;
+  const submit = async () => {
+    if (done) return; done = true; clearInterval(tick);
+    try { renderResult(await api('submit', { answer: $('#ans').value })); } catch (e) { done = false; showErr(e.message); }
+  };
+  const upd = () => {
+    const left = a.deadline - nowS();
+    if (left <= 0) return submit();
+    const s = Math.ceil(left / 1000); $('#t').textContent = String(Math.floor(s / 60)).padStart(2, '0') + ':' + String(s % 60).padStart(2, '0');
+  };
+  upd(); tick = setInterval(upd, 500);
+  $('#sub').onclick = () => { if ($('#ans').value.trim()) submit(); else showErr('정답을 입력해 주세요.'); };
+  $('#ans').onkeydown = (e) => e.key === 'Enter' && $('#sub').click();
+  $('#neg').onclick = () => { const i = $('#ans'); i.value = i.value.startsWith('-') ? i.value.slice(1) : '-' + i.value; i.focus(); };
+}
+function renderResult(r) {
+  me.points = r.points;
+  app(`<div class="card"><div class="res ${r.correct ? 'ok' : 'bad'}">${r.correct ? '🎉 정답!' : r.timeout ? '⏰ 시간 초과' : '😢 오답'}</div>
+  ${r.correct ? `<p class="fire">+${fmt(r.reward)}P ${r.mult > 1 ? '(🔥 2배 적용)' : ''}</p>` : ''}
+  <p>정답: <b>${esc(r.answer)}</b></p><p class="pts">${fmt(r.points)} P</p></div>
+  <div class="card"><h2>해설</h2><div class="expl">${esc(r.explanation) || '(해설이 아직 없어요)'}</div>
+  ${r.extra ? `<div class="expl">${esc(r.extra)}</div>` : ''}</div>
+  <button class="primary btn-big" id="nx">다음 문제 도전</button>`);
+  $('#nx').onclick = () => loadMe();
+}
+async function renderHistory() {
+  const h = await api('history');
+  app(`<div class="top"><h2>내 기록 (최근 30개)</h2><button id="bk">돌아가기</button></div>
+  ${h.map((x) => `<div class="card"><div class="sub">${esc(x.grade)} · ${new Date(x.t).toLocaleString('ko-KR')} · <b class="${x.correct ? 'ok' : 'bad'}">${x.correct ? '정답 +' + x.reward : x.timeout ? '시간초과' : '오답'}</b></div>
+  <div class="prob">${esc(x.text)}${x.image ? `<img src="${esc(x.image)}" alt="">` : ''}</div>
+  <p>내 답: ${esc(x.myAnswer || '-')} / 정답: <b>${esc(x.answer)}</b></p>
+  <div class="expl">${esc(x.explanation)}</div>${x.extra ? `<div class="expl">${esc(x.extra)}</div>` : ''}</div>`).join('') || '<div class="card sub">아직 푼 문제가 없어요.</div>'}`);
+  $('#bk').onclick = () => loadMe();
+}
+
+// ---------- 관리자 ----------
+function tabs(cur) {
+  return `<div class="top"><h1>🏰 관리자</h1><button id="out">로그아웃</button></div><div class="tabs">${[['students', '학생·포인트'], ['problems', '문제'], ['log', '포인트 기록'], ['rules', '규칙 값'], ['settings', '비밀번호']].map(([k, n]) => `<button data-t="${k}" class="${k === cur ? 'on' : ''}">${n}</button>`).join('')}</div>`;
+}
+function bindTabs() { $('#out').onclick = logout; document.querySelectorAll('.tabs button').forEach((b) => b.onclick = () => renderAdmin(b.dataset.t)); }
+async function renderAdmin(tab) {
+  try {
+    if (tab === 'students') {
+      const list = await api('admin/students');
+      app(`${tabs(tab)}
+      <div class="card"><h2>학생 등록</h2><p class="sub">한 줄에 한 명: 이름 + 전화번호 뒷 4자리 (예: 김도윤 2364). 처음 비밀번호는 0000, 기본 5,000P가 지급됩니다.</p>
+      <textarea id="nw" placeholder="김도윤 2364&#10;이서연 1180"></textarea><div class="err" id="err"></div><button class="primary" id="add">등록</button></div>
+      <div class="card"><h2>포인트 지급 / 차감</h2><div class="row"><input id="amt" type="number" placeholder="포인트 (차감은 -)"><input id="why" placeholder="사유 (예: 일일테스트 우수)"><button class="primary" id="give">선택한 학생에게 적용</button></div><div class="err" id="err2"></div></div>
+      <div class="card"><div class="row"><h2 style="flex:1">학생 ${list.length}명</h2><input id="q" placeholder="이름 검색"></div>
+      <table><tr><th><input type="checkbox" id="all" style="width:auto"></th><th>아이디</th><th>포인트</th><th>오늘</th><th></th></tr>
+      ${list.sort((a, b) => a.id.localeCompare(b.id, 'ko')).map((s) => `<tr data-id="${esc(s.id)}"><td><input type="checkbox" class="ck" value="${esc(s.id)}" style="width:auto"></td><td>${esc(s.id)}${s.mustChange ? ' <span class="sub">(초기비번)</span>' : ''}</td><td>${fmt(s.points)}</td><td>${s.today}</td><td><button class="rs" data-id="${esc(s.id)}">비번초기화</button> <button class="danger dl" data-id="${esc(s.id)}">삭제</button></td></tr>`).join('')}</table></div>`);
+      bindTabs();
+      $('#add').onclick = async () => { try { const r = await api('admin/students', { text: $('#nw').value }); alert(`등록 ${r.added.length}명` + (r.skipped.length ? '\n건너뜀:\n' + r.skipped.join('\n') : '')); renderAdmin(tab); } catch (e) { showErr(e.message); } };
+      $('#all').onchange = (e) => document.querySelectorAll('.ck').forEach((c) => { if (c.closest('tr').style.display !== 'none') c.checked = e.target.checked; });
+      $('#q').oninput = (e) => document.querySelectorAll('tr[data-id]').forEach((r) => r.style.display = r.dataset.id.includes(e.target.value.trim()) ? '' : 'none');
+      $('#give').onclick = async () => {
+        const ids = [...document.querySelectorAll('.ck:checked')].map((c) => c.value);
+        if (!ids.length) return ($('#err2').textContent = '학생을 먼저 선택해 주세요.');
+        try { const r = await api('admin/points', { ids, delta: $('#amt').value, reason: $('#why').value }); alert(r.count + '명에게 적용했어요.'); renderAdmin(tab); } catch (e) { $('#err2').textContent = e.message; }
+      };
+      document.querySelectorAll('.rs').forEach((b) => b.onclick = async () => { if (confirm(b.dataset.id + ' 비밀번호를 0000으로 초기화할까요?')) { await api('admin/resetpw', { id: b.dataset.id }); renderAdmin(tab); } });
+      document.querySelectorAll('.dl').forEach((b) => b.onclick = async () => { if (confirm(b.dataset.id + ' 학생을 삭제할까요? 되돌릴 수 없어요.')) { await api('admin/deletestudent', { id: b.dataset.id }); renderAdmin(tab); } });
+    } else if (tab === 'problems') {
+      const list = await api('admin/problems'), G = ['중1', '중2', '중3', '고1', '고2', '고3'];
+      app(`${tabs(tab)}
+      <div class="card"><h2 id="ft">문제 추가</h2><input type="hidden" id="pid">
+      <div class="row"><div><label>학년</label><select id="gr">${G.map((g) => `<option>${g}</option>`).join('')}</select></div><div><label>정답 (숫자만)</label><input id="an"></div></div>
+      <label>문제 (수식은 $...$ 로 쓰면 예쁘게 보여요)</label><textarea id="tx"></textarea>
+      <label>그림 (선택)</label><input type="file" id="im" accept="image/*"><div class="sub" id="imn"></div>
+      <label>해설</label><textarea id="ex"></textarea>
+      <label>변형 풀이 (문제를 숫자 답으로 바꿨을 때 해설 뒤에 덧붙을 내용, 선택)</label><textarea id="xt"></textarea>
+      <label><input type="checkbox" id="ac" checked style="width:auto"> 출제에 사용 (끄면 학생에게 나오지 않아요)</label>
+      <div class="err" id="err"></div><div class="row"><button class="primary" id="sv">저장</button><button id="cl">새로 쓰기</button></div></div>
+      <div class="card"><h2>문제 일괄 등록 (JSON)</h2><p class="sub">[{"grade":"중1","text":"...","answer":"11","explanation":"...","extra":"..."}, ...]</p><textarea id="js"></textarea><div class="err" id="err3"></div><button id="imp">일괄 등록</button></div>
+      <div class="card"><h2>문제 ${list.length}개</h2><table><tr><th>학년</th><th>문제</th><th>정답</th><th></th></tr>
+      ${list.map((p, i) => `<tr><td>${p.grade}${p.active === false ? ' <span class="sub">(끔)</span>' : ''}</td><td>${esc(p.text.slice(0, 40))}${p.text.length > 40 ? '…' : ''}</td><td>${esc(p.answer)}</td><td><button class="ed" data-i="${i}">수정</button> <button class="danger dp" data-id="${p.id}">삭제</button></td></tr>`).join('')}</table></div>`);
+      bindTabs(); let img = '';
+      $('#im').onchange = (e) => {
+        const f = e.target.files[0]; if (!f) return;
+        const im = new Image(), u = URL.createObjectURL(f);
+        im.onload = async () => { // 가로 1000px 이하 JPEG 로 줄여 올려요 (서버 저장 용량 절약)
+          const k = Math.min(1, 1000 / im.width), cv = document.createElement('canvas');
+          cv.width = Math.round(im.width * k); cv.height = Math.round(im.height * k);
+          const g = cv.getContext('2d'); g.fillStyle = '#fff'; g.fillRect(0, 0, cv.width, cv.height); g.drawImage(im, 0, 0, cv.width, cv.height);
+          try { img = (await api('admin/upload', { dataUrl: cv.toDataURL('image/jpeg', 0.85) })).url; $('#imn').textContent = '올렸어요: ' + img; } catch (er) { showErr(er.message); }
+        };
+        im.onerror = () => showErr('그림을 읽을 수 없어요.'); im.src = u;
+      };
+      $('#sv').onclick = async () => { try { await api('admin/problem', { id: $('#pid').value || undefined, grade: $('#gr').value, answer: $('#an').value, text: $('#tx').value, explanation: $('#ex').value, extra: $('#xt').value, image: img, active: $('#ac').checked }); renderAdmin(tab); } catch (e) { showErr(e.message); } };
+      $('#cl').onclick = () => renderAdmin(tab);
+      $('#imp').onclick = async () => { try { const r = await api('admin/import', { items: JSON.parse($('#js').value) }); alert(`등록 ${r.count}개` + (r.errors.length ? '\n' + r.errors.join('\n') : '')); renderAdmin(tab); } catch (e) { $('#err3').textContent = e.message; } };
+      document.querySelectorAll('.ed').forEach((b) => b.onclick = () => { const p = list[b.dataset.i]; $('#ft').textContent = '문제 수정'; $('#pid').value = p.id; $('#gr').value = p.grade; $('#an').value = p.answer; $('#tx').value = p.text; $('#ex').value = p.explanation; $('#xt').value = p.extra; $('#ac').checked = p.active !== false; img = p.image || ''; $('#imn').textContent = img ? '그림: ' + img : ''; scrollTo(0, 0); });
+      document.querySelectorAll('.dp').forEach((b) => b.onclick = async () => { if (confirm('이 문제를 삭제할까요?')) { await api('admin/deleteproblem', { id: b.dataset.id }); renderAdmin(tab); } });
+    } else if (tab === 'log') {
+      const log = await api('admin/log');
+      app(`${tabs(tab)}<div class="card"><h2>최근 포인트 기록</h2><table><tr><th>시각</th><th>학생</th><th>변동</th><th>잔액</th><th>내용</th></tr>
+      ${log.map((l) => `<tr><td>${new Date(l.t).toLocaleString('ko-KR')}</td><td>${esc(l.sid)}</td><td class="${l.delta > 0 ? 'ok' : 'bad'}">${l.delta > 0 ? '+' : ''}${fmt(l.delta)}</td><td>${fmt(l.balance)}</td><td>${esc(l.reason)}</td></tr>`).join('')}</table></div>`);
+      bindTabs();
+    } else if (tab === 'rules') {
+      const c = await api('admin/cfg');
+      const F = [['START_POINTS', '처음 지급 포인트 (새 학생에게만)'], ['PREVIEW_COST', '미리보기 차감 포인트'], ['PREVIEW_SEC', '미리보기 시간 (초)'], ['ACCEPT_COST', '풀기 선택 차감 포인트'], ['TIME_LIMIT_MIN', '문제 제한시간 (분)'], ['REWARD', '정답 보상 포인트'], ['MORNING_FROM', '아침 2배 시작 (시)'], ['MORNING_TO', '아침 2배 끝 (시)'], ['DAILY_BONUS_COUNT', '하루 N문제째부터 2배']];
+      c.TIME_LIMIT_MIN = c.TIME_LIMIT_SEC / 60;
+      app(`${tabs(tab)}<div class="card"><h2>규칙 값</h2><p class="sub">바꾼 값은 바로 적용돼요. 진행 중인 문제의 제한시간은 그대로예요.</p>
+      ${F.map(([k, n]) => `<label>${n}</label><input class="cf" data-k="${k}" type="number" value="${c[k]}">`).join('')}
+      <div class="err" id="err"></div><button class="primary" id="sv">저장</button></div>`);
+      bindTabs();
+      $('#sv').onclick = async () => {
+        const v = {}; document.querySelectorAll('.cf').forEach((i) => v[i.dataset.k] = i.value);
+        v.TIME_LIMIT_SEC = Number(v.TIME_LIMIT_MIN) * 60; delete v.TIME_LIMIT_MIN;
+        try { await api('admin/cfg', v); alert('저장했어요.'); } catch (e) { showErr(e.message); }
+      };
+    } else {
+      app(`${tabs(tab)}<div class="card"><h2>관리자 비밀번호 변경</h2><input id="np" type="password" placeholder="새 비밀번호 (6자 이상)"><div class="err" id="err"></div><button class="primary" id="sv">변경</button></div>`);
+      bindTabs();
+      $('#sv').onclick = async () => { try { await api('admin/adminpw', { pw: $('#np').value }); alert('변경했어요.'); $('#np').value = ''; } catch (e) { showErr(e.message); } };
+    }
+  } catch (e) { if (token) alert(e.message); }
+}
+
+start();
+</script>
+</body>
+</html>
