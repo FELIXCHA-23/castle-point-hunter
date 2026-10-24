@@ -75,6 +75,13 @@ code{background:var(--bg);padding:1px 6px;border-radius:6px;font-size:.92em}
 .back{display:flex;align-items:center;gap:6px;border:none;background:none;padding:6px 4px;font-size:14px;color:var(--sub);font-weight:600}
 .back svg{width:20px;height:20px;stroke:currentColor}
 .chip{display:inline-block;padding:3px 9px;border-radius:999px;background:var(--bg);color:var(--sub);font-size:12px;font-weight:600}
+.rk-row{display:flex;align-items:center;gap:12px;padding:11px 10px;border-radius:14px}
+.rk-row:nth-child(-n+3){background:var(--bg)}
+.rk-row.me{background:var(--tint);color:var(--main);font-weight:800}
+.rk-no{width:26px;text-align:center;font-weight:800;font-variant-numeric:tabular-nums;display:flex;justify-content:center;color:var(--sub)}
+.rk-nm{flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.rk-pt{font-variant-numeric:tabular-nums;font-weight:700}
+.rk-row+.rk-row{margin-top:4px}
 @media (min-width:700px){#app{max-width:600px}.card{padding:24px}}
 </style>
 </head>
@@ -119,6 +126,9 @@ const IC = {
   back: '<svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 5l-7 7 7 7"/></svg>',
   out: '<svg viewBox="0 0 24 24" fill="none" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M10 4.5H5.5v15H10"/><path d="M14 8l4 4-4 4M18 12H9.5"/></svg>'
 };
+const trophy = (c) => `<svg viewBox="0 0 24 24" width="22" height="22" aria-hidden="true"><path d="M7 4h10v5.2A5 5 0 0 1 12 14a5 5 0 0 1-5-4.8z" fill="${c}"/><path d="M7 5.5H4.2v1.3A3.4 3.4 0 0 0 7.6 10.2M17 5.5h2.8v1.3a3.4 3.4 0 0 1-3.4 3.4" fill="none" stroke="${c}" stroke-width="1.6" stroke-linecap="round"/><path d="M12 14v3.3M8.2 20h7.6M9.5 17.3h5" fill="none" stroke="${c}" stroke-width="1.8" stroke-linecap="round"/></svg>`;
+const MEDAL = ['#f5b82e', '#9aa6b8', '#cd7f4a'];
+const rankRows = (top) => top.map((x) => `<div class="rk-row${x.me ? ' me' : ''}"><div class="rk-no">${x.rank <= 3 ? trophy(MEDAL[x.rank - 1]) : x.rank}</div><div class="rk-nm">${esc(x.name)}${x.me ? ' <span class="chip">나</span>' : ''}</div><div class="rk-pt">${fmt(x.points)} P</div></div>`).join('');
 function navBar(cur) {
   const it = [['home', '홈', IC.home, () => loadMe()], ['nt', '오답노트', IC.note, renderNotes], ['hist', '기록', IC.list, renderHistory], ['rk', '순위', IC.rank, () => renderHome('', true)]];
   return `<div class="nav"><div>${it.map(([k, n, ic]) => `<button data-n="${k}" class="${k === cur ? 'on' : ''}">${ic}${n}</button>`).join('')}</div></div>`;
@@ -193,7 +203,7 @@ function renderHome(notice, toRank) {
   bindHead();
   api('rank').then((r) => {
     const el = $('#rk'); if (!el) return;
-    el.innerHTML = `<h2>헌터 순위 <span class="sub">(내 순위 ${r.myRank}위 / ${r.total}명)</span></h2><table>${r.top.map((x) => `<tr style="${x.me ? 'font-weight:800;color:var(--main)' : ''}"><td>${x.rank}</td><td>${esc(x.name)}</td><td style="text-align:right">${fmt(x.points)} P</td></tr>`).join('')}</table>`;
+    el.innerHTML = `<h2 style="display:flex;align-items:center;gap:8px">${trophy('#f5b82e')}헌터 순위 <span class="sub" style="font-weight:600">내 순위 ${r.myRank}위 / ${r.total}명</span></h2>${rankRows(r.top)}`;
     if (toRank) el.scrollIntoView({ block: 'center' });
   }).catch(() => {});
   document.querySelectorAll('.grades button').forEach((b) => b.onclick = () => { pickedGrade = b.dataset.g; renderHome(); });
