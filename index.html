@@ -51,6 +51,7 @@ th,td{border-bottom:1px solid var(--line);padding:7px 6px;text-align:left}
 </head>
 <body>
 <div id="app"></div>
+<script src="config.js"></script>
 <script>
 const $ = (s) => document.querySelector(s);
 const esc = (s) => String(s ?? '').replace(/[&<>"']/g, (c) => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
@@ -58,18 +59,22 @@ let token = localStorage.getItem('tk'), role = localStorage.getItem('role'), ske
 const nowS = () => Date.now() + skew;
 const fmt = (n) => Number(n).toLocaleString('ko-KR');
 
+// 모든 기능은 Supabase 함수 castle_api 하나로 갑니다 (규칙·정답·비밀번호 검사는 Supabase 안에서 해요).
 async function api(path, body) {
-  const r = await fetch('/api/' + path, {
-    method: body === undefined ? 'GET' : 'POST',
-    headers: { 'Content-Type': 'application/json', ...(token ? { Authorization: 'Bearer ' + token } : {}) },
-    body: body === undefined ? undefined : JSON.stringify(body),
-  });
+  const cfg = window.CASTLE_CONFIG || {};
+  if (!cfg.url || !cfg.anonKey) throw new Error('config.js 에 Supabase 주소와 anon 키를 넣어 주세요.');
+  const r = await fetch(cfg.url.replace(/\/$/, '') + '/rest/v1/rpc/castle_api', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', apikey: cfg.anonKey, Authorization: 'Bearer ' + cfg.anonKey },
+    body: JSON.stringify({ p_path: path, p_token: token || null, p_body: body === undefined ? {} : body }),
+  }).catch(() => { throw new Error('인터넷 연결을 확인해 주세요.'); });
   const j = await r.json().catch(() => ({}));
-  if (r.status === 401 && token) { logout(); throw new Error(j.error || '다시 로그인해 주세요.'); }
-  if (!r.ok) throw new Error(j.error || '오류가 났어요.');
+  if (r.status === 401) { if (token) logout(); throw new Error(j.message || '다시 로그인해 주세요.'); }
+  if (!r.ok) throw new Error(j.message || '오류가 났어요.');
+  if (j && j.error) throw new Error(j.error);
   return j;
 }
-function logout() { if (token) fetch('/api/logout', { method: 'POST', headers: { Authorization: 'Bearer ' + token } }).catch(() => {}); token = null; role = null; localStorage.removeItem('tk'); localStorage.removeItem('role'); clearInterval(tick); renderLogin(); }
+function logout() { if (token) api('logout').catch(() => {}); token = null; role = null; localStorage.removeItem('tk'); localStorage.removeItem('role'); clearInterval(tick); renderLogin(); }
 function math(el) { if (window.renderMathInElement) try { renderMathInElement(el, { delimiters: [{ left: '$$', right: '$$', display: true }, { left: '$', right: '$', display: false }], throwOnError: false }); } catch (e) {} }
 window.addEventListener('load', () => math(document.body));
 const app = (html) => { clearInterval(tick); $('#app').innerHTML = html; math($('#app')); };
@@ -221,7 +226,7 @@ async function renderAdmin(tab) {
       <table><tr><th><input type="checkbox" id="all" style="width:auto"></th><th>아이디</th><th>포인트</th><th>오늘</th><th></th></tr>
       ${list.sort((a, b) => a.id.localeCompare(b.id, 'ko')).map((s) => `<tr data-id="${esc(s.id)}"><td><input type="checkbox" class="ck" value="${esc(s.id)}" style="width:auto"></td><td>${esc(s.id)}${s.mustChange ? ' <span class="sub">(초기비번)</span>' : ''}</td><td>${fmt(s.points)}</td><td>${s.today}</td><td><button class="rs" data-id="${esc(s.id)}">비번초기화</button> <button class="danger dl" data-id="${esc(s.id)}">삭제</button></td></tr>`).join('')}</table></div>`);
       bindTabs();
-      $('#add').onclick = async () => { try { const r = await api('admin/students', { text: $('#nw').value }); alert(`등록 ${r.added.length}명` + (r.skipped.length ? '\n건너뜀:\n' + r.skipped.join('\n') : '')); renderAdmin(tab); } catch (e) { showErr(e.message); } };
+      $('#add').onclick = async () => { try { const r = await api('admin/addstudents', { text: $('#nw').value }); alert(`등록 ${r.added.length}명` + (r.skipped.length ? '\n건너뜀:\n' + r.skipped.join('\n') : '')); renderAdmin(tab); } catch (e) { showErr(e.message); } };
       $('#all').onchange = (e) => document.querySelectorAll('.ck').forEach((c) => { if (c.closest('tr').style.display !== 'none') c.checked = e.target.checked; });
       $('#q').oninput = (e) => document.querySelectorAll('tr[data-id]').forEach((r) => r.style.display = r.dataset.id.includes(e.target.value.trim()) ? '' : 'none');
       $('#give').onclick = async () => {
@@ -249,18 +254,20 @@ async function renderAdmin(tab) {
       $('#im').onchange = (e) => {
         const f = e.target.files[0]; if (!f) return;
         const im = new Image(), u = URL.createObjectURL(f);
-        im.onload = async () => { // 가로 1000px 이하 JPEG 로 줄여 올려요 (서버 저장 용량 절약)
-          const k = Math.min(1, 1000 / im.width), cv = document.createElement('canvas');
+        im.onload = () => { // 가로 800px 이하 JPEG 로 줄여서 문제에 함께 저장해요
+          const k = Math.min(1, 800 / im.width), cv = document.createElement('canvas');
           cv.width = Math.round(im.width * k); cv.height = Math.round(im.height * k);
           const g = cv.getContext('2d'); g.fillStyle = '#fff'; g.fillRect(0, 0, cv.width, cv.height); g.drawImage(im, 0, 0, cv.width, cv.height);
-          try { img = (await api('admin/upload', { dataUrl: cv.toDataURL('image/jpeg', 0.85) })).url; $('#imn').textContent = '올렸어요: ' + img; } catch (er) { showErr(er.message); }
+          const d = cv.toDataURL('image/jpeg', 0.8);
+          if (d.length > 590000) return showErr('그림이 너무 커요. 더 작은 그림을 써 주세요.');
+          img = d; $('#imn').textContent = '그림을 붙였어요 (저장을 눌러야 반영돼요)';
         };
         im.onerror = () => showErr('그림을 읽을 수 없어요.'); im.src = u;
       };
       $('#sv').onclick = async () => { try { await api('admin/problem', { id: $('#pid').value || undefined, grade: $('#gr').value, answer: $('#an').value, text: $('#tx').value, explanation: $('#ex').value, extra: $('#xt').value, image: img, active: $('#ac').checked }); renderAdmin(tab); } catch (e) { showErr(e.message); } };
       $('#cl').onclick = () => renderAdmin(tab);
       $('#imp').onclick = async () => { try { const r = await api('admin/import', { items: JSON.parse($('#js').value) }); alert(`등록 ${r.count}개` + (r.errors.length ? '\n' + r.errors.join('\n') : '')); renderAdmin(tab); } catch (e) { $('#err3').textContent = e.message; } };
-      document.querySelectorAll('.ed').forEach((b) => b.onclick = () => { const p = list[b.dataset.i]; $('#ft').textContent = '문제 수정'; $('#pid').value = p.id; $('#gr').value = p.grade; $('#an').value = p.answer; $('#tx').value = p.text; $('#ex').value = p.explanation; $('#xt').value = p.extra; $('#ac').checked = p.active !== false; img = p.image || ''; $('#imn').textContent = img ? '그림: ' + img : ''; scrollTo(0, 0); });
+      document.querySelectorAll('.ed').forEach((b) => b.onclick = () => { const p = list[b.dataset.i]; $('#ft').textContent = '문제 수정'; $('#pid').value = p.id; $('#gr').value = p.grade; $('#an').value = p.answer; $('#tx').value = p.text; $('#ex').value = p.explanation; $('#xt').value = p.extra; $('#ac').checked = p.active !== false; img = p.image || ''; $('#imn').textContent = img ? '그림이 붙어 있어요 (새 그림을 고르면 바뀌어요)' : ''; scrollTo(0, 0); });
       document.querySelectorAll('.dp').forEach((b) => b.onclick = async () => { if (confirm('이 문제를 삭제할까요?')) { await api('admin/deleteproblem', { id: b.dataset.id }); renderAdmin(tab); } });
     } else if (tab === 'log') {
       const log = await api('admin/log');
@@ -278,7 +285,7 @@ async function renderAdmin(tab) {
       $('#sv').onclick = async () => {
         const v = {}; document.querySelectorAll('.cf').forEach((i) => v[i.dataset.k] = i.value);
         v.TIME_LIMIT_SEC = Number(v.TIME_LIMIT_MIN) * 60; delete v.TIME_LIMIT_MIN;
-        try { await api('admin/cfg', v); alert('저장했어요.'); } catch (e) { showErr(e.message); }
+        try { await api('admin/setcfg', v); alert('저장했어요.'); } catch (e) { showErr(e.message); }
       };
     } else {
       app(`${tabs(tab)}<div class="card"><h2>관리자 비밀번호 변경</h2><input id="np" type="password" placeholder="새 비밀번호 (6자 이상)"><div class="err" id="err"></div><button class="primary" id="sv">변경</button></div>`);

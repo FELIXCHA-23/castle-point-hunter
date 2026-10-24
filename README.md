@@ -1,20 +1,18 @@
 # 캐슬 포인트 헌터
 
-## 실행
-`시작.bat` 더블클릭 → http://localhost:3000
-관리자 아이디 `admin` / 초기 비밀번호 `castle1234!` (관리자 화면 > 비밀번호 탭에서 변경)
+서버 없이 **Supabase + 정적 화면(GitHub Pages)** 으로 돌아갑니다.
+
+## 구성
+- `index.html` : 화면 전체 (학생 + 관리자)
+- `config.js` : Supabase 주소와 anon 키 (공개 키라서 올려도 됩니다. service_role 키는 넣지 마세요)
+- `supabase_setup.sql` : Supabase SQL Editor 에서 한 번 실행. 표·규칙 함수·샘플 문제 생성
+  - 정답·비밀번호·포인트 계산은 전부 Supabase 안(castle 스키마)에 있고, 화면은 `castle_api` 함수 하나만 부를 수 있습니다.
+  - 관리자 비밀번호 설정: `select castle.init_admin('원하는비밀번호');`
 
 ## 규칙 값
-관리자 화면 > "규칙 값" 탭에서 바로 바꿉니다 (미리보기·풀기 포인트, 보상, 제한시간, 아침 2배 시간, N문제 2배).
+관리자 화면 > "규칙 값" 탭에서 바로 바꿉니다 (미리보기·풀기 포인트, 보상, 제한시간, 아침 2배 시간, N문제째부터 2배).
 
-## 데이터 저장
-- 기본: `data/db.json` 한 파일(학원 PC에서 돌릴 때). 이 파일만 백업하면 됩니다.
-- 무료 서버(Render 등)는 재시작하면 파일이 사라지므로 Supabase 에 저장합니다.
-  1. Supabase > SQL Editor 에 `supabase_setup.sql` 내용을 붙여넣고 Run (표 1개 생성)
-  2. 서버 환경변수 `SUPABASE_URL`(프로젝트 주소), `SUPABASE_SERVICE_KEY`(service_role 키) 설정
-  3. service_role 키는 비밀번호와 같습니다. GitHub 에 올리거나 남에게 알려주지 마세요.
-- 그 밖의 환경변수: `ADMIN_PASSWORD`(처음 관리자 비밀번호), `PORT`, `DATA_DIR`.
-
-## 배포 메모
-- GitHub에 올릴 때 `.gitignore` 가 `data/`, `tools/` 를 제외합니다. `render.yaml` 로 Render 무료 웹서비스를 만들 수 있습니다.
-- 무료 서버는 15분 접속이 없으면 잠듭니다. `/api/health` 를 5분마다 호출하는 무료 모니터(UptimeRobot 등)로 깨워 둘 수 있습니다.
+## 메모
+- 아침 2배와 15문제 2배는 겹쳐도 2배까지만 적용됩니다.
+- 10초 안에 고르지 않으면 학년 선택 화면으로 돌아갑니다(미리보기 10P는 차감).
+- `_옛_Node서버/` 는 Supabase 로 바꾸기 전의 Node 서버 버전(보관용, 저장소에는 올리지 않음).
