@@ -206,7 +206,7 @@ function renderHome(notice, toRank) {
     el.innerHTML = `<h2 style="display:flex;align-items:center;gap:8px">${trophy('#f5b82e')}헌터 순위 <span class="sub" style="font-weight:600">내 순위 ${r.myRank}위 / ${r.total}명</span></h2>${rankRows(r.top)}`;
     if (toRank) el.scrollIntoView({ block: 'center' });
   }).catch(() => {});
-  document.querySelectorAll('.grades button').forEach((b) => b.onclick = () => { pickedGrade = b.dataset.g; renderHome(); });
+  document.querySelectorAll('.grades button').forEach((b) => b.onclick = () => { const y = window.scrollY; pickedGrade = b.dataset.g; renderHome(); window.scrollTo(0, y); requestAnimationFrame(() => window.scrollTo(0, y)); });
   $('#pv').onclick = async () => {
     try { const r = await api('preview', { grade: pickedGrade }); skew = r.serverNow - Date.now(); me.points = r.points; renderPreview(r.active); }
     catch (e) { showErr(e.message); }
