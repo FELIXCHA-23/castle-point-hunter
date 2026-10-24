@@ -35,6 +35,12 @@ create table if not exists castle.log (
   id bigserial primary key, sid text not null, t timestamptz not null default now(),
   delta int not null, reason text not null, balance int not null);
 create index if not exists log_sid_idx on castle.log (sid);
+-- 학생별 오답노트: 푼 적 있는 문제만 담을 수 있고, 메모·분류 이름은 학생이 직접 정리한다
+create table if not exists castle.notes (
+  sid text not null references castle.students(id) on delete cascade, pid text not null,
+  memo text not null default '', tag text not null default '', created_at timestamptz not null default now(),
+  primary key (sid, pid));
+alter table castle.notes enable row level security;
 create table if not exists castle.sessions (token text primary key, id text not null, role text not null, exp timestamptz not null);
 create table if not exists castle.tries (key text primary key, n int not null default 0, until_at timestamptz);
 
@@ -353,7 +359,7 @@ begin
   perform castle.finish(a.id, b->>'answer', now() > a.deadline + interval '5 seconds');
   select * into a from castle.attempts where id = a.id;
   select * into p from castle.problems where id = a.pid;
-  return jsonb_build_object('correct', a.correct, 'timeout', a.timeout, 'reward', a.reward, 'mult', a.mult,
+  return jsonb_build_object('pid', a.pid, 'correct', a.correct, 'timeout', a.timeout, 'reward', a.reward, 'mult', a.mult,
     'points', (select points from castle.students where id = st.id),
     'answer', coalesce(p.answer, ''), 'explanation', coalesce(p.explanation, ''), 'extra', coalesce(p.extra, ''));
 end $$;
@@ -361,7 +367,7 @@ end $$;
 create or replace function castle.r_history(tok text) returns jsonb language plpgsql as $$
 declare st castle.students := castle.stu(tok);
 begin
-  return (select coalesce(jsonb_agg(jsonb_build_object('t', castle.ms(q.end_at), 'grade', q.grade,
+  return (select coalesce(jsonb_agg(jsonb_build_object('pid', q.pid, 't', castle.ms(q.end_at), 'grade', q.grade,
             'text', coalesce(q.ptext, '(삭제된 문제)'), 'image', case when q.rn <= 10 then coalesce(q.pimage, '') else '' end,
             'correct', q.correct, 'timeout', q.timeout, 'reward', q.reward, 'myAnswer', q.answer, 'answer', q.panswer,
             'explanation', q.pexpl, 'extra', q.pextra) order by q.id desc), '[]')
@@ -369,6 +375,43 @@ begin
                        row_number() over (order by a.id desc) as rn
                 from castle.attempts a left join castle.problems p on p.id = a.pid
                 where a.sid = st.id and a.state = 'done' order by a.id desc limit 30) q);
+end $$;
+
+-- ----- 오답노트 -----
+create or replace function castle.r_notes(tok text) returns jsonb language plpgsql as $$
+declare st castle.students := castle.stu(tok);
+begin
+  return (select coalesce(jsonb_agg(jsonb_build_object('pid', n.pid, 'memo', n.memo, 'tag', n.tag, 't', castle.ms(n.created_at),
+            'grade', coalesce(p.grade, ''), 'text', coalesce(p.text, '(삭제된 문제)'), 'image', coalesce(p.image, ''),
+            'answer', coalesce(p.answer, ''), 'explanation', coalesce(p.explanation, ''), 'extra', coalesce(p.extra, ''))
+            order by n.created_at desc), '[]')
+          from castle.notes n left join castle.problems p on p.id = n.pid where n.sid = st.id);
+end $$;
+
+create or replace function castle.r_note_add(tok text, b jsonb) returns jsonb language plpgsql as $$
+declare st castle.students := castle.stu(tok); v_pid text := b->>'pid';
+begin
+  if v_pid is null or not exists (select 1 from castle.attempts where sid = st.id and pid = v_pid and state = 'done') then
+    perform castle.fail(400, '풀어 본 문제만 오답노트에 담을 수 있어요.');
+  end if;
+  if (select count(*) from castle.notes where sid = st.id) >= 500 then perform castle.fail(400, '오답노트는 500개까지 담을 수 있어요.'); end if;
+  insert into castle.notes (sid, pid) values (st.id, v_pid) on conflict do nothing;
+  return jsonb_build_object('ok', true);
+end $$;
+
+create or replace function castle.r_note_update(tok text, b jsonb) returns jsonb language plpgsql as $$
+declare st castle.students := castle.stu(tok);
+begin
+  update castle.notes set memo = left(coalesce(b->>'memo', ''), 1000), tag = left(btrim(coalesce(b->>'tag', '')), 20)
+   where sid = st.id and pid = b->>'pid';
+  return jsonb_build_object('ok', true);
+end $$;
+
+create or replace function castle.r_note_del(tok text, b jsonb) returns jsonb language plpgsql as $$
+declare st castle.students := castle.stu(tok);
+begin
+  delete from castle.notes where sid = st.id and pid = b->>'pid';
+  return jsonb_build_object('ok', true);
 end $$;
 
 -- ----- 관리자 -----
@@ -556,6 +599,10 @@ begin
     when 'skip' then return castle.r_skip(tok);
     when 'accept' then return castle.r_accept(tok);
     when 'submit' then return castle.r_submit(tok, b);
+    when 'notes' then return castle.r_notes(tok);
+    when 'note/add' then return castle.r_note_add(tok, b);
+    when 'note/update' then return castle.r_note_update(tok, b);
+    when 'note/del' then return castle.r_note_del(tok, b);
     when 'history' then return castle.r_history(tok);
     when 'admin/students' then return castle.r_admin_students(tok);
     when 'admin/addstudents' then return castle.r_admin_addstudents(tok, b);
