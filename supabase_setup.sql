@@ -104,10 +104,10 @@ declare v_bal int;
 begin
   update castle.students set points = points + p_delta where id = p_sid returning points into v_bal;
   insert into castle.log (sid, delta, reason, balance) values (p_sid, p_delta, p_reason, v_bal);
-  -- 포인트가 0P 이하가 되면 110P 자동 충전
-  if p_delta < 0 and v_bal <= 0 then
-    update castle.students set points = points + 110 where id = p_sid returning points into v_bal;
-    insert into castle.log (sid, delta, reason, balance) values (p_sid, 110, '포인트 소진 자동 충전', v_bal);
+  -- 풀이 포인트(100P)보다 모자라 문제를 못 풀게 되면 110P로 맞춰 줌
+  if p_delta < 0 and v_bal < castle.c('ACCEPT_COST') then
+    update castle.students set points = 110 where id = p_sid;
+    insert into castle.log (sid, delta, reason, balance) values (p_sid, 110 - v_bal, '포인트 소진 자동 충전(110P)', 110);
   end if;
 end $$;
 
