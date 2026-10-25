@@ -104,6 +104,11 @@ declare v_bal int;
 begin
   update castle.students set points = points + p_delta where id = p_sid returning points into v_bal;
   insert into castle.log (sid, delta, reason, balance) values (p_sid, p_delta, p_reason, v_bal);
+  -- 포인트가 0P 이하가 되면 110P 자동 충전
+  if p_delta < 0 and v_bal <= 0 then
+    update castle.students set points = points + 110 where id = p_sid returning points into v_bal;
+    insert into castle.log (sid, delta, reason, balance) values (p_sid, 110, '포인트 소진 자동 충전', v_bal);
+  end if;
 end $$;
 
 create or replace function castle.today_count(p_sid text) returns int language sql stable as $$
