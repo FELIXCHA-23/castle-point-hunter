@@ -356,7 +356,7 @@ async function renderNotes() {
 
 // ---------- 관리자 ----------
 function tabs(cur) {
-  return `<div class="top"><h1>관리자</h1><button id="out">로그아웃</button></div><div class="tabs">${[['students', '학생·포인트'], ['problems', '문제'], ['units', '출제 단원'], ['log', '포인트 기록'], ['rules', '규칙 값'], ['settings', '비밀번호']].map(([k, n]) => `<button data-t="${k}" class="${k === cur ? 'on' : ''}">${n}</button>`).join('')}</div>`;
+  return `<div class="top"><h1>관리자</h1><button id="out">로그아웃</button></div><div class="tabs">${[['students', '학생·포인트'], ['problems', '문제'], ['units', '출제 단원'], ['sus', '풀이 분석'], ['log', '포인트 기록'], ['rules', '규칙 값'], ['settings', '비밀번호']].map(([k, n]) => `<button data-t="${k}" class="${k === cur ? 'on' : ''}">${n}</button>`).join('')}</div>`;
 }
 function bindTabs() { $('#out').onclick = logout; document.querySelectorAll('.tabs button').forEach((b) => b.onclick = () => renderAdmin(b.dataset.t)); }
 async function renderAdmin(tab) {
@@ -445,6 +445,14 @@ async function renderAdmin(tab) {
         $('#rel').onclick = () => { if (confirm(cur + ' 제한을 풀고 모든 문제를 출제할까요?')) save([]); };
       };
       draw();
+    } else if (tab === 'sus') {
+      const days = window.__sd || 14, fast = window.__sf || 20, d = await api('admin/suspects', { days, fast });
+      app(`${tabs(tab)}<div class="card"><h2>풀이 분석</h2><p class="sub">정답을 <b>${fast}초 안에</b> 맞힌 횟수를 학생별로 보여 줘요. ${fast}초 안에 3번 이상, 맞힌 문제의 절반 이상이 그렇다면 <b>확인 필요</b>로 표시해요. AI나 다른 사람의 도움을 받았다는 증거는 아니고, 직접 물어볼 학생을 좁히는 용도예요.</p>
+      <div class="row"><select id="sd">${[7, 14, 30, 90].map((x) => `<option value="${x}" ${x === days ? 'selected' : ''}>최근 ${x}일</option>`).join('')}</select><select id="sf">${[10, 15, 20, 30, 45, 60].map((x) => `<option value="${x}" ${x === fast ? 'selected' : ''}>${x}초 안에 정답</option>`).join('')}</select></div>
+      ${d.length ? `<table><tr><th>학생</th><th>푼 수</th><th>정답률</th><th>중간 시간</th><th>빠른 정답</th><th></th></tr>${d.map((r) => `<tr><td>${esc(r.sid)}</td><td>${r.n}</td><td>${r.rate}%</td><td>${r.median}초</td><td><b>${r.fastCount}</b></td><td>${r.flag ? '<b class="bad">확인 필요</b>' : ''}</td></tr>${r.fast.length ? `<tr><td colspan="6" class="sub" style="font-size:12px">${r.fast.map((f) => `${esc(f.src || '삭제된 문제')} ${f.sec}초`).join(' · ')}</td></tr>` : ''}`).join('')}</table>` : '<p class="sub">이 기간에 푼 기록이 없어요.</p>'}</div>`);
+      bindTabs();
+      $('#sd').onchange = (e) => { window.__sd = +e.target.value; renderAdmin('sus'); };
+      $('#sf').onchange = (e) => { window.__sf = +e.target.value; renderAdmin('sus'); };
     } else if (tab === 'log') {
       const log = await api('admin/log');
       app(`${tabs(tab)}<div class="card"><h2>최근 포인트 기록</h2><table><tr><th>시각</th><th>학생</th><th>변동</th><th>잔액</th><th>내용</th></tr>

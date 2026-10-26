@@ -451,6 +451,34 @@ begin
   return jsonb_build_object('added', added, 'skipped', skipped);
 end $$;
 
+-- ----- 풀이 분석: 너무 빨리 맞힌 학생 찾기 (AI·외부 도움 의심용) -----
+create or replace function castle.r_admin_suspects(tok text, b jsonb) returns jsonb language plpgsql as $$
+declare v_days int := least(greatest(coalesce((b->>'days')::int, 14), 1), 365);
+        v_fast int := least(greatest(coalesce((b->>'fast')::int, 20), 3), 600);
+begin
+  perform castle.auth(tok, 'admin');
+  return (
+    with t as (
+      select a.sid, a.pid, a.correct, a.end_at, greatest(0, extract(epoch from (a.end_at - a.start_at))::int) as sec
+      from castle.attempts a
+      where a.state = 'done' and a.start_at is not null and a.end_at > now() - make_interval(days => v_days)
+    ), g as (
+      select sid, count(*) as n, count(*) filter (where correct) as c,
+             count(*) filter (where correct and sec < v_fast) as fc,
+             percentile_cont(0.5) within group (order by sec) filter (where correct) as med
+      from t group by sid
+    )
+    select coalesce(jsonb_agg(jsonb_build_object(
+        'sid', g.sid, 'n', g.n, 'correct', g.c, 'rate', round(100.0 * g.c / g.n),
+        'median', coalesce(round(g.med::numeric), 0), 'fastCount', g.fc,
+        'flag', g.fc >= 3 and g.fc * 2 >= g.c,
+        'fast', coalesce((select jsonb_agg(jsonb_build_object('src', f.src, 'sec', f.sec) order by f.end_at desc)
+                          from (select p.src, x.sec, x.end_at from t x left join castle.problems p on p.id = x.pid
+                                where x.sid = g.sid and x.correct and x.sec < v_fast order by x.end_at desc limit 6) f), '[]'))
+      order by g.fc desc, g.c desc, g.sid), '[]')
+    from g);
+end $$;
+
 create or replace function castle.r_admin_points(tok text, b jsonb) returns jsonb language plpgsql as $$
 declare v_delta int; v_id text; n int := 0; v_why text := coalesce(nullif(left(btrim(coalesce(b->>'reason', '')), 60), ''), '관리자 지급');
 begin
@@ -628,6 +656,7 @@ begin
     when 'admin/deleteproblem' then return castle.r_admin_deleteproblem(tok, b);
     when 'admin/deleteall' then return castle.r_admin_deleteall(tok, b);
     when 'admin/log' then return castle.r_admin_log(tok);
+    when 'admin/suspects' then return castle.r_admin_suspects(tok, b);
     else perform castle.fail(404, '없는 기능이에요.');
   end case;
   return null;
