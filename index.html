@@ -36,6 +36,7 @@ label{display:block;font-size:13px;font-weight:700;color:var(--sub);margin:14px 
 .grades button.on{background:var(--main);color:var(--main-ink);box-shadow:0 6px 16px rgba(43,107,255,.25)}
 .banner{background:var(--tint);color:var(--main);border:none;border-radius:14px;padding:11px 14px;margin-bottom:12px;font-weight:700;font-size:14px}
 .prob{white-space:pre-wrap;font-size:17.5px;line-height:1.8;padding:2px 0;word-break:keep-all;overflow-wrap:anywhere}
+.pnote{font-size:13.5px;font-weight:600;color:var(--sub);background:var(--bg);border-radius:10px;padding:8px 12px;margin-bottom:6px;line-height:1.5}
 .prob img{max-width:100%;display:block;margin:14px auto 4px;border-radius:10px;background:#fff}
 .prob .katex-display{overflow-x:auto;overflow-y:hidden;padding:4px 0;margin:.5em 0}
 .katex{font-size:1.06em}
@@ -244,7 +245,7 @@ async function nextPreview(g) {
 }
 // 줄바꿈이 필요한 수식(경우 나누기 등)은 가운데 정렬된 별도 줄로 보여 준다
 const dm = (s) => String(s ?? '').replace(/\$([^$]*\\begin\{cases\}[^$]*)\$/g, (m, f) => '$$' + f + '$$');
-const probHtml = (p) => `<div class="prob wm">${esc(dm(p.text))}${p.image ? `<img src="${esc(p.image)}" alt="">` : ''}</div>`;
+const probHtml = (p) => `<div class="prob wm">${p.image && p.text ? `<div class="pnote">${esc(dm(p.text))}</div>` : esc(dm(p.text))}${p.image ? `<img src="${esc(p.image)}" alt="">` : ''}</div>`;
 function renderPreview(a) {
   app(`<div class="top"><button class="back" id="hm">${IC.back}${esc(a.problem.grade)} 미리보기</button><div class="timer" id="t"></div></div>
   <div class="bar"><div id="b"></div></div>
@@ -274,7 +275,7 @@ function renderSolve(a) {
   const isSet = a.problem.kind === 'set';
   app(`<div class="top"><button class="back" id="hm">${IC.back}${esc(a.problem.grade)} · ${isSet ? '보기의 기호를 입력' : '숫자만 입력'}</button><div class="timer" id="t"></div></div>
   <div class="card">${probHtml(a.problem)}</div>
-  <div class="card">${isSet ? `<label>정답 (해당하는 보기의 기호를 모두 쓰세요. 예: ㄱ, ㄷ)</label><div class="row" style="flex-wrap:nowrap"><input id="ans" autocomplete="off" enterkeyhint="done" placeholder="예: ㄱ, ㄷ"></div>` : `<label>정답 (숫자만, 예: 12 / -3 / 0.5)</label><div class="row" style="flex-wrap:nowrap"><input id="ans" inputmode="decimal" autocomplete="off" enterkeyhint="done"><button id="neg" style="flex:0 0 64px" title="마이너스 부호 넣기/빼기">−</button></div>`}
+  <div class="card">${isSet ? `<label>정답 (해당하는 보기의 기호를 모두 쓰세요. 예: ㄱ, ㄷ)</label><div class="row" style="flex-wrap:nowrap"><input id="ans" autocomplete="off" enterkeyhint="done" placeholder="예: ㄱ, ㄷ"></div>` : `<label>정답 (숫자만, 예: 12 / -3 / 0.5)</label><div class="row" style="flex-wrap:nowrap"><input id="ans" inputmode="decimal" autocomplete="off" enterkeyhint="done"><button id="neg" style="flex:0 0 92px;font-size:15px" title="마이너스 부호 넣기/빼기">− (부호)</button></div>`}
   <div class="err" id="err"></div><button class="primary btn-big" id="sub">답안 제출</button></div>`, true);
   let done = false;
   const submit = async () => {
