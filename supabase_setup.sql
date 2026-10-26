@@ -507,6 +507,47 @@ begin
                    having count(*) >= 3 order by 4, 2 desc limit 3) w));
 end $$;
 
+
+-- ----- 캐치유 테스트 오답모음 (KMMS 에서 복사해 온 데이터, 학생은 본인 것만 조회) -----
+create table if not exists castle.catchu_rounds (
+  id text primary key, title text not null, date date, grade text not null default '', total int not null default 0);
+create table if not exists castle.catchu_wrong (
+  round_id text not null references castle.catchu_rounds(id) on delete cascade,
+  sid text not null references castle.students(id) on delete cascade,
+  wrong jsonb not null default '[]', retest_date date, still_wrong jsonb,
+  primary key (round_id, sid));
+alter table castle.catchu_rounds enable row level security;
+alter table castle.catchu_wrong enable row level security;
+
+create or replace function castle.r_catchu(tok text) returns jsonb language plpgsql as $$
+declare st castle.students := castle.stu(tok);
+begin
+  return (select coalesce(jsonb_agg(jsonb_build_object('id', r.id, 'title', r.title, 'date', r.date, 'grade', r.grade, 'total', r.total,
+            'wrong', w.wrong, 'retestDate', w.retest_date, 'stillWrong', w.still_wrong) order by r.date desc nulls last, r.title), '[]')
+          from castle.catchu_wrong w join castle.catchu_rounds r on r.id = w.round_id where w.sid = st.id);
+end $$;
+
+-- KMMS 에서 뽑은 JSON ({rounds:[...], rows:[{roundId, sid, wrong, retestDate, stillWrong}]})을 넣는다. SQL 편집기에서만 호출 (앱 경로에는 연결하지 않음).
+create or replace function castle.catchu_import(j jsonb) returns jsonb language plpgsql as $$
+declare x jsonb; n_r int := 0; n_w int := 0; n_skip int := 0;
+begin
+  for x in select * from jsonb_array_elements(coalesce(j->'rounds', '[]')) loop
+    insert into castle.catchu_rounds (id, title, date, grade, total)
+      values (x->>'id', x->>'title', nullif(x->>'date', '')::date, coalesce(x->>'grade', ''), coalesce((x->>'total')::int, 0))
+      on conflict (id) do update set title = excluded.title, date = excluded.date, grade = excluded.grade, total = excluded.total;
+    n_r := n_r + 1;
+  end loop;
+  for x in select * from jsonb_array_elements(coalesce(j->'rows', '[]')) loop
+    if exists (select 1 from castle.students where id = x->>'sid') and exists (select 1 from castle.catchu_rounds where id = x->>'roundId') then
+      insert into castle.catchu_wrong (round_id, sid, wrong, retest_date, still_wrong)
+        values (x->>'roundId', x->>'sid', coalesce(x->'wrong', '[]'), nullif(x->>'retestDate', '')::date, case when jsonb_typeof(x->'stillWrong') = 'array' then x->'stillWrong' end)
+        on conflict (round_id, sid) do update set wrong = excluded.wrong, retest_date = excluded.retest_date, still_wrong = excluded.still_wrong;
+      n_w := n_w + 1;
+    else n_skip := n_skip + 1; end if;
+  end loop;
+  return jsonb_build_object('rounds', n_r, 'rows', n_w, 'skipped', n_skip);
+end $$;
+
 -- ----- 오답노트 -----
 create or replace function castle.r_notes(tok text) returns jsonb language plpgsql as $$
 declare st castle.students := castle.stu(tok);
@@ -1025,6 +1066,7 @@ begin
     when 'note/del' then return castle.r_note_del(tok, b);
     when 'history' then return castle.r_history(tok);
     when 'stats' then return castle.r_stats(tok);
+    when 'catchu' then return castle.r_catchu(tok);
     when 'notices' then return castle.r_notices(tok);
     when 'admin/notice/save' then return castle.r_admin_notice_save(tok, b);
     when 'admin/notice/del' then return castle.r_admin_notice_del(tok, b);
