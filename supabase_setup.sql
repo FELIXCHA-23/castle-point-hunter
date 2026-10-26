@@ -888,11 +888,59 @@ begin
   return jsonb_build_object('ok', true);
 end $$;
 
+
+-- ----- 로그인 없이 구경하기 (체험 모드): 포인트·기록은 저장하지 않고 문제만 보여 줌 -----
+create or replace function castle.r_guest_start(b jsonb) returns jsonb language plpgsql as $$
+declare v_tok text;
+begin
+  delete from castle.sessions where exp < now();
+  if (select count(*) from castle.sessions where role = 'guest') >= 5000 then perform castle.fail(429, '지금은 체험 접속이 많습니다. 잠시 후 다시 시도해 주십시오.'); end if;
+  v_tok := encode(extensions.gen_random_bytes(24), 'hex');
+  insert into castle.sessions values (v_tok, 'guest', 'guest', now() + interval '3 hours');
+  return jsonb_build_object('token', v_tok);
+end $$;
+
+create or replace function castle.r_guest_problem(tok text, b jsonb) returns jsonb language plpgsql as $$
+declare p castle.problems; v_g text := nullif(b->>'grade', ''); v_min int := coalesce((b->>'minLevel')::int, 0);
+        v_ex text[] := coalesce(array(select jsonb_array_elements_text(coalesce(b->'exclude', '[]'::jsonb))), '{}');
+begin
+  perform castle.auth(tok, 'guest');
+  select * into p from castle.problems q where q.active and q.level >= v_min and (v_g is null or q.grade = v_g)
+    and (v_g is null or castle.unit_ok(v_g, q.subject, q.unit_large, q.unit)) and not (q.id = any (v_ex)) order by random() limit 1;
+  if not found then
+    select * into p from castle.problems q where q.active and q.level >= v_min and (v_g is null or q.grade = v_g)
+      and (v_g is null or castle.unit_ok(v_g, q.subject, q.unit_large, q.unit)) order by random() limit 1;
+  end if;
+  if not found then perform castle.fail(400, '지금은 이 학년에 풀 수 있는 문제가 없습니다. 다른 학년을 선택해 주십시오.'); end if;
+  return jsonb_build_object('id', p.id, 'grade', p.grade, 'text', p.text, 'image', p.image, 'level', p.level,
+                            'kind', case when p.answer ~ '^[ㄱ-ㅎ]+$' then 'set' else 'num' end);
+end $$;
+
+create or replace function castle.r_guest_pool(tok text, b jsonb) returns jsonb language plpgsql as $$
+begin
+  perform castle.auth(tok, 'guest');
+  return jsonb_build_object('n', (select count(*) from castle.problems where active and level >= coalesce((b->>'minLevel')::int, 0)));
+end $$;
+
+create or replace function castle.r_guest_check(tok text, b jsonb) returns jsonb language plpgsql as $$
+declare p castle.problems;
+begin
+  perform castle.auth(tok, 'guest');
+  select * into p from castle.problems where id = b->>'id';
+  if not found then perform castle.fail(400, '문제를 찾을 수 없습니다.'); end if;
+  return jsonb_build_object('correct', castle.same(b->>'answer', p.answer), 'answer', p.answer, 'explanation', p.explanation,
+                            'extra', p.extra, 'explImage', p.expl_image, 'level', p.level);
+end $$;
+
 create or replace function castle.dispatch(p_path text, tok text, b jsonb) returns jsonb language plpgsql as $$
 begin
   case p_path
     when 'login' then return castle.r_login(b);
     when 'register' then return castle.r_register(b);
+    when 'guest/start' then return castle.r_guest_start(b);
+    when 'guest/problem' then return castle.r_guest_problem(tok, b);
+    when 'guest/pool' then return castle.r_guest_pool(tok, b);
+    when 'guest/check' then return castle.r_guest_check(tok, b);
     when 'reset/request' then return castle.r_reset_request(b);
     when 'admin/resets' then return castle.r_admin_resets(tok);
     when 'logout' then return castle.r_logout(tok);
