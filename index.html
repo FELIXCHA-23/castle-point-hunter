@@ -68,6 +68,9 @@ td,th,input,textarea,.rk-nm,.chip,.gchip{overflow-wrap:anywhere;word-break:norma
 .ovl h2{margin:0 0 8px}.ovl p{margin:0 0 16px;color:var(--sub);line-height:1.6;font-size:14.5px}
 .btnlink{display:inline-block;text-align:center;font-weight:700;color:var(--ink);background:var(--card);border:1px solid var(--line);padding:11px 15px;border-radius:8px;text-decoration:none;white-space:nowrap}
 .btnlink.wide{display:block;padding:14px}
+.btnlink.ico{flex:1;display:flex;align-items:center;justify-content:center;padding:12px 0}
+.btnlink.ico svg{width:28px;height:28px;stroke:var(--main)}
+.btnlink.kk{background:#fee500;border-color:#fee500}.btnlink.kk svg{color:#3a1d1d}
 .gchip{display:inline-block;margin-left:5px;padding:1px 6px;border-radius:4px;background:var(--bg);color:var(--sub);font-size:11.5px;font-weight:700}
 .pnote .katex{font-size:1.5em;color:var(--ink)}
 .katex .frac-line{border-bottom-style:solid!important;border-bottom-color:currentColor;min-height:1px}
@@ -279,6 +282,8 @@ const IC = {
   rank: '<svg viewBox="0 0 24 24" fill="none" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M8 4h8v5a4 4 0 0 1-8 0z"/><path d="M8 6H5v1.5A3 3 0 0 0 8 10.5M16 6h3v1.5a3 3 0 0 1-3 3"/><path d="M12 13v4M8.5 20h7"/></svg>',
   season: '<svg viewBox="0 0 24 24" fill="none" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M4 17.5 3 8l5 4 4-7 4 7 5-4-1 9.5z"/><path d="M5.5 20.5h13"/></svg>',
   more: '<svg viewBox="0 0 24 24" fill="none" stroke-width="3.4" stroke-linecap="round"><path d="M5.5 12h.01M12 12h.01M18.5 12h.01"/></svg>',
+  sms: '<svg viewBox="0 0 24 24" fill="none" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M4 5.5h16v11H11l-4.5 3.5V16.5H4z"/><path d="M8.5 11h.01M12 11h.01M15.5 11h.01" stroke-width="2.6"/></svg>',
+  kakao: '<svg viewBox="0 0 24 24" stroke="none"><path fill="currentColor" d="M12 3.5c-5.2 0-9.4 3.3-9.4 7.4 0 2.6 1.7 4.9 4.3 6.2l-.9 3.3c-.1.3.2.5.5.3l3.9-2.6c.5.1 1 .1 1.6.1 5.2 0 9.4-3.3 9.4-7.4S17.200 3.500 12 3.500z"/></svg>',
   back: '<svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 5l-7 7 7 7"/></svg>',
   out: '<svg viewBox="0 0 24 24" fill="none" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M10 4.5H5.5v15H10"/><path d="M14 8l4 4-4 4M18 12H9.5"/></svg>'
 };
@@ -301,7 +306,7 @@ function renderLogin(msg, signup) {
   <label>비밀번호${signup ? ' (4자 이상)' : ''}</label><input id="pw" type="password" autocomplete="${signup ? 'new-password' : 'current-password'}">
   <div class="err" id="err">${esc(msg || '')}</div>
   <button class="primary btn-big" id="go" style="margin-top:6px">${signup ? '가입하고 시작하기' : '로그인'}</button>${signup ? '' : '<button class="btn-big" id="gst" style="margin-top:8px">로그인 없이 탐험하기</button>'}</div>
-  ${signup ? '' : '<p class="sub" style="text-align:center;margin:14px 8px 8px">비밀번호를 잊은 경우<br><b>차성빈 원장</b>에게 초기화를 요청하십시오.</p><div class="row" style="flex-wrap:nowrap"><a class="btnlink" id="sms" href="' + smsHref('') + '">문자 보내기</a><a class="btnlink" href="' + KAKAO_URL + '" target="_blank" rel="noopener">카카오톡 오픈채팅</a></div>'}`, true);
+  ${signup ? '' : '<p class="sub" style="text-align:center;margin:14px 8px 8px">비밀번호를 잊은 경우<br><b>차성빈 원장</b>에게 초기화를 요청하십시오.</p><div class="row" style="flex-wrap:nowrap"><a class="btnlink ico" id="sms" aria-label="문자 보내기" title="문자 보내기" href="' + smsHref('') + '">' + IC.sms + '</a><a class="btnlink ico kk" aria-label="카카오톡 오픈채팅" title="카카오톡 오픈채팅" href="' + KAKAO_URL + '" target="_blank" rel="noopener">' + IC.kakao + '</a></div>'}`, true);
   const go = async () => {
     try {
       const r = await api(signup ? 'register' : 'login', { id: $('#id').value, pw: $('#pw').value });
