@@ -343,9 +343,6 @@ declare st castle.students := castle.stu(tok); a castle.attempts; v_mult int;
 begin
   select * into a from castle.attempts where sid = st.id and state in ('preview', 'solving') order by id desc limit 1;
   if not found or a.state <> 'preview' then perform castle.fail(400, '미리보기 중인 문제가 없어요.'); end if;
-  if now() > a.preview_at + make_interval(secs => (castle.c('PREVIEW_SEC') + 3)::double precision) then
-    perform castle.fail(400, '선택 시간이 지나 문제가 넘어갔어요.');
-  end if;
   if st.points < castle.c('ACCEPT_COST') then perform castle.fail(400, '풀이 포인트(' || castle.c('ACCEPT_COST') || 'P)가 부족해요.'); end if;
   perform castle.add_pts(st.id, -castle.c('ACCEPT_COST'), '문제 풀기 선택');
   v_mult := (castle.next_mult(st.id)->>'value')::int;

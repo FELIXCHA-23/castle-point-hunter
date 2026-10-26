@@ -224,14 +224,18 @@ const probHtml = (p) => `<div class="prob">${esc(dm(p.text))}${p.image ? `<img s
 function renderPreview(a) {
   app(`<div class="top"><button class="back" id="hm">${IC.back}${esc(a.problem.grade)} 미리보기</button><div class="timer" id="t"></div></div>
   <div class="bar"><div id="b"></div></div>
-  <div class="card" style="margin-top:12px">${probHtml(a.problem)}</div>
+  <div class="card" style="margin-top:12px" id="pv">${probHtml(a.problem)}</div>
   <button class="primary btn-big" id="ac">이 문제 풀기 (-${me.cfg.ACCEPT_COST}P)</button>
   <button class="btn-big soft" id="sk" style="border-color:transparent">넘기기 (다음 문제)</button><div class="err" id="err"></div>`, true);
   pickedGrade = a.problem.grade;
   const total = me.cfg.PREVIEW_SEC * 1000;
   const upd = () => {
     const left = a.previewEndsAt - nowS();
-    if (left <= 0) { clearInterval(tick); api('skip').then(() => loadMe('선택하지 않아 문제를 넘겼어요. 다음 문제를 골라 보세요!')).catch(() => loadMe()); return; }
+    if (left <= 0) {
+      clearInterval(tick); $('#t').textContent = '0초'; $('#b').style.width = '0%';
+      $('#pv').innerHTML = '<div style="height:220px;background:#fff;display:flex;align-items:center;justify-content:center;color:var(--sub);font-weight:600">미리보기 시간이 끝났어요</div>';
+      return;
+    }
     $('#t').textContent = Math.ceil(left / 1000) + '초'; $('#b').style.width = (left / total * 100) + '%';
   };
   upd(); tick = setInterval(upd, 200);
