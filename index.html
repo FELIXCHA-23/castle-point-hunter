@@ -122,7 +122,8 @@ async function api(path, body) {
   if (j && j.error) throw new Error(j.error);
   return j;
 }
-function logout() { if (token) api('logout').catch(() => {}); token = null; role = null; localStorage.removeItem('tk'); localStorage.removeItem('role'); clearInterval(tick); renderLogin(); }
+function logout() { if (token) api('logout').catch(() => {}); token = null; role = null; localStorage.removeItem('tk'); localStorage.removeItem('role'); localStorage.removeItem('staff'); clearInterval(tick); renderLogin(); }
+async function switchTo(to) { try { const r = await api('switch', { to }); token = r.token; role = r.role; localStorage.setItem('tk', token); localStorage.setItem('role', role); start(); } catch (e) { alert(e.message); } }
 function math(el) { if (window.renderMathInElement) try { renderMathInElement(el, { delimiters: [{ left: '$$', right: '$$', display: true }, { left: '$', right: '$', display: false }], throwOnError: false }); } catch (e) {} }
 window.addEventListener('load', () => math(document.body));
 const app = (html, nonav) => { clearInterval(tick); $('#app').className = nonav ? 'nonav' : ''; $('#app').innerHTML = html; math($('#app')); window.scrollTo(0, 0); };
@@ -176,7 +177,7 @@ function renderLogin(msg, signup) {
   const go = async () => {
     try {
       const r = await api(signup ? 'register' : 'login', { id: $('#id').value, pw: $('#pw').value });
-      token = r.token; role = r.role; localStorage.setItem('tk', token); localStorage.setItem('role', role);
+      token = r.token; role = r.role; localStorage.setItem('tk', token); localStorage.setItem('role', role); localStorage.setItem('staff', r.staff ? '1' : '');
       start();
     } catch (e) { showErr(e.message); }
   };
@@ -209,12 +210,12 @@ async function loadMe(notice) {
 function head() {
   const m = me.mult;
   const fire = m.value > 1 ? `<div class="banner">🔥 포인트 2배 적용 중${m.morning ? ' · 아침 7~9시 타임' : ''}${m.daily ? ` · 오늘 ${me.cfg.DAILY_BONUS_COUNT}문제 맞힘` : ''}</div>` : '';
-  return `<div class="top"><img class="logo" src="logo.png" alt="캐슬수학"><button id="out" class="back" style="margin-right:-4px">${IC.out}로그아웃</button></div>
+  return `<div class="top"><img class="logo" src="logo.png" alt="캐슬수학"><span style="display:flex;gap:4px;align-items:center">${me.isAdmin ? '<button id="toadm" class="back">관리자 화면</button>' : ''}<button id="out" class="back" style="margin-right:-4px">${IC.out}로그아웃</button></span></div>
   <div class="hello"><h1>${esc(me.name)}님</h1><div class="sub">오늘도 좋은 하루예요</div></div>
   <div class="card pcard"><div><div class="sub">총 포인트</div><div class="pts">${fmt(me.points)}<span style="font-size:16px;font-weight:700;color:var(--sub);margin-left:3px">P</span></div></div></div>
   <div class="tiles"><button class="tile" id="nt">${IC.note}오답노트</button><button class="tile" id="hist">${IC.list}내 기록</button></div>${fire}`;
 }
-function bindHead() { $('#out').onclick = logout; $('#hist').onclick = renderHistory; $('#nt').onclick = renderNotes; bindNav(); }
+function bindHead() { $('#out').onclick = logout; if ($('#toadm')) $('#toadm').onclick = () => switchTo('admin'); $('#hist').onclick = renderHistory; $('#nt').onclick = renderNotes; bindNav(); }
 function renderHome(notice, toRank) {
   const c = me.cfg, cnt = Math.min(me.todayCount, c.DAILY_BONUS_COUNT), left = Math.max(0, c.DAILY_BONUS_COUNT - me.todayCount);
   app(`${head()}
@@ -353,20 +354,20 @@ async function renderNotes() {
 
 // ---------- 관리자 ----------
 function tabs(cur) {
-  return `<div class="top"><h1>관리자</h1><button id="out">로그아웃</button></div><div class="tabs">${[['students', '학생·포인트'], ['problems', '문제'], ['units', '출제 단원'], ['sus', '풀이 분석'], ['log', '포인트 기록'], ['rules', '규칙 값'], ['settings', '비밀번호']].map(([k, n]) => `<button data-t="${k}" class="${k === cur ? 'on' : ''}">${n}</button>`).join('')}</div>`;
+  return `<div class="top"><h1>관리자</h1><span style="display:flex;gap:6px">${localStorage.getItem('staff') ? '<button id="tostu">학생 화면</button>' : ''}<button id="out">로그아웃</button></span></div><div class="tabs">${[['students', '학생·포인트'], ['problems', '문제'], ['units', '출제 단원'], ['sus', '풀이 분석'], ['log', '포인트 기록'], ['rules', '규칙 값'], ['settings', '비밀번호']].map(([k, n]) => `<button data-t="${k}" class="${k === cur ? 'on' : ''}">${n}</button>`).join('')}</div>`;
 }
-function bindTabs() { $('#out').onclick = logout; document.querySelectorAll('.tabs button').forEach((b) => b.onclick = () => renderAdmin(b.dataset.t)); }
+function bindTabs() { $('#out').onclick = logout; if ($('#tostu')) $('#tostu').onclick = () => switchTo('student'); document.querySelectorAll('.tabs button').forEach((b) => b.onclick = () => renderAdmin(b.dataset.t)); }
 async function renderAdmin(tab) {
   try {
     if (tab === 'students') {
       const list = await api('admin/students');
       app(`${tabs(tab)}
-      <div class="card"><h2>학생 등록</h2><p class="sub">한 줄에 한 명: 이름만 쓰면 아이디가 이름 그대로 됩니다 (동명이인은 김도윤2처럼 숫자를 붙이세요). 이름 뒤에 4자리 숫자를 같이 쓰면 이름+숫자가 아이디가 됩니다 (예: 김도윤 2364). 처음 비밀번호는 0000, 기본 5,000P가 지급됩니다.</p>
-      <textarea id="nw" placeholder="김도윤 2364&#10;이서연 1180"></textarea><div class="err" id="err"></div><button class="primary" id="add">등록</button></div>
+      <div class="card"><h2>학생 등록</h2><p class="sub">한 줄에 한 명씩 <b>학교이름+이름</b>으로 쓰세요 (예: 해원고이시현). 이 글자가 그대로 아이디가 돼요. 처음 비밀번호는 0000이고, 처음 로그인할 때 바꿔요.</p>
+      <textarea id="nw" placeholder="해원고이시현&#10;신현고황서윤"></textarea><div class="err" id="err"></div><button class="primary" id="add">등록</button></div>
       <div class="card"><h2>포인트 지급 / 차감</h2><div class="row"><input id="amt" type="number" placeholder="포인트 (차감은 -)"><input id="why" placeholder="사유 (예: 일일테스트 우수)"><button class="primary" id="give">선택한 학생에게 적용</button></div><div class="err" id="err2"></div></div>
       <div class="card"><div class="row"><h2 style="flex:1">학생 ${list.length}명</h2><input id="q" placeholder="이름 검색"></div>
       <table><tr><th><input type="checkbox" id="all" style="width:auto"></th><th>아이디</th><th>포인트</th><th>오늘</th><th></th></tr>
-      ${list.sort((a, b) => a.id.localeCompare(b.id, 'ko')).map((s) => `<tr data-id="${esc(s.id)}"><td><input type="checkbox" class="ck" value="${esc(s.id)}" style="width:auto"></td><td>${esc(s.id)}${s.mustChange ? ' <span class="sub">(초기비번)</span>' : ''}</td><td>${fmt(s.points)}</td><td>${s.today}</td><td><button class="rs" data-id="${esc(s.id)}">비번초기화</button> <button class="danger dl" data-id="${esc(s.id)}">삭제</button></td></tr>`).join('')}</table></div>`);
+      ${list.sort((a, b) => a.id.localeCompare(b.id, 'ko')).map((s) => `<tr data-id="${esc(s.id)}"><td><input type="checkbox" class="ck" value="${esc(s.id)}" style="width:auto"></td><td>${esc(s.id)}${s.isAdmin ? ' <span class="chip">관리자</span>' : ''}${s.mustChange ? ' <span class="sub">(초기비번)</span>' : ''}</td><td>${fmt(s.points)}</td><td>${s.today}</td><td><button class="rs" data-id="${esc(s.id)}">비번초기화</button> <button class="danger dl" data-id="${esc(s.id)}">삭제</button></td></tr>`).join('')}</table></div>`);
       bindTabs();
       $('#add').onclick = async () => { try { const r = await api('admin/addstudents', { text: $('#nw').value }); alert(`등록 ${r.added.length}명` + (r.skipped.length ? '\n건너뜀:\n' + r.skipped.join('\n') : '')); renderAdmin(tab); } catch (e) { showErr(e.message); } };
       $('#all').onchange = (e) => document.querySelectorAll('.ck').forEach((c) => { if (c.closest('tr').style.display !== 'none') c.checked = e.target.checked; });

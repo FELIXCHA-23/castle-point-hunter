@@ -25,6 +25,7 @@ alter table castle.problems add column if not exists unit_large text not null de
 alter table castle.problems add column if not exists unit text not null default '';       -- 중단원 (2022 개정)
 alter table castle.problems add column if not exists src text not null default '';        -- 출처 (예: RPM 공통수학2 0312). 같은 출처로 다시 올리면 덮어씀
 create unique index if not exists problems_src_uq on castle.problems (src) where src <> '';
+alter table castle.students add column if not exists is_admin boolean not null default false;  -- 선생님 계정에 관리자 권한을 줄 때
 alter table castle.problems add column if not exists expl_image text not null default '';  -- 해설을 그림(캡처)으로 올릴 때
 create table if not exists castle.attempts (
   id bigserial primary key, sid text not null references castle.students(id) on delete cascade,
@@ -226,7 +227,7 @@ create or replace function castle.r_login(b jsonb) returns jsonb language plpgsq
 declare v_id text := regexp_replace(normalize(coalesce(b->>'id', ''), NFC), '\s', '', 'g');
         v_pw text := coalesce(b->>'pw', '');
         v_ip text := coalesce((nullif(current_setting('request.headers', true), '')::jsonb)->>'x-forwarded-for', '');
-        v_key text; t castle.tries; v_adm boolean := lower(v_id) = 'admin'; v_hash text; v_must boolean := false; v_tok text;
+        v_key text; t castle.tries; v_adm boolean := lower(v_id) = 'admin'; v_hash text; v_must boolean := false; v_tok text; v_staff boolean := false;
 begin
   v_key := v_id || '|' || v_ip;
   select * into t from castle.tries where key = v_key;
@@ -234,7 +235,8 @@ begin
     return jsonb_build_object('error', '로그인 시도가 너무 많아요. 5분 뒤에 다시 해 주세요.');
   end if;
   if v_adm then select hash into v_hash from castle.admin where id = 1;
-  else select pw_hash, must_change into v_hash, v_must from castle.students where id = v_id; end if;
+  else select pw_hash, must_change, is_admin into v_hash, v_must, v_staff from castle.students where id = v_id; end if;
+  v_staff := coalesce(v_staff, false);
   if v_hash is null or v_hash <> extensions.crypt(v_pw, v_hash) then
     insert into castle.tries as x (key, n) values (v_key, 1)
       on conflict (key) do update set n = case when x.n + 1 >= 5 then 0 else x.n + 1 end,
@@ -244,8 +246,11 @@ begin
   delete from castle.tries where key = v_key;
   delete from castle.sessions where exp < now();
   v_tok := encode(extensions.gen_random_bytes(24), 'hex');
-  insert into castle.sessions values (v_tok, case when v_adm then 'admin' else v_id end, case when v_adm then 'admin' else 'student' end, now() + interval '7 days');
-  return jsonb_build_object('token', v_tok, 'role', case when v_adm then 'admin' else 'student' end, 'mustChange', v_must and not v_adm);
+  -- 관리자 권한이 있는 선생님 계정은 비밀번호를 바꾼 뒤부터 관리자 화면으로 들어가요 (처음 0000일 때는 학생으로 들어가 비밀번호부터 바꿔요)
+  insert into castle.sessions values (v_tok, case when v_adm then 'admin' else v_id end,
+    case when v_adm or (v_staff and not v_must) then 'admin' else 'student' end, now() + interval '7 days');
+  return jsonb_build_object('token', v_tok, 'role', case when v_adm or (v_staff and not v_must) then 'admin' else 'student' end,
+    'mustChange', v_must and not v_adm, 'staff', v_staff);
 end $$;
 
 -- 회원가입: 아이디와 비밀번호만 받는다. 가입하면 바로 로그인된다.
@@ -303,7 +308,7 @@ create or replace function castle.r_me(tok text) returns jsonb language plpgsql 
 declare st castle.students := castle.stu(tok); a castle.attempts := castle.settle(st.id); v_pts int;
 begin
   select points into v_pts from castle.students where id = st.id;
-  return jsonb_build_object('id', st.id, 'name', st.name, 'points', v_pts, 'mustChange', st.must_change,
+  return jsonb_build_object('id', st.id, 'name', st.name, 'points', v_pts, 'mustChange', st.must_change, 'isAdmin', st.is_admin,
     'grades', to_jsonb(castle.grades()), 'cfg', castle.cfg_all(), 'mult', castle.next_mult(st.id),
     'todayCount', castle.today_count(st.id), 'active', castle.active_view(a), 'serverNow', castle.ms(clock_timestamp()));
 end $$;
@@ -426,7 +431,7 @@ end $$;
 create or replace function castle.r_admin_students(tok text) returns jsonb language plpgsql as $$
 begin
   perform castle.auth(tok, 'admin');
-  return (select coalesce(jsonb_agg(jsonb_build_object('id', id, 'name', name, 'points', points, 'mustChange', must_change,
+  return (select coalesce(jsonb_agg(jsonb_build_object('id', id, 'name', name, 'points', points, 'mustChange', must_change, 'isAdmin', is_admin,
             'today', castle.today_count(id), 'solved', coalesce(array_length(done, 1), 0)) order by id), '[]') from castle.students);
 end $$;
 
@@ -511,11 +516,28 @@ begin
 end $$;
 
 create or replace function castle.r_admin_adminpw(tok text, b jsonb) returns jsonb language plpgsql as $$
+declare v_id text := castle.auth(tok, 'admin');
 begin
-  perform castle.auth(tok, 'admin');
   if length(coalesce(b->>'pw', '')) < 6 then perform castle.fail(400, '관리자 비밀번호는 6자 이상이어야 해요.'); end if;
-  perform castle.init_admin(b->>'pw');
+  if v_id = 'admin' then
+    perform castle.init_admin(b->>'pw');
+  else  -- 관리자 권한이 있는 선생님 계정은 자기 비밀번호만 바꿔요
+    update castle.students set pw_hash = extensions.crypt(b->>'pw', extensions.gen_salt('bf', 6)), must_change = false where id = v_id;
+  end if;
   return jsonb_build_object('ok', true);
+end $$;
+
+-- 관리자 권한이 있는 선생님이 관리자 화면 ↔ 학생 화면을 오갈 때
+create or replace function castle.r_switch(tok text, b jsonb) returns jsonb language plpgsql as $$
+declare s castle.sessions; st castle.students; v_to text := case when b->>'to' = 'admin' then 'admin' else 'student' end; v_tok text;
+begin
+  select * into s from castle.sessions where token = tok and exp > now();
+  if not found then perform castle.fail(401, '다시 로그인해 주세요.'); end if;
+  select * into st from castle.students where id = s.id;
+  if not found or not st.is_admin or st.must_change then perform castle.fail(403, '권한이 없어요.'); end if;
+  v_tok := encode(extensions.gen_random_bytes(24), 'hex');
+  insert into castle.sessions values (v_tok, st.id, v_to, now() + interval '7 days');
+  return jsonb_build_object('token', v_tok, 'role', v_to);
 end $$;
 
 create or replace function castle.r_admin_cfg(tok text) returns jsonb language plpgsql as $$
@@ -646,6 +668,7 @@ begin
     when 'admin/resetpw' then return castle.r_admin_resetpw(tok, b);
     when 'admin/deletestudent' then return castle.r_admin_deletestudent(tok, b);
     when 'admin/adminpw' then return castle.r_admin_adminpw(tok, b);
+    when 'switch' then return castle.r_switch(tok, b);
     when 'admin/cfg' then return castle.r_admin_cfg(tok);
     when 'admin/setcfg' then return castle.r_admin_setcfg(tok, b);
     when 'admin/problems' then return castle.r_admin_problems(tok);
