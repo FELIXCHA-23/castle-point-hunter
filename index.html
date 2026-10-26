@@ -342,7 +342,7 @@ function head() {
   const m = me.mult;
   const fire = m.value > 1 ? `<div class="banner">🔥 포인트 2배 적용 중${m.morning ? ' · 주말·공휴일 아침 타임' : ''}${m.daily ? ` · 오늘 ${me.cfg.DAILY_BONUS_COUNT}문제 맞힘` : ''}</div>` : '';
   return `<div class="top"><img class="logo" src="logo.png" alt="캐슬수학"><span style="display:flex;gap:4px;align-items:center"><button id="tomode" class="back">모드 선택</button>${me.isAdmin ? '<button id="toadm" class="back">관리자 화면</button>' : ''}<button id="out" class="back" style="margin-right:-4px">${IC.out}${guest ? '나가기' : '로그아웃'}</button></span></div>
-  <div class="hello"><h1>${guest ? '안녕하세요! ' : ''}${esc(me.name)}${esc(me.title || '님')}</h1></div>
+  <div class="hello"><h1>안녕하세요! ${esc(me.name)}${esc(me.title || '님')}</h1></div>
   <div class="card pcard"><div><div class="sub">총 포인트</div><div class="pts">${fmt(me.points)}<span style="font-size:16px;font-weight:700;color:var(--sub);margin-left:3px">P</span></div></div></div>
   <div class="tiles"><button class="tile" id="nt">${IC.note}오답노트</button><button class="tile" id="hist">${IC.list}내 기록</button></div>${fire}`;
 }
@@ -503,7 +503,7 @@ const ago = (ms, now) => { if (!ms) return '기록 없음'; const m = Math.floor
 function renderModes() {
   setMode(null);
   app(`<div class="top"><img class="logo" src="logo.png" alt="캐슬수학"><button id="out" class="back" style="margin-right:-4px">${IC.out}${guest ? '나가기' : '로그아웃'}</button></div>
-  <div class="hello"><h1>${guest ? '안녕하세요! ' : ''}${esc(me.name)}${esc(me.title || '님')}</h1><div class="sub">모드를 선택하십시오.</div></div>
+  <div class="hello"><h1>안녕하세요! ${esc(me.name)}${esc(me.title || '님')}</h1><div class="sub">모드를 선택하십시오.</div></div>
   <div class="modes">
     <button class="mode hunt" id="m-normal"><b>포인트 사냥</b><span>문제를 풀어 포인트를 모읍니다.</span></button>
     <button class="mode season" id="m-season"><b>시즌 랭킹전</b><span>포인트 대신 순위 경쟁🏅<br>난이도 중상 이상😈<br>시즌 종료 시 소정의 상품🎁</span></button>
