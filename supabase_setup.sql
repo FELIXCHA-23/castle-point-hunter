@@ -311,11 +311,12 @@ end $$;
 create or replace function castle.r_rank(tok text) returns jsonb language plpgsql as $$
 declare st castle.students := castle.stu(tok);
 begin
+  -- 1,000P 이상인 학생만 순위에 보인다
   return jsonb_build_object(
     'top', (select coalesce(jsonb_agg(jsonb_build_object('rank', rk, 'name', castle.mask_name(name), 'points', points, 'me', id = st.id) order by rk), '[]')
-            from (select id, name, points, row_number() over (order by points desc, created_at) as rk from castle.students) q where rk <= 10),
-    'myRank', 1 + (select count(*) from castle.students where points > (select points from castle.students where id = st.id)),
-    'total', (select count(*) from castle.students));
+            from (select id, name, points, row_number() over (order by points desc, created_at) as rk from castle.students where points >= 1000) q where rk <= 10),
+    'myRank', case when st.points >= 1000 then 1 + (select count(*) from castle.students where points > st.points) end,
+    'total', (select count(*) from castle.students where points >= 1000));
 end $$;
 
 create or replace function castle.r_preview(tok text, b jsonb) returns jsonb language plpgsql as $$

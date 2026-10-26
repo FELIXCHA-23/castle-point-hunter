@@ -204,7 +204,7 @@ function renderHome(notice, toRank) {
   bindHead();
   api('rank').then((r) => {
     const el = $('#rk'); if (!el) return;
-    el.innerHTML = `<h2 style="display:flex;align-items:center;gap:8px">${trophy('#f5b82e')}헌터 순위 <span class="sub" style="font-weight:600">내 순위 ${r.myRank}위 / ${r.total}명</span></h2>${rankRows(r.top)}`;
+    el.innerHTML = `<h2 style="display:flex;align-items:center;gap:8px">${trophy('#f5b82e')}헌터 순위 <span class="sub" style="font-weight:600">${r.myRank ? `내 순위 ${r.myRank}위 / ${r.total}명` : '1,000P 이상부터 순위에 올라요'}</span></h2>${r.top.length ? rankRows(r.top) : '<p class="sub">아직 순위에 오른 학생이 없어요.</p>'}`;
     if (toRank) el.scrollIntoView({ block: 'center' });
   }).catch(() => {});
   document.querySelectorAll('.grades button').forEach((b) => b.onclick = () => { const y = window.scrollY; pickedGrade = b.dataset.g; renderHome(); window.scrollTo(0, y); requestAnimationFrame(() => window.scrollTo(0, y)); });
