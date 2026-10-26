@@ -61,6 +61,11 @@ td,th,input,textarea,.rk-nm,.chip,.gchip{overflow-wrap:anywhere;word-break:norma
 .tbw table{min-width:480px;font-size:13px}
 .pick{display:inline-flex;align-items:center;gap:6px;margin:3px 8px 3px 0;font-size:13.5px;font-weight:600;color:var(--ink)}
 .pick input{width:auto}
+.guestbar{display:flex;align-items:center;justify-content:space-between;gap:10px;background:#fff4e5;border:1px solid #ffd8a8;color:#9a4b00;border-radius:8px;padding:9px 12px;margin-bottom:12px;font-size:13px;font-weight:600;line-height:1.4}
+.guestbar button{padding:6px 10px;font-size:12.5px;white-space:nowrap}
+.ovl{position:fixed;inset:0;background:rgba(15,20,30,.55);display:flex;align-items:center;justify-content:center;padding:24px;z-index:100}
+.ovl .box{background:#fff;border-radius:10px;padding:22px 20px 18px;max-width:360px;width:100%}
+.ovl h2{margin:0 0 8px}.ovl p{margin:0 0 16px;color:var(--sub);line-height:1.6;font-size:14.5px}
 .btnlink{display:inline-block;text-align:center;font-weight:700;color:var(--ink);background:var(--card);border:1px solid var(--line);padding:11px 15px;border-radius:8px;text-decoration:none;white-space:nowrap}
 .btnlink.wide{display:block;padding:14px}
 .gchip{display:inline-block;margin-left:5px;padding:1px 6px;border-radius:4px;background:var(--bg);color:var(--sub);font-size:11.5px;font-weight:700}
@@ -137,6 +142,7 @@ const fa = (s) => /^[ㄱ-ㅎ]+$/.test(String(s)) ? String(s).split('').join(', '
 
 // 모든 기능은 Supabase 함수 castle_api 하나로 갑니다 (규칙·정답·비밀번호 검사는 Supabase 안에서 해요).
 async function api(path, body) {
+  if (guest) return guestApi(path, body);
   const cfg = window.CASTLE_CONFIG || {};
   if (!cfg.url || !cfg.anonKey) throw new Error('config.js 에 Supabase 주소와 anon 키를 넣어 주십시오.');
   const r = await fetch(cfg.url.replace(/\/$/, '') + '/rest/v1/rpc/castle_api', {
@@ -150,11 +156,62 @@ async function api(path, body) {
   if (j && j.error) throw new Error(j.error);
   return j;
 }
-function logout() { if (token) api('logout').catch(() => {}); token = null; role = null; localStorage.removeItem('tk'); localStorage.removeItem('role'); localStorage.removeItem('staff'); localStorage.removeItem('who'); try { sessionStorage.removeItem('mode'); } catch (_) {} clearInterval(tick); renderLogin(); }
+
+// ---------- 로그인 없이 구경하기 (체험 모드: 서버를 쓰지 않고 이 화면 안에서만 동작) ----------
+let guest = false;
+const GP = [
+  { id: 'g1', grade: '고1', text: '두 집합 $A=\\{1,\\ 2,\\ 3\\}$, $B=\\{2,\\ 3,\\ 4\\}$에 대하여 $n(A\\cup B)$의 값을 구하시오.', answer: 4, explanation: '$A\\cup B=\\{1,2,3,4\\}$이므로 $n(A\\cup B)=4$이다.' },
+  { id: 'g2', grade: '고1', text: '함수 $f(x)=2x-1$에 대하여 $f(5)$의 값을 구하시오.', answer: 9, explanation: '$f(5)=2\\times5-1=9$이다.' },
+  { id: 'g3', grade: '고1', text: '이차방정식 $x^2-5x+6=0$의 두 근의 합을 구하시오.', answer: 5, explanation: '근과 계수의 관계에서 두 근의 합은 $5$이다.' },
+  { id: 'g4', grade: '중3', text: '$\\sqrt{50}-\\sqrt{2}$를 $a\\sqrt{2}$ 꼴로 나타낼 때, $a$의 값을 구하시오.', answer: 4, explanation: '$\\sqrt{50}=5\\sqrt{2}$이므로 $5\\sqrt{2}-\\sqrt{2}=4\\sqrt{2}$이다.' },
+];
+const G = { cur: null, i: 0, score: 0, ok: 0, n: 0 };
+const guestMe = () => ({ id: 'guest', name: '체험', title: ' 학생님', grade: '', points: 0, mustChange: false, isAdmin: false, isTeacher: false,
+  grades: ['중1', '중2', '중3', '고1', '고2', '고3'], cfg: { START_POINTS: 0, PREVIEW_COST: 10, PREVIEW_SEC: 10, ACCEPT_COST: 50, TIME_LIMIT_SEC: 300, REWARD: 100, DAILY_BONUS_COUNT: 15, MORNING_FROM: 7, MORNING_TO: 9 },
+  mult: { morning: false, daily: false, value: 1 }, todayCount: 0, active: G.cur ? gview(G.cur) : null, serverNow: Date.now() });
+const gview = (a) => ({ state: a.state, season: !!a.season, problem: { id: a.p.id, grade: a.p.grade, text: a.p.text, image: '', kind: 'num' }, previewEndsAt: a.previewEndsAt || 0, deadline: a.deadline || 0 });
+const gnext = () => GP[G.i++ % GP.length];
+async function guestApi(path, b) {
+  const now = Date.now();
+  switch (path) {
+    case 'me': return guestMe();
+    case 'logout': return {};
+    case 'rank': return { grade: '', top: [], myRank: null, total: 0, gradeTop: [], myGradeRank: null, gradeTotal: 0 };
+    case 'season/info': return { serverNow: now, grade: '', canPlay: true, poolLeft: GP.length, total: 0, top: [], gradeTop: [],
+      me: { score: G.score, rank: null, gradeRank: null, ok: G.ok, n: G.n },
+      season: { id: 0, name: '체험 시즌 (예시)', status: 'active', startsAt: now - 864e5, endsAt: now + 7 * 864e5, prize: '', minLevel: 3, timeLimitSec: 300 } };
+    case 'preview': G.cur = { p: gnext(), state: 'preview', previewEndsAt: now + 10000 }; return { points: 0, active: gview(G.cur), serverNow: now };
+    case 'accept': G.cur.state = 'solving'; G.cur.deadline = now + 300000; return { points: 0, active: gview(G.cur), mult: 1, serverNow: now };
+    case 'skip': G.cur = null; return { points: 0 };
+    case 'season/start': G.cur = { p: gnext(), state: 'solving', season: true, deadline: now + 300000 }; return { active: gview(G.cur), serverNow: now };
+    case 'submit': {
+      const a = G.cur; G.cur = null;
+      const ok = !!a && String(b && b.answer).trim() !== '' && Number(String(b.answer).trim()) === a.p.answer;
+      if (a && a.season) { G.n++; if (ok) { G.ok++; G.score += 30; } }
+      return { pid: a ? a.p.id : '', correct: ok, timeout: false, reward: 0, mult: 1, points: 0, answer: a ? String(a.p.answer) : '', explanation: a ? a.p.explanation : '', extra: '', explImage: '', season: !!(a && a.season), score: ok ? 30 : 0, guest: true };
+    }
+    case 'notes': case 'history': return [];
+    case 'note/add': throw new Error('체험 모드에서는 저장되지 않습니다.');
+  }
+  throw new Error('체험 모드에서는 사용할 수 없는 기능입니다.');
+}
+function startGuest() {
+  const ov = document.createElement('div'); ov.className = 'ovl';
+  ov.innerHTML = '<div class="box"><h2>체험 모드 안내</h2><p>로그인하지 않았으므로 <b>포인트를 얻을 수 없습니다.</b><br>푼 기록과 오답노트도 저장되지 않습니다.<br>화면 구성과 문제 풀이 방식만 확인하실 수 있습니다.</p><button class="primary btn-big" id="gok" style="margin:0">확인</button></div>';
+  document.body.appendChild(ov);
+  $('#gok').onclick = async () => {
+    ov.remove(); guest = true; token = null; role = 'student'; G.cur = null; G.i = 0; G.score = 0; G.ok = 0; G.n = 0;
+    me = await api('me'); skew = 0; renderModes();
+  };
+}
+function exitGuest() { guest = false; token = null; role = null; me = null; clearInterval(tick); renderLogin(); }
+
+function logout() {
+  if (guest) return exitGuest(); if (token) api('logout').catch(() => {}); token = null; role = null; localStorage.removeItem('tk'); localStorage.removeItem('role'); localStorage.removeItem('staff'); localStorage.removeItem('who'); try { sessionStorage.removeItem('mode'); } catch (_) {} clearInterval(tick); renderLogin(); }
 async function switchTo(to) { try { const r = await api('switch', { to }); token = r.token; role = r.role; localStorage.setItem('tk', token); localStorage.setItem('role', role); start(); } catch (e) { alert(e.message); } }
 function math(el) { if (window.renderMathInElement) try { renderMathInElement(el, { delimiters: [{ left: '$$', right: '$$', display: true }, { left: '$', right: '$', display: false }], throwOnError: false }); } catch (e) {} }
 window.addEventListener('load', () => math(document.body));
-const app = (html, nonav) => { clearInterval(tick); $('#app').className = nonav ? 'nonav' : ''; $('#app').innerHTML = html; math($('#app')); window.scrollTo(0, 0); };
+const app = (html, nonav) => { clearInterval(tick); $('#app').className = nonav ? 'nonav' : ''; $('#app').innerHTML = (guest ? '<div class="guestbar"><span>체험 모드입니다. 포인트가 적립되지 않고 기록은 저장되지 않습니다.</span><button id="gout">나가기</button></div>' : '') + html; if (guest && $('#gout')) $('#gout').onclick = exitGuest; math($('#app')); window.scrollTo(0, 0); };
 
 // ---- 문제 화면 보호 (복사·저장·인쇄를 어렵게 해요) ----
 const guard = (e) => { if (e.target.closest && e.target.closest('.prob,.eimg,.wm')) e.preventDefault(); };
@@ -202,7 +259,7 @@ function renderLogin(msg, signup) {
   <label>비밀번호${signup ? ' (4자 이상)' : ''}</label><input id="pw" type="password" autocomplete="${signup ? 'new-password' : 'current-password'}">
   <div class="err" id="err">${esc(msg || '')}</div>
   <button class="primary btn-big" id="go" style="margin-top:6px">${signup ? '가입하고 시작하기' : '로그인'}</button></div>
-  ${signup ? '' : '<p class="sub" style="text-align:center;margin:14px 8px 8px">비밀번호를 잊은 경우<br><b>차성빈 원장</b>에게 초기화를 요청하십시오.</p><button id="rq" style="display:block;width:100%">비밀번호 초기화 요청</button><div class="row" style="flex-wrap:nowrap;margin-top:8px"><a class="btnlink" id="sms" href="' + smsHref('') + '">문자 보내기</a><a class="btnlink" href="' + KAKAO_URL + '" target="_blank" rel="noopener">카카오톡 오픈채팅</a></div>'}`, true);
+  ${signup ? '' : '<p class="sub" style="text-align:center;margin:14px 8px 8px">비밀번호를 잊은 경우<br><b>차성빈 원장</b>에게 초기화를 요청하십시오.</p><div class="row" style="flex-wrap:nowrap"><a class="btnlink" id="sms" href="' + smsHref('') + '">문자 보내기</a><a class="btnlink" href="' + KAKAO_URL + '" target="_blank" rel="noopener">카카오톡 오픈채팅</a></div><button id="gst" style="display:block;width:100%;margin-top:14px;background:none;border:none;color:var(--sub);text-decoration:underline;font-weight:600">로그인 없이 구경하기</button>'}`, true);
   const go = async () => {
     try {
       const r = await api(signup ? 'register' : 'login', { id: $('#id').value, pw: $('#pw').value });
@@ -212,6 +269,7 @@ function renderLogin(msg, signup) {
   };
   $('#go').onclick = go; $('#pw').onkeydown = (e) => { if (e.key === 'Enter') go(); };
   if ($('#rq')) $('#rq').onclick = () => renderResetRequest($('#id').value);
+  if ($('#gst')) $('#gst').onclick = startGuest;
   if ($('#sms')) $('#sms').onclick = () => { $('#sms').href = smsHref($('#id').value.trim()); };
 }
 const SMS_NO = '01026462308';
@@ -266,7 +324,7 @@ async function loadMe(notice) {
 function head() {
   const m = me.mult;
   const fire = m.value > 1 ? `<div class="banner">🔥 포인트 2배 적용 중${m.morning ? ' · 주말·공휴일 아침 타임' : ''}${m.daily ? ` · 오늘 ${me.cfg.DAILY_BONUS_COUNT}문제 맞힘` : ''}</div>` : '';
-  return `<div class="top"><img class="logo" src="logo.png" alt="캐슬수학"><span style="display:flex;gap:4px;align-items:center"><button id="tomode" class="back">모드 선택</button>${me.isAdmin ? '<button id="toadm" class="back">관리자 화면</button>' : ''}<button id="out" class="back" style="margin-right:-4px">${IC.out}로그아웃</button></span></div>
+  return `<div class="top"><img class="logo" src="logo.png" alt="캐슬수학"><span style="display:flex;gap:4px;align-items:center"><button id="tomode" class="back">모드 선택</button>${me.isAdmin ? '<button id="toadm" class="back">관리자 화면</button>' : ''}<button id="out" class="back" style="margin-right:-4px">${IC.out}${guest ? '나가기' : '로그아웃'}</button></span></div>
   <div class="hello"><h1>${esc(me.name)}${esc(me.title || '님')}</h1></div>
   <div class="card pcard"><div><div class="sub">총 포인트</div><div class="pts">${fmt(me.points)}<span style="font-size:16px;font-weight:700;color:var(--sub);margin-left:3px">P</span></div></div></div>
   <div class="tiles"><button class="tile" id="nt">${IC.note}오답노트</button><button class="tile" id="hist">${IC.list}내 기록</button></div>${fire}`;
@@ -370,12 +428,12 @@ function renderResult(r) {
   me.points = r.points;
   if (r.season) return renderSeasonResult(r);
   app(`<div class="card"><div class="res ${r.correct ? 'ok' : 'bad'}">${r.correct ? '정답입니다' : r.timeout ? '시간 초과' : '오답입니다'}</div>
-  ${r.correct ? `<p class="fire">+${fmt(r.reward)}P ${r.mult > 1 ? '🔥 (2배 적용)' : ''}</p>` : ''}
+  ${r.guest ? '<p class="sub">체험 모드이므로 포인트가 적립되지 않습니다.</p>' : r.correct ? `<p class="fire">+${fmt(r.reward)}P ${r.mult > 1 ? '🔥 (2배 적용)' : ''}</p>` : ''}
   <p>정답: <b>${esc(fa(r.answer))}</b></p><p class="pts">${fmt(r.points)} P</p></div>
   <div class="card"><h2>해설</h2>${r.explImage ? `<div class="wm"><img class="eimg" src="${esc(r.explImage)}" alt=""></div>` : ''}${r.explanation || !r.explImage ? `<div class="expl">${esc(dm(r.explanation)) || '(해설이 아직 없습니다)'}</div>` : ''}
   ${r.extra ? `<div class="expl">${esc(dm(r.extra))}</div>` : ''}</div>
   <button class="btn-big soft" id="nb">오답노트에 담기</button>
-  <button class="primary btn-big" id="nx">다음 문제 도전 (-${me.cfg.PREVIEW_COST}P)</button>
+  <button class="primary btn-big" id="nx">다음 문제 도전${guest ? '' : ` (-${me.cfg.PREVIEW_COST}P)`}</button>
   <button class="back" id="hm" style="margin:10px auto 0">${IC.home}홈으로</button>`, true);
   $('#nb').onclick = async () => { try { await api('note/add', { pid: r.pid }); $('#nb').textContent = '오답노트에 담았습니다'; $('#nb').disabled = true; } catch (e) { alert(e.message); } };
   if (r.correct) $('#nb').textContent = '오답노트에 담기 (맞힌 문제)';
@@ -427,7 +485,7 @@ const ago = (ms, now) => { if (!ms) return '기록 없음'; const m = Math.floor
 
 function renderModes() {
   setMode(null);
-  app(`<div class="top"><img class="logo" src="logo.png" alt="캐슬수학"><button id="out" class="back" style="margin-right:-4px">${IC.out}로그아웃</button></div>
+  app(`<div class="top"><img class="logo" src="logo.png" alt="캐슬수학"><button id="out" class="back" style="margin-right:-4px">${IC.out}${guest ? '나가기' : '로그아웃'}</button></div>
   <div class="hello"><h1>${esc(me.name)}${esc(me.title || '님')}</h1><div class="sub">모드를 선택하십시오.</div></div>
   <div class="modes">
     <button class="mode hunt" id="m-normal"><b>포인트 사냥</b><span>문제를 풀어 포인트를 모읍니다.</span></button>
