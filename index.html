@@ -84,11 +84,10 @@ code{background:var(--bg);padding:1px 6px;border-radius:6px;font-size:.92em}
 .rk-pt{font-variant-numeric:tabular-nums;font-weight:700}
 .rk-row+.rk-row{margin-top:4px}
 @media (min-width:700px){#app{max-width:600px}.card{padding:24px}}
-/* 문제 화면 보호: 복사·저장·인쇄를 어렵게 하고, 캡처에 학생 이름이 남도록 워터마크를 깔아요 */
+/* 문제 화면 보호: 복사·저장·인쇄를 어렵게 해요 */
 .prob,.eimg,.wm{-webkit-user-select:none;user-select:none;-webkit-touch-callout:none}
 .prob img,.eimg{pointer-events:none;-webkit-user-drag:none}
 .wm{position:relative}
-.wm::after{content:"";position:absolute;inset:0;pointer-events:none;background-image:var(--wm);background-size:190px 120px}
 body.cover .prob,body.cover .eimg{filter:blur(22px);transition:filter .05s}
 @media print{#app{display:none!important}body::before{content:"인쇄할 수 없어요";display:block;padding:40px;font-size:20px}}
 </style>
@@ -124,13 +123,7 @@ function math(el) { if (window.renderMathInElement) try { renderMathInElement(el
 window.addEventListener('load', () => math(document.body));
 const app = (html, nonav) => { clearInterval(tick); $('#app').className = nonav ? 'nonav' : ''; $('#app').innerHTML = html; math($('#app')); window.scrollTo(0, 0); };
 
-// ---- 문제 화면 보호 (캡처를 완전히 막을 수는 없어서, 방해와 추적용 워터마크를 함께 써요) ----
-const wmSet = () => {
-  if (!me) return;
-  const t = String(me.name || me.id).replace(/[<>&"']/g, '');
-  const svg = `<svg xmlns="http://www.w3.org/2000/svg" width="190" height="120"><text x="95" y="60" text-anchor="middle" transform="rotate(-24 95 60)" font-size="15" font-family="sans-serif" font-weight="700" fill="rgba(20,30,60,0.10)">${t}</text></svg>`;
-  document.documentElement.style.setProperty('--wm', `url("data:image/svg+xml;utf8,${encodeURIComponent(svg)}")`);
-};
+// ---- 문제 화면 보호 (복사·저장·인쇄를 어렵게 해요) ----
 const guard = (e) => { if (e.target.closest && e.target.closest('.prob,.eimg,.wm')) e.preventDefault(); };
 document.addEventListener('contextmenu', guard);
 document.addEventListener('dragstart', guard);
@@ -204,7 +197,7 @@ async function start() {
   try { await loadMe(); } catch (e) { return renderLogin(e.message); }
 }
 async function loadMe(notice) {
-  me = await api('me'); skew = me.serverNow - Date.now(); wmSet();
+  me = await api('me'); skew = me.serverNow - Date.now();
   if (me.mustChange) return renderSetPw();
   if (me.active) return me.active.state === 'preview' ? renderPreview(me.active) : renderSolve(me.active);
   renderHome(notice);
