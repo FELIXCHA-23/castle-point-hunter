@@ -165,7 +165,7 @@ async function api(path, body) {
 let guest = false;
 const G = { tok: null, cur: null, seen: [], sseen: [], score: 0, ok: 0, n: 0, points: 500, today: 0 };
 const gfill = (p) => (p < 50 ? 110 : p);  // 풀이 포인트보다 모자라면 110P로 맞춤 (실제와 같은 규칙)
-const guestMe = () => ({ id: 'guest', name: '체험', title: ' 학생님', grade: '', points: G.points, mustChange: false, isAdmin: false, isTeacher: false,
+const guestMe = () => ({ id: 'guest', name: '탐험가', title: '님', grade: '', points: G.points, mustChange: false, isAdmin: false, isTeacher: false,
   grades: ['중1', '중2', '중3', '고1', '고2', '고3'], cfg: { START_POINTS: 500, PREVIEW_COST: 10, PREVIEW_SEC: 10, ACCEPT_COST: 50, TIME_LIMIT_SEC: 300, REWARD: 100, DAILY_BONUS_COUNT: 15, MORNING_FROM: 7, MORNING_TO: 9 },
   mult: { morning: false, daily: G.today >= 15, value: G.today >= 15 ? 2 : 1 }, todayCount: G.today, active: G.cur ? gview(G.cur) : null, serverNow: Date.now() });
 const gview = (a) => ({ state: a.state, season: !!a.season, problem: { id: a.p.id, grade: a.p.grade, text: a.p.text, image: a.p.image, kind: a.p.kind }, previewEndsAt: a.previewEndsAt || 0, deadline: a.deadline || 0 });
@@ -174,7 +174,7 @@ async function guestApi(path, b) {
   switch (path) {
     case 'me': return guestMe();
     case 'logout': return {};
-    case 'rank': { const on = G.points >= 1000, row = [{ rank: 1, name: '체*험', grade: '', points: G.points, me: true }]; return { grade: '', top: on ? row : [], myRank: on ? 1 : null, total: on ? 1 : 0, gradeTop: [], myGradeRank: null, gradeTotal: 0 }; }
+    case 'rank': { const on = G.points >= 1000, row = [{ rank: 1, name: '탐*가', grade: '', points: G.points, me: true }]; return { grade: '', top: on ? row : [], myRank: on ? 1 : null, total: on ? 1 : 0, gradeTop: [], myGradeRank: null, gradeTotal: 0 }; }
     case 'season/info': { const pool = await api('guest/pool', { minLevel: 3 });
       return { serverNow: now, grade: '', canPlay: true, poolLeft: pool.n, total: 0, top: [], gradeTop: [], me: { score: G.score, rank: null, gradeRank: null, ok: G.ok, n: G.n },
         season: { id: 0, name: '체험 시즌 (예시)', status: 'active', startsAt: now - 864e5, endsAt: now + 7 * 864e5, prize: '', minLevel: 3, timeLimitSec: 300 } }; }
