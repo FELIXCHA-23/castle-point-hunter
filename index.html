@@ -426,23 +426,20 @@ async function renderSeason(notice) {
   const active = s.status === 'active', upcoming = s.status === 'upcoming';
   const left = Math.max(0, s.endsAt - d.serverNow), days = Math.floor(left / 86400000), hrs = Math.floor(left / 3600000) % 24;
   const state = active ? `진행 중 · 종료까지 ${days > 0 ? days + '일 ' : ''}${hrs}시간` : upcoming ? `${fmtDay(s.startsAt)}에 시작해요` : '시즌이 끝났어요';
-  const draw = (k) => {
-    const grade = k === 'grade', list = grade ? d.gradeTop : d.top;
-    $('#sl').innerHTML = `<div class="seg"><button data-k="all" class="${grade ? '' : 'on'}">전체</button><button data-k="grade" class="${grade ? 'on' : ''}">내 학년${d.grade ? ' · ' + esc(d.grade) : ''}</button></div>
-      ${list.length ? seasonRows(list) : '<p class="sub">아직 점수를 낸 학생이 없어요.</p>'}`;
-    $('#sl').querySelectorAll('.seg button').forEach((b) => b.onclick = () => { window.__sk = b.dataset.k; draw(b.dataset.k); });
+  const draw = () => {
+    $('#sl').innerHTML = d.top.length ? seasonRows(d.top) : '<p class="sub">아직 점수를 낸 학생이 없어요.</p>';
   };
   app(`${head2}
   <div class="card"><h2 style="margin-bottom:4px">${esc(s.name)}</h2>
     <div class="sub">${fmtDay(s.startsAt)} ~ ${fmtDay(s.endsAt)} · ${state}</div>
     ${s.prize ? `<div class="pbox">🎁 시즌 종료 후 상품 이벤트<br><span style="font-weight:600">${esc(s.prize)}</span></div>` : '<div class="pbox">🎁 시즌이 끝나면 상위 학생에게 상품 이벤트가 있어요</div>'}
-    <div class="stat3"><div><b>${fmt(d.me.score)}</b><span>내 점수</span></div><div><b>${d.me.rank ? d.me.rank + '위' : '-'}</b><span>전체 순위</span></div><div><b>${d.me.gradeRank ? d.me.gradeRank + '위' : '-'}</b><span>내 학년 순위</span></div></div>
-    <ul class="rules"><li>포인트는 쓰지도, 받지도 않아요. 순위로만 겨뤄요.</li><li>일반보다 어려운 문제(난이도 <b>${LV[s.minLevel]}</b> 이상)만 나와요.</li><li>맞히면 <b>난이도×10점</b>, 틀려도 감점은 없어요.</li><li>한 번 푼 문제는 이번 시즌에 다시 나오지 않아요.</li><li>한 문제당 제한시간 ${Math.round(s.timeLimitSec / 60)}분이에요.</li></ul>
+    <div class="stat3"><div><b>${fmt(d.me.score)}</b><span>내 점수</span></div><div><b>${d.me.rank ? d.me.rank + '위' : '-'}</b><span>전체 순위</span></div><div><b>${d.total}명</b><span>참가 인원</span></div></div>
+    <ul class="rules"><li><b>학년 구분 없이 모두 함께</b> 순위를 겨뤄요. (중1부터 고2까지 한 판!)</li><li>포인트는 쓰지도, 받지도 않아요. 순위로만 겨뤄요.</li><li>일반보다 어려운 문제(난이도 <b>${LV[s.minLevel]}</b> 이상)만 나와요.</li><li>맞히면 <b>난이도×10점</b>, 틀려도 감점은 없어요.</li><li>한 번 푼 문제는 이번 시즌에 다시 나오지 않아요.</li><li>한 문제당 제한시간 ${Math.round(s.timeLimitSec / 60)}분이에요.</li></ul>
     <div class="err" id="err">${esc(notice || '')}</div>
     ${active && d.canPlay ? (d.poolLeft > 0 ? `<button class="primary btn-big" id="go">도전하기 (남은 문제 ${d.poolLeft}개)</button>` : '<p class="sub" style="margin-top:12px">이번 시즌 문제를 모두 풀었어요! 🎉</p>') : (!d.canPlay ? '<p class="sub" style="margin-top:12px">선생님·관리자는 순위만 볼 수 있어요.</p>' : '')}
   </div>
   <div class="card"><h2 style="display:flex;align-items:center;gap:8px">${trophy('#f5b82e')}시즌 순위 <span class="sub" style="font-weight:600">${d.total}명 참가</span></h2><div id="sl"></div></div>`, true);
-  draw(window.__sk || 'all');
+  draw();
   $('#bk').onclick = renderModes;
   if ($('#go')) $('#go').onclick = startSeason;
 }
