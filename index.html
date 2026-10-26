@@ -561,17 +561,17 @@ async function renderHistory() {
   document.querySelectorAll('.nbh').forEach((b) => b.onclick = async () => { try { await api('note/add', { pid: b.dataset.p }); b.textContent = '담았습니다'; b.disabled = true; } catch (e) { alert(e.message); } });
 }
 // 오답노트: 학생마다 따로 메모를 적고, 단원별·시기별로 찾는다
-let noteUnit = '', notePeriod = '';
+let noteUnit = '', notePeriod = '', noteSort = 'new';
 const ym = (ms) => { const d = new Date(ms); return d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0'); };
 async function renderNotes() {
   const list = await api('notes'), units = [...new Set(list.map((n) => n.unit).filter(Boolean))].sort((a, b) => a.localeCompare(b, 'ko')), months = [...new Set(list.map((n) => ym(n.t)))];
   if (noteUnit && !units.includes(noteUnit)) noteUnit = '';
   if (notePeriod && !['7', '30'].includes(notePeriod) && !months.includes(notePeriod)) notePeriod = '';
   const now = Date.now(), inPeriod = (n) => !notePeriod || (notePeriod === '7' ? now - n.t <= 7 * 864e5 : notePeriod === '30' ? now - n.t <= 30 * 864e5 : ym(n.t) === notePeriod);
-  const shown = list.filter((n) => (!noteUnit || n.unit === noteUnit) && inPeriod(n));
+  const shown = list.filter((n) => (!noteUnit || n.unit === noteUnit) && inPeriod(n)).sort((a, b) => noteSort === 'old' ? a.t - b.t : b.t - a.t);
   const opt = (v, t, cur) => `<option value="${esc(v)}" ${v === cur ? 'selected' : ''}>${esc(t)}</option>`;
   app(`<div class="top"><h1 style="font-size:22px">내 오답노트 <span class="sub">${shown.length === list.length ? list.length + '개' : shown.length + ' / ' + list.length + '개'}</span></h1></div>
-  ${list.length ? `<div class="row" style="margin-bottom:10px;flex-wrap:nowrap"><select id="fper">${opt('', '전체 기간', notePeriod)}${opt('7', '최근 7일', notePeriod)}${opt('30', '최근 30일', notePeriod)}${months.map((m) => opt(m, m.replace('-', '년 ') + '월', notePeriod)).join('')}</select>${units.length ? `<select id="funit">${opt('', '전체 단원', noteUnit)}${units.map((u) => opt(u, u, noteUnit)).join('')}</select>` : ''}</div>` : ''}
+  ${list.length ? `<div class="row" style="margin-bottom:10px;flex-wrap:wrap"><select id="fsrt">${opt('new', '최근 순', noteSort)}${opt('old', '오래된 순', noteSort)}</select><select id="fper">${opt('', '전체 기간', notePeriod)}${opt('7', '최근 7일', notePeriod)}${opt('30', '최근 30일', notePeriod)}${months.map((m) => opt(m, m.replace('-', '년 ') + '월', notePeriod)).join('')}</select>${units.length ? `<select id="funit">${opt('', '전체 단원', noteUnit)}${units.map((u) => opt(u, u, noteUnit)).join('')}</select>` : ''}</div>` : ''}
   ${shown.map((n) => `<div class="card" data-p="${esc(n.pid)}"><div class="sub">${esc(n.grade)}${n.unit ? ' · ' + esc(n.unit) : ''} · ${ymd(n.t)}에 담음</div>
   ${probHtml(n)}
   <button class="sh">정답·해설 보기</button><div class="shw" style="display:none"><p>정답: <b>${esc(fa(n.answer))}</b></p>${n.explImage ? `<div class="wm"><img class="eimg" src="${esc(n.explImage)}" alt=""></div>` : ''}${n.explanation || !n.explImage ? `<div class="expl">${esc(dm(n.explanation)) || '(해설이 아직 없습니다)'}</div>` : ''}${n.extra ? `<div class="expl">${esc(dm(n.extra))}</div>` : ''}</div>
@@ -579,6 +579,7 @@ async function renderNotes() {
   <div class="row"><button class="primary nsv">저장</button><button class="danger ndl">오답노트에서 빼기</button></div></div>`).join('') || `<div class="card sub">${list.length ? '조건에 맞는 문제가 없습니다.' : '아직 담은 문제가 없습니다. 결과 화면이나 내 기록에서 “오답노트에 담기”를 눌러 보십시오.'}</div>`}
   ${navBar('nt')}`);
   bindNav();
+  if ($('#fsrt')) $('#fsrt').onchange = (e) => { noteSort = e.target.value; renderNotes(); };
   if ($('#fper')) $('#fper').onchange = (e) => { notePeriod = e.target.value; renderNotes(); };
   if ($('#funit')) $('#funit').onchange = (e) => { noteUnit = e.target.value; renderNotes(); };
   document.querySelectorAll('.card[data-p]').forEach((c) => {
