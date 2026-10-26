@@ -254,7 +254,7 @@ function logout() {
 async function switchTo(to) { try { const r = await api('switch', { to }); token = r.token; role = r.role; localStorage.setItem('tk', token); localStorage.setItem('role', role); start(); } catch (e) { alert(e.message); } }
 function math(el) { if (window.renderMathInElement) try { renderMathInElement(el, { delimiters: [{ left: '$$', right: '$$', display: true }, { left: '$', right: '$', display: false }], throwOnError: false }); } catch (e) {} }
 window.addEventListener('load', () => math(document.body));
-const app = (html, nonav) => { clearInterval(tick); closeMore(); $('#app').className = nonav ? 'nonav' : ''; $('#app').innerHTML = (guest ? '<div class="guestbar"><span>체험모드이므로 포인트는 사라집니다.</span><button id="gout">나가기</button></div>' : '') + html; if (guest && $('#gout')) $('#gout').onclick = exitGuest; math($('#app')); window.scrollTo(0, 0); };
+const app = (html, nonav) => { clearInterval(tick); closeMore(); $('#app').className = nonav ? 'nonav' : ''; $('#app').innerHTML = (guest ? '<div class="guestbar"><span>체험모드이므로 포인트는 사라집니다.</span></div>' : '') + html; math($('#app')); window.scrollTo(0, 0); };
 
 // ---- 문제 화면 보호 (복사·저장·인쇄를 어렵게 해요) ----
 const guard = (e) => { if (e.target.closest && e.target.closest('.prob,.eimg,.wm')) e.preventDefault(); };
