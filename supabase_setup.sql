@@ -29,6 +29,7 @@ alter table castle.students add column if not exists is_admin boolean not null d
 alter table castle.students add column if not exists is_teacher boolean not null default false;  -- 선생님(담당 학생 현황을 볼 수 있음)
 alter table castle.students add column if not exists title text not null default '';             -- 호칭: 선생님 / 원장님 / 관리자님 (비우면 '님')
 alter table castle.students add column if not exists grade text not null default '';             -- 학생 학년: 중1 … 고3 (학년별 순위용)
+alter table castle.problems add column if not exists book text not null default '';              -- 문제 출처 설명 (예: 미래엔 교과서 문제 변형). 나중에 분류할 때 써요
 alter table castle.problems add column if not exists level int not null default 0;               -- 난이도 1하 2중하 3중 4상 5최상 (0=미정)
 create table if not exists castle.roster (
   teacher text not null references castle.students(id) on delete cascade,
@@ -240,10 +241,10 @@ begin
   if v_id is null and v_src <> '' then select id into v_id from castle.problems where src = v_src; end if;
   if v_id is null or not exists (select 1 from castle.problems where id = v_id) then
     v_id := encode(extensions.gen_random_bytes(5), 'hex');
-    insert into castle.problems (id, grade, text, answer, image, expl_image, explanation, extra, active, term, subject, unit_large, unit, src, level)
+    insert into castle.problems (id, grade, text, answer, image, expl_image, explanation, extra, active, term, subject, unit_large, unit, src, level, book)
     values (v_id, b->>'grade', v_txt, v_ans, case when v_img = '@keep' then '' else v_img end, case when v_eimg = '@keep' then '' else v_eimg end, left(coalesce(b->>'explanation', ''), 6000), left(coalesce(b->>'extra', ''), 6000),
             coalesce((b->>'active')::boolean, true), left(coalesce(b->>'term', ''), 40), left(coalesce(b->>'subject', ''), 40),
-            left(coalesce(b->>'unit_large', ''), 60), left(coalesce(b->>'unit', ''), 60), v_src, least(greatest(coalesce((b->>'level')::int, 0), 0), 5));
+            left(coalesce(b->>'unit_large', ''), 60), left(coalesce(b->>'unit', ''), 60), v_src, least(greatest(coalesce((b->>'level')::int, 0), 0), 5), left(coalesce(b->>'book', ''), 200));
   else
     update castle.problems set grade = b->>'grade', text = v_txt, answer = v_ans,
            image = case when v_img = '@keep' then image else v_img end, expl_image = case when v_eimg = '@keep' then expl_image else v_eimg end,
@@ -252,7 +253,8 @@ begin
            term = left(coalesce(b->>'term', term), 40), subject = left(coalesce(b->>'subject', subject), 40),
            unit_large = left(coalesce(b->>'unit_large', unit_large), 60), unit = left(coalesce(b->>'unit', unit), 60),
            src = case when b ? 'src' then v_src else src end,
-           level = case when b ? 'level' then least(greatest(coalesce((b->>'level')::int, 0), 0), 5) else level end where id = v_id;
+           level = case when b ? 'level' then least(greatest(coalesce((b->>'level')::int, 0), 0), 5) else level end,
+           book = case when b ? 'book' then left(coalesce(b->>'book', ''), 200) else book end where id = v_id;
   end if;
   return jsonb_build_object('id', v_id);
 end $$;
@@ -647,7 +649,7 @@ create or replace function castle.r_admin_problems(tok text) returns jsonb langu
 begin
   perform castle.auth(tok, 'admin');
   return (select coalesce(jsonb_agg(jsonb_build_object('id', id, 'grade', grade, 'text', text, 'answer', answer, 'image', case when length(image) > 30000 then '@keep' else image end,
-            'expl_image', case when expl_image <> '' then '@keep' else '' end, 'explanation', explanation, 'extra', extra, 'active', active, 'level', level,
+            'expl_image', case when expl_image <> '' then '@keep' else '' end, 'explanation', explanation, 'extra', extra, 'active', active, 'level', level, 'book', book,
             'term', term, 'subject', subject, 'unit_large', unit_large, 'unit', unit, 'src', src) order by created_at, id), '[]') from castle.problems);
 end $$;
 
