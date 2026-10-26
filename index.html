@@ -216,7 +216,7 @@ function renderLogin(msg, signup) {
 }
 const SMS_NO = '01026462308';
 const KAKAO_URL = 'https://open.kakao.com/o/suDCQiUi';
-const smsHref = (id) => 'sms:' + SMS_NO + '?&body=' + encodeURIComponent('[캐슬 포인트 헌터] 비밀번호 초기화 요청\n아이디: ' + (id || ''));
+const smsHref = () => 'sms:' + SMS_NO + '?&body=' + encodeURIComponent('[캐슬 포인트 헌터] 비밀번호 초기화 요청\n아래에 학교와 이름을 적어주세요.\n학교: \n이름: ');
 function renderResetRequest(id0) {
   app(`<button class="back" id="bk" style="margin-top:14px">${IC.back}로그인 화면으로</button>
   <div class="card" style="margin-top:10px"><h1>비밀번호 초기화 요청</h1>
