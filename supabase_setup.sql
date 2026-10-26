@@ -158,8 +158,8 @@ create or replace function castle.auth(tok text, want text) returns text languag
 declare s castle.sessions;
 begin
   select * into s from castle.sessions where token = tok and exp > now();
-  if not found then perform castle.fail(401, '다시 로그인해 주세요.'); end if;
-  if want is not null and s.role <> want then perform castle.fail(403, '권한이 없어요.'); end if;
+  if not found then perform castle.fail(401, '다시 로그인해 주십시오.'); end if;
+  if want is not null and s.role <> want then perform castle.fail(403, '권한이 없습니다.'); end if;
   return s.id;
 end $$;
 
@@ -168,7 +168,7 @@ create or replace function castle.stu(tok text) returns castle.students language
 declare v_id text := castle.auth(tok, 'student'); st castle.students;
 begin
   select * into st from castle.students where id = v_id for update;
-  if not found then perform castle.fail(401, '다시 로그인해 주세요.'); end if;
+  if not found then perform castle.fail(401, '다시 로그인해 주십시오.'); end if;
   return st;
 end $$;
 
@@ -229,14 +229,14 @@ create or replace function castle.upsert_problem(b jsonb) returns jsonb language
 declare v_id text := nullif(b->>'id', ''); v_ans text := castle.norm(b->>'answer'); v_txt text := left(btrim(coalesce(b->>'text', '')), 4000);
         v_img text := coalesce(b->>'image', ''); v_eimg text := coalesce(b->>'expl_image', ''); v_src text := left(btrim(coalesce(b->>'src', '')), 200);
 begin
-  if not ((b->>'grade') = any (castle.grades())) then perform castle.fail(400, '학년이 올바르지 않아요.'); end if;
-  if v_txt = '' and v_img = '' then perform castle.fail(400, '문제 내용을 입력해 주세요.'); end if;
-  if v_ans !~ '^-?[0-9]+(\.[0-9]+)?$' and v_ans !~ '^[ㄱ-ㅎ]+$' then perform castle.fail(400, '정답은 숫자(예: 12, -3, 0.5) 또는 보기 기호(예: ㄱ, ㄷ)만 쓸 수 있어요.'); end if;
+  if not ((b->>'grade') = any (castle.grades())) then perform castle.fail(400, '학년이 올바르지 않습니다.'); end if;
+  if v_txt = '' and v_img = '' then perform castle.fail(400, '문제 내용을 입력해 주십시오.'); end if;
+  if v_ans !~ '^-?[0-9]+(\.[0-9]+)?$' and v_ans !~ '^[ㄱ-ㅎ]+$' then perform castle.fail(400, '정답은 숫자(예: 12, -3, 0.5) 또는 보기 기호(예: ㄱ, ㄷ)만 쓸 수 있습니다.'); end if;
   if v_img not in ('', '@keep') and (v_img !~ '^data:image/(jpeg|png|webp|gif);base64,[A-Za-z0-9+/=]+$' or length(v_img) > 600000) then
-    perform castle.fail(400, '그림이 올바르지 않거나 너무 커요.');
+    perform castle.fail(400, '그림이 올바르지 않거나 너무 큽니다.');
   end if;
   if v_eimg not in ('', '@keep') and (v_eimg !~ '^data:image/(jpeg|png|webp|gif);base64,[A-Za-z0-9+/=]+$' or length(v_eimg) > 600000) then
-    perform castle.fail(400, '해설 그림이 올바르지 않거나 너무 커요.');
+    perform castle.fail(400, '해설 그림이 올바르지 않거나 너무 큽니다.');
   end if;
   if v_id is null and v_src <> '' then select id into v_id from castle.problems where src = v_src; end if;
   if v_id is null or not exists (select 1 from castle.problems where id = v_id) then
@@ -270,7 +270,7 @@ begin
   v_key := v_id || '|' || v_ip;
   select * into t from castle.tries where key = v_key;
   if found and t.until_at is not null and t.until_at > now() then
-    return jsonb_build_object('error', '로그인 시도가 너무 많아요. 5분 뒤에 다시 해 주세요.');
+    return jsonb_build_object('error', '로그인 시도가 너무 많습니다. 5분 뒤에 다시 해 주십시오.');
   end if;
   if v_adm then select hash into v_hash from castle.admin where id = 1;
   else select pw_hash, must_change, is_admin, name, title into v_hash, v_must, v_staff, v_name, v_title from castle.students where id = v_id; end if;
@@ -279,7 +279,7 @@ begin
     insert into castle.tries as x (key, n) values (v_key, 1)
       on conflict (key) do update set n = case when x.n + 1 >= 5 then 0 else x.n + 1 end,
                                       until_at = case when x.n + 1 >= 5 then now() + interval '5 minutes' else x.until_at end;
-    return jsonb_build_object('error', '아이디 또는 비밀번호가 맞지 않아요.');
+    return jsonb_build_object('error', '아이디 또는 비밀번호가 맞지 않습니다.');
   end if;
   delete from castle.tries where key = v_key;
   delete from castle.sessions where exp < now();
@@ -299,21 +299,21 @@ declare v_id text := regexp_replace(normalize(coalesce(b->>'id', ''), NFC), '\s'
         v_key text := 'reg|' || coalesce(nullif(v_ip, ''), 'local'); t castle.tries; v_tok text;
 begin
   if coalesce(castle.cfg_all() ->> 'SIGNUP_OPEN', '0') <> '1' then
-    return jsonb_build_object('error', '지금은 회원가입을 받지 않아요. 선생님께 등록을 부탁하세요.');
+    return jsonb_build_object('error', '지금은 회원가입을 받지 않습니다. 선생님께 등록을 부탁하십시오.');
   end if;
   select * into t from castle.tries where key = v_key;
   if found and t.until_at is not null and t.until_at > now() then
-    return jsonb_build_object('error', '가입을 너무 많이 시도했어요. 10분 뒤에 다시 해 주세요.');
+    return jsonb_build_object('error', '가입을 너무 많이 시도했습니다. 10분 뒤에 다시 해 주십시오.');
   end if;
   if v_id !~ '^[가-힣A-Za-z0-9_]{2,20}$' then
-    return jsonb_build_object('error', '아이디는 한글·영문·숫자·_ 로 2~20자예요.');
+    return jsonb_build_object('error', '아이디는 한글·영문·숫자·_ 로 2~20자입니다.');
   end if;
-  if lower(v_id) = 'admin' then return jsonb_build_object('error', '쓸 수 없는 아이디예요.'); end if;
+  if lower(v_id) = 'admin' then return jsonb_build_object('error', '쓸 수 없는 아이디입니다.'); end if;
   if length(v_pw) < 4 or length(v_pw) > 30 then
-    return jsonb_build_object('error', '비밀번호는 4~30자예요.');
+    return jsonb_build_object('error', '비밀번호는 4~30자입니다.');
   end if;
   if exists (select 1 from castle.students where id = v_id) then
-    return jsonb_build_object('error', '이미 있는 아이디예요. 다른 아이디를 써 주세요.');
+    return jsonb_build_object('error', '이미 있는 아이디입니다. 다른 아이디를 써 주십시오.');
   end if;
   insert into castle.tries as x (key, n) values (v_key, 1)
     on conflict (key) do update set n = case when x.n + 1 >= 100 then 0 else x.n + 1 end,
@@ -336,8 +336,8 @@ end $$;
 create or replace function castle.r_setpw(tok text, b jsonb) returns jsonb language plpgsql as $$
 declare st castle.students := castle.stu(tok); v_pw text := coalesce(b->>'pw', '');
 begin
-  if length(v_pw) < 4 or length(v_pw) > 30 then perform castle.fail(400, '비밀번호는 4~30자예요.'); end if;
-  if v_pw = '0000' then perform castle.fail(400, '0000은 쓸 수 없어요. 다른 숫자로 정해 주세요.'); end if;
+  if length(v_pw) < 4 or length(v_pw) > 30 then perform castle.fail(400, '비밀번호는 4~30자입니다.'); end if;
+  if v_pw = '0000' then perform castle.fail(400, '0000은 쓸 수 없습니다. 다른 숫자로 정해 주십시오.'); end if;
   update castle.students set pw_hash = extensions.crypt(v_pw, extensions.gen_salt('bf', 6)), must_change = false where id = st.id;
   return jsonb_build_object('ok', true);
 end $$;
@@ -372,16 +372,16 @@ end $$;
 create or replace function castle.r_preview(tok text, b jsonb) returns jsonb language plpgsql as $$
 declare st castle.students := castle.stu(tok); a castle.attempts := castle.settle(st.id); p castle.problems; v_g text := b->>'grade';
 begin
-  if a.id is not null then perform castle.fail(400, '진행 중인 문제가 있어요.'); end if;
-  if v_g is null or not (v_g = any (castle.grades())) then perform castle.fail(400, '학년을 선택해 주세요.'); end if;
-  if st.points < castle.c('PREVIEW_COST') then perform castle.fail(400, '포인트가 부족해요.'); end if;
+  if a.id is not null then perform castle.fail(400, '진행 중인 문제가 있습니다.'); end if;
+  if v_g is null or not (v_g = any (castle.grades())) then perform castle.fail(400, '학년을 선택해 주십시오.'); end if;
+  if st.points < castle.c('PREVIEW_COST') then perform castle.fail(400, '포인트가 부족합니다.'); end if;
   select * into p from castle.problems where grade = v_g and active and not (id = any (st.done))
     and castle.unit_ok(v_g, subject, unit_large, unit)
     and not exists (select 1 from castle.attempts x where x.sid = st.id and x.pid = problems.id) order by random() limit 1;
   if not found then
     select * into p from castle.problems where grade = v_g and active and not (id = any (st.done)) and castle.unit_ok(v_g, subject, unit_large, unit) order by random() limit 1;
   end if;
-  if not found then perform castle.fail(400, '지금은 이 학년에 풀 수 있는 문제가 없어요. 다른 학년을 골라 보세요!'); end if;
+  if not found then perform castle.fail(400, '지금은 이 학년에 풀 수 있는 문제가 없습니다. 다른 학년을 선택해 주십시오.'); end if;
   perform castle.add_pts(st.id, -castle.c('PREVIEW_COST'), '문제 미리보기');
   insert into castle.attempts (sid, pid, grade, state) values (st.id, p.id, p.grade, 'preview') returning * into a;
   return jsonb_build_object('points', (select points from castle.students where id = st.id), 'active', castle.active_view(a), 'serverNow', castle.ms(clock_timestamp()));
@@ -398,8 +398,8 @@ create or replace function castle.r_accept(tok text) returns jsonb language plpg
 declare st castle.students := castle.stu(tok); a castle.attempts; v_mult int;
 begin
   select * into a from castle.attempts where sid = st.id and state in ('preview', 'solving') order by id desc limit 1;
-  if not found or a.state <> 'preview' then perform castle.fail(400, '미리보기 중인 문제가 없어요.'); end if;
-  if st.points < castle.c('ACCEPT_COST') then perform castle.fail(400, '풀이 포인트(' || castle.c('ACCEPT_COST') || 'P)가 부족해요.'); end if;
+  if not found or a.state <> 'preview' then perform castle.fail(400, '미리보기 중인 문제가 없습니다.'); end if;
+  if st.points < castle.c('ACCEPT_COST') then perform castle.fail(400, '풀이 포인트(' || castle.c('ACCEPT_COST') || 'P)가 부족합니다.'); end if;
   perform castle.add_pts(st.id, -castle.c('ACCEPT_COST'), '문제 풀기 선택');
   v_mult := (castle.next_mult(st.id)->>'value')::int;
   update castle.attempts set day = castle.kst_today(), mult = v_mult, state = 'solving', start_at = now(),
@@ -413,7 +413,7 @@ create or replace function castle.r_submit(tok text, b jsonb) returns jsonb lang
 declare st castle.students := castle.stu(tok); a castle.attempts; p castle.problems;
 begin
   select * into a from castle.attempts where sid = st.id and state = 'solving' order by id desc limit 1;
-  if not found then perform castle.fail(400, '풀고 있는 문제가 없어요.'); end if;
+  if not found then perform castle.fail(400, '풀고 있는 문제가 없습니다.'); end if;
   perform castle.finish(a.id, b->>'answer', now() > a.deadline + interval '5 seconds');
   select * into a from castle.attempts where id = a.id;
   select * into p from castle.problems where id = a.pid;
@@ -451,9 +451,9 @@ create or replace function castle.r_note_add(tok text, b jsonb) returns jsonb la
 declare st castle.students := castle.stu(tok); v_pid text := b->>'pid';
 begin
   if v_pid is null or not exists (select 1 from castle.attempts where sid = st.id and pid = v_pid and state = 'done') then
-    perform castle.fail(400, '풀어 본 문제만 오답노트에 담을 수 있어요.');
+    perform castle.fail(400, '풀어 본 문제만 오답노트에 담을 수 있습니다.');
   end if;
-  if (select count(*) from castle.notes where sid = st.id) >= 500 then perform castle.fail(400, '오답노트는 500개까지 담을 수 있어요.'); end if;
+  if (select count(*) from castle.notes where sid = st.id) >= 500 then perform castle.fail(400, '오답노트는 500개까지 담을 수 있습니다.'); end if;
   insert into castle.notes (sid, pid) values (st.id, v_pid) on conflict do nothing;
   return jsonb_build_object('ok', true);
 end $$;
@@ -546,7 +546,7 @@ declare v_delta int; v_id text; n int := 0; v_why text := coalesce(nullif(left(b
 begin
   perform castle.auth(tok, 'admin');
   begin v_delta := trunc((b->>'delta')::numeric)::int; exception when others then v_delta := null; end;
-  if v_delta is null or v_delta = 0 then perform castle.fail(400, '포인트 숫자를 입력해 주세요.'); end if;
+  if v_delta is null or v_delta = 0 then perform castle.fail(400, '포인트 숫자를 입력해 주십시오.'); end if;
   for v_id in select jsonb_array_elements_text(coalesce(b->'ids', '[]')) loop
     if exists (select 1 from castle.students where id = v_id) then
       perform castle.add_pts(v_id, v_delta, '관리자: ' || v_why); n := n + 1;
@@ -559,7 +559,7 @@ create or replace function castle.r_admin_resetpw(tok text, b jsonb) returns jso
 begin
   perform castle.auth(tok, 'admin');
   update castle.students set pw_hash = extensions.crypt('0000', extensions.gen_salt('bf', 6)), must_change = true where id = b->>'id';
-  if not found then perform castle.fail(404, '학생이 없어요.'); end if;
+  if not found then perform castle.fail(404, '학생이 없습니다.'); end if;
   delete from castle.sessions where id = b->>'id';
   return jsonb_build_object('ok', true);
 end $$;
@@ -575,7 +575,7 @@ end $$;
 create or replace function castle.r_admin_adminpw(tok text, b jsonb) returns jsonb language plpgsql as $$
 declare v_id text := castle.auth(tok, 'admin');
 begin
-  if length(coalesce(b->>'pw', '')) < 4 then perform castle.fail(400, '비밀번호는 4자 이상이어야 해요.'); end if;
+  if length(coalesce(b->>'pw', '')) < 4 then perform castle.fail(400, '비밀번호는 4자 이상이어야 합니다.'); end if;
   if v_id = 'admin' then
     perform castle.init_admin(b->>'pw');
   else  -- 관리자 권한이 있는 선생님 계정은 자기 비밀번호만 바꿔요
@@ -589,9 +589,9 @@ create or replace function castle.r_switch(tok text, b jsonb) returns jsonb lang
 declare s castle.sessions; st castle.students; v_to text := case when b->>'to' = 'admin' then 'admin' else 'student' end; v_tok text;
 begin
   select * into s from castle.sessions where token = tok and exp > now();
-  if not found then perform castle.fail(401, '다시 로그인해 주세요.'); end if;
+  if not found then perform castle.fail(401, '다시 로그인해 주십시오.'); end if;
   select * into st from castle.students where id = s.id;
-  if not found or not st.is_admin or st.must_change then perform castle.fail(403, '권한이 없어요.'); end if;
+  if not found or not st.is_admin or st.must_change then perform castle.fail(403, '권한이 없습니다.'); end if;
   v_tok := encode(extensions.gen_random_bytes(24), 'hex');
   insert into castle.sessions values (v_tok, st.id, v_to, now() + interval '7 days');
   return jsonb_build_object('token', v_tok, 'role', v_to);
@@ -612,11 +612,11 @@ begin
                                  ('DAILY_BONUS_COUNT', 1, 500)) as t (k, lo, hi) loop
     begin v := trunc((b->>r.k)::numeric); exception when others then v := null; end;
     if v is null or v < r.lo or v > r.hi then
-      perform castle.fail(400, r.k || ' 값은 ' || r.lo || '~' || r.hi || ' 사이 숫자여야 해요.');
+      perform castle.fail(400, r.k || ' 값은 ' || r.lo || '~' || r.hi || ' 사이 숫자여야 합니다.');
     end if;
     nxt := nxt || jsonb_build_object(r.k, v);
   end loop;
-  if (nxt->>'MORNING_TO')::int <= (nxt->>'MORNING_FROM')::int then perform castle.fail(400, '아침 시간대의 끝은 시작보다 늦어야 해요.'); end if;
+  if (nxt->>'MORNING_TO')::int <= (nxt->>'MORNING_FROM')::int then perform castle.fail(400, '아침 시간대의 끝은 시작보다 늦어야 합니다.'); end if;
   update castle.cfg set data = data || nxt where id = 1;
   return castle.cfg_all();
 end $$;
@@ -635,8 +635,8 @@ create or replace function castle.r_admin_setunits(tok text, b jsonb) returns js
 declare g text := b->>'grade';
 begin
   perform castle.auth(tok, 'admin');
-  if g is null or not (g = any (castle.grades())) then perform castle.fail(400, '학년이 올바르지 않아요.'); end if;
-  if jsonb_typeof(b->'units') is distinct from 'array' then perform castle.fail(400, '단원 목록이 필요해요.'); end if;
+  if g is null or not (g = any (castle.grades())) then perform castle.fail(400, '학년이 올바르지 않습니다.'); end if;
+  if jsonb_typeof(b->'units') is distinct from 'array' then perform castle.fail(400, '단원 목록이 필요합니다.'); end if;
   if jsonb_array_length(b->'units') = 0 then
     update castle.cfg set data = data #- array['UNITS', g] where id = 1;
   else
@@ -679,7 +679,7 @@ create or replace function castle.r_admin_import(tok text, b jsonb) returns json
 declare it jsonb; n int := 0; i int := 0; errs jsonb := '[]';
 begin
   perform castle.auth(tok, 'admin');
-  if jsonb_typeof(b->'items') <> 'array' then perform castle.fail(400, '문제 목록(배열)이 필요해요.'); end if;
+  if jsonb_typeof(b->'items') <> 'array' then perform castle.fail(400, '문제 목록(배열)이 필요합니다.'); end if;
   for it in select jsonb_array_elements(b->'items') loop
     i := i + 1;
     begin perform castle.upsert_problem(it); n := n + 1;
@@ -746,15 +746,15 @@ end $$;
 create or replace function castle.r_season_start(tok text) returns jsonb language plpgsql as $$
 declare st castle.students := castle.stu(tok); a castle.attempts := castle.settle(st.id); s castle.seasons := castle.season_cur(); p castle.problems;
 begin
-  if st.is_teacher or st.is_admin then perform castle.fail(403, '시즌 랭킹전은 학생만 참가할 수 있어요.'); end if;
+  if st.is_teacher or st.is_admin then perform castle.fail(403, '시즌 랭킹전은 학생만 참가할 수 있습니다.'); end if;
   if a.id is not null then
     if a.season_id is not null then return jsonb_build_object('active', castle.active_view(a), 'serverNow', castle.ms(clock_timestamp())); end if;
-    perform castle.fail(400, '진행 중인 문제가 있어요.');
+    perform castle.fail(400, '진행 중인 문제가 있습니다.');
   end if;
-  if s.id is null then perform castle.fail(400, '지금 진행 중인 시즌이 없어요.'); end if;
+  if s.id is null then perform castle.fail(400, '지금 진행 중인 시즌이 없습니다.'); end if;
   select * into p from castle.problems q where q.active and q.level >= s.min_level
     and not exists (select 1 from castle.attempts x where x.sid = st.id and x.season_id = s.id and x.pid = q.id) order by random() limit 1;
-  if not found then perform castle.fail(400, '이번 시즌의 문제를 모두 풀었어요! 새 문제가 생기면 다시 도전해 보세요.'); end if;
+  if not found then perform castle.fail(400, '이번 시즌의 문제를 모두 풀었습니다. 새 문제가 등록되면 다시 도전할 수 있습니다.'); end if;
   insert into castle.attempts (sid, pid, grade, state, season_id, start_at, deadline, mult)
     values (st.id, p.id, p.grade, 'solving', s.id, now(), now() + make_interval(secs => castle.c('TIME_LIMIT_SEC')::double precision), 1) returning * into a;
   return jsonb_build_object('active', castle.active_view(a), 'serverNow', castle.ms(clock_timestamp()));
@@ -774,7 +774,7 @@ create or replace function castle.roster_rows(p_teacher text) returns jsonb lang
 create or replace function castle.r_roster(tok text) returns jsonb language plpgsql as $$
 declare st castle.students := castle.stu(tok);
 begin
-  if not st.is_teacher then perform castle.fail(403, '권한이 없어요.'); end if;
+  if not st.is_teacher then perform castle.fail(403, '권한이 없습니다.'); end if;
   return jsonb_build_object('teacher', st.id, 'name', st.name, 'students', castle.roster_rows(st.id), 'serverNow', castle.ms(clock_timestamp()));
 end $$;
 
@@ -793,7 +793,7 @@ create or replace function castle.r_admin_roster_edit(tok text, b jsonb) returns
 declare v_t text := b->>'teacher'; v_id text; n_add int := 0; n_rm int := 0; miss text := '';
 begin
   perform castle.auth(tok, 'admin');
-  if not exists (select 1 from castle.students where id = v_t and is_teacher) then perform castle.fail(400, '선생님 계정이 아니에요.'); end if;
+  if not exists (select 1 from castle.students where id = v_t and is_teacher) then perform castle.fail(400, '선생님 계정이 아닙니다.'); end if;
   for v_id in select jsonb_array_elements_text(coalesce(b->'add', '[]')) loop
     if exists (select 1 from castle.students where id = v_id) then
       insert into castle.roster (teacher, student) values (v_t, v_id) on conflict do nothing; n_add := n_add + 1;
@@ -839,9 +839,9 @@ declare v_id int := nullif(b->>'id', '')::int; v_start timestamptz; v_end timest
 begin
   perform castle.auth(tok, 'admin');
   begin v_start := (b->>'startsAt')::timestamptz; v_end := (b->>'endsAt')::timestamptz;
-  exception when others then perform castle.fail(400, '시작·종료 시각이 올바르지 않아요.'); end;
-  if v_start is null or v_end is null or v_end <= v_start then perform castle.fail(400, '종료 시각은 시작 시각보다 뒤여야 해요.'); end if;
-  if length(btrim(coalesce(b->>'name', ''))) = 0 then perform castle.fail(400, '시즌 이름을 입력해 주세요.'); end if;
+  exception when others then perform castle.fail(400, '시작·종료 시각이 올바르지 않습니다.'); end;
+  if v_start is null or v_end is null or v_end <= v_start then perform castle.fail(400, '종료 시각은 시작 시각보다 뒤여야 합니다.'); end if;
+  if length(btrim(coalesce(b->>'name', ''))) = 0 then perform castle.fail(400, '시즌 이름을 입력해 주십시오.'); end if;
   if v_id is null then
     insert into castle.seasons (name, starts_at, ends_at, min_level, prize)
       values (left(btrim(b->>'name'), 40), v_start, v_end, least(greatest(coalesce((b->>'minLevel')::int, 4), 1), 5), left(coalesce(b->>'prize', ''), 300)) returning id into v_id;
@@ -905,7 +905,7 @@ begin
     when 'admin/deleteall' then return castle.r_admin_deleteall(tok, b);
     when 'admin/log' then return castle.r_admin_log(tok);
     when 'admin/suspects' then return castle.r_admin_suspects(tok, b);
-    else perform castle.fail(404, '없는 기능이에요.');
+    else perform castle.fail(404, '없는 기능입니다.');
   end case;
   return null;
 end $$;

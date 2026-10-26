@@ -9,79 +9,79 @@
 <script defer src="https://cdnjs.cloudflare.com/ajax/libs/KaTeX/0.16.9/katex.min.js"></script>
 <script defer src="https://cdnjs.cloudflare.com/ajax/libs/KaTeX/0.16.9/contrib/auto-render.min.js"></script>
 <style>
-:root{--bg:#f3f7ff;--bg2:#e6efff;--card:#ffffff;--ink:#0f1b3d;--sub:#6b7a99;--line:#e3eaf7;--main:#2b6bff;--main-ink:#ffffff;--tint:#eaf1ff;--gold:#0f1b3d;--ok:#0f9d58;--bad:#e5484d;--fire:#2b6bff;--shadow:0 2px 6px rgba(43,107,255,.05),0 10px 28px rgba(43,107,255,.08);--glass:rgba(255,255,255,.92)}
+:root{--bg:#f4f5f7;--bg2:#f4f5f7;--card:#ffffff;--ink:#1a1d23;--sub:#6a7280;--line:#dde1e7;--main:#2b6bff;--main-ink:#ffffff;--tint:#eaf1ff;--gold:#0f1b3d;--ok:#0f9d58;--bad:#e5484d;--fire:#2b6bff;--shadow:none;--glass:rgba(255,255,255,.92)}
 *{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
 html{-webkit-text-size-adjust:100%;color-scheme:light}
-body{margin:0;background:var(--bg);background-image:linear-gradient(180deg,var(--bg2) 0,var(--bg) 320px);background-repeat:no-repeat;color:var(--ink);font-family:'Pretendard Variable',Pretendard,-apple-system,BlinkMacSystemFont,'Apple SD Gothic Neo','Malgun Gothic',system-ui,sans-serif;line-height:1.55;letter-spacing:-.01em;font-size:16px;min-height:100vh}
+body{margin:0;background:var(--bg);color:var(--ink);font-family:'Pretendard Variable',Pretendard,-apple-system,BlinkMacSystemFont,'Apple SD Gothic Neo','Malgun Gothic',system-ui,sans-serif;line-height:1.55;letter-spacing:-.01em;font-size:16px;min-height:100vh}
 #app{max-width:520px;margin:0 auto;padding:18px 16px calc(96px + env(safe-area-inset-bottom,0px))}
 #app.nonav{padding-bottom:40px}
-h1{font-size:26px;font-weight:800;letter-spacing:-.04em;margin:0}h2{font-size:17px;font-weight:800;letter-spacing:-.03em;margin:0 0 12px}
-.card{background:var(--card);border:1px solid var(--line);border-radius:22px;padding:20px;margin-bottom:12px;box-shadow:var(--shadow)}
+h1{font-size:25px;font-weight:700;letter-spacing:-.03em;margin:0}h2{font-size:17px;font-weight:700;letter-spacing:-.02em;margin:0 0 12px}
+.card{background:var(--card);border:1px solid var(--line);border-radius:10px;padding:20px;margin-bottom:12px;box-shadow:var(--shadow)}
 .top{display:flex;justify-content:space-between;align-items:center;gap:10px;margin-bottom:14px}
 .pts{font-size:38px;font-weight:800;letter-spacing:-.05em;font-variant-numeric:tabular-nums;line-height:1.1}
 .sub{color:var(--sub);font-size:13.5px}
-button{font:inherit;font-weight:700;cursor:pointer;border:1px solid var(--line);background:var(--card);color:var(--ink);padding:11px 15px;border-radius:14px;transition:background .15s,transform .05s,opacity .15s}
+button{font:inherit;font-weight:700;cursor:pointer;border:1px solid var(--line);background:var(--card);color:var(--ink);padding:11px 15px;border-radius:8px;transition:background .15s,transform .05s,opacity .15s}
 button:active{transform:scale(.98)}
-button.primary{background:var(--main);color:var(--main-ink);border-color:var(--main);box-shadow:0 8px 20px rgba(43,107,255,.28)}
+button.primary{background:var(--main);color:var(--main-ink);border-color:var(--main)}
 button.danger{color:var(--bad)}
 button.soft{background:var(--tint);color:var(--main);border-color:transparent}
 button:disabled{opacity:.45;cursor:default;box-shadow:none}
-.btn-big{width:100%;padding:17px;font-size:16.5px;margin-top:10px;border-radius:18px}
-input,textarea,select{font:inherit;width:100%;padding:14px 15px;border:1px solid var(--line);border-radius:14px;background:var(--card);color:var(--ink);outline:none;transition:border-color .15s,box-shadow .15s}
+.btn-big{width:100%;padding:15px;font-size:16px;margin-top:10px;border-radius:8px}
+input,textarea,select{font:inherit;width:100%;padding:13px 14px;border:1px solid var(--line);border-radius:8px;background:var(--card);color:var(--ink);outline:none;transition:border-color .15s,box-shadow .15s}
 input:focus,textarea:focus,select:focus{border-color:var(--main);box-shadow:0 0 0 3px color-mix(in srgb,var(--main) 18%,transparent)}
 textarea{min-height:90px;resize:vertical}
 label{display:block;font-size:13px;font-weight:700;color:var(--sub);margin:14px 0 6px}
 .grades{display:grid;grid-template-columns:repeat(3,1fr);gap:8px}
-.grades button{padding:14px 0;font-size:16px;border-radius:14px;background:var(--bg);border-color:transparent;color:var(--ink)}
-.grades button.on{background:var(--main);color:var(--main-ink);box-shadow:0 6px 16px rgba(43,107,255,.25)}
-.banner{background:var(--tint);color:var(--main);border:none;border-radius:14px;padding:11px 14px;margin-bottom:12px;font-weight:700;font-size:14px}
+.grades button{padding:13px 0;font-size:16px;border-radius:8px;background:var(--bg);border-color:transparent;color:var(--ink)}
+.grades button.on{background:var(--main);color:var(--main-ink)}
+.banner{background:var(--tint);color:var(--main);border:none;border-radius:8px;padding:11px 14px;margin-bottom:12px;font-weight:700;font-size:14px}
 .prob{white-space:pre-wrap;font-size:17.5px;line-height:1.8;padding:2px 0;word-break:keep-all;overflow-wrap:anywhere}
 /* 줄바꿈은 낱말(의미) 단위로: 한글이 글자 중간에서 끊기지 않게 */
 body{word-break:keep-all;overflow-wrap:break-word;line-break:strict}
 h1,h2,h3,.sub,.pbox,.rules li,.mode span,.banner,label,p{text-wrap:balance}
 td,th,input,textarea,.rk-nm,.chip,.gchip{overflow-wrap:anywhere;word-break:normal}
 .modes{display:grid;gap:12px;margin:18px 0}
-.mode{display:flex;flex-direction:column;align-items:flex-start;gap:5px;text-align:left;padding:19px 18px 18px;border-radius:20px;border:none;color:#fff;box-shadow:0 6px 18px rgba(20,30,60,.12);width:100%}
+.mode{display:flex;flex-direction:column;align-items:flex-start;gap:5px;text-align:left;padding:18px;border-radius:10px;border:none;color:#fff;width:100%}
 .mode b{font-size:18.5px;letter-spacing:-.02em}
 .mode span{font-size:13.5px;color:rgba(255,255,255,.9);font-weight:500;line-height:1.5}
-.mode.hunt{background:linear-gradient(135deg,#ff7a2f,#ffa94d)}
-.mode.season{background:linear-gradient(135deg,#2b59ff,#5f86ff)}
-.mode.roster{background:linear-gradient(135deg,#0fa97f,#3cd3a5)}
-.mode.adm{background:linear-gradient(135deg,#334155,#5b6b82)}
+.mode.hunt{background:#e8590c}
+.mode.season{background:#1c4fd6}
+.mode.roster{background:#0b7a5b}
+.mode.adm{background:#3a4352}
 .seg{display:flex;gap:6px;margin:6px 0 10px;flex-wrap:wrap}
-.seg button{padding:7px 14px;border-radius:999px;font-size:13.5px}
+.seg button{padding:7px 14px;border-radius:6px;font-size:13.5px}
 .seg button.on{background:var(--ink);color:#fff;border-color:var(--ink)}
 .stat3{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin:12px 0}
-.stat3>div{background:var(--bg);border-radius:14px;padding:11px 6px;text-align:center}
+.stat3>div{background:var(--bg);border-radius:8px;padding:11px 6px;text-align:center}
 .stat3 b{display:block;font-size:21px;letter-spacing:-.03em}
 .stat3 span{font-size:12px;color:var(--sub)}
-.pbox{background:var(--tint);color:var(--main);border-radius:14px;padding:12px 14px;font-weight:700;font-size:14px;line-height:1.5;margin:10px 0}
+.pbox{background:var(--tint);color:var(--main);border-radius:8px;padding:12px 14px;font-weight:700;font-size:14px;line-height:1.5;margin:10px 0}
 .rules{margin:8px 0 0;padding-left:18px;color:var(--sub);font-size:13.5px;line-height:1.7}
 .tbw{overflow-x:auto;margin:0 -4px}
 .tbw table{min-width:480px;font-size:13px}
 .pick{display:inline-flex;align-items:center;gap:6px;margin:3px 8px 3px 0;font-size:13.5px;font-weight:600;color:var(--ink)}
 .pick input{width:auto}
-.gchip{display:inline-block;margin-left:5px;padding:1px 7px;border-radius:999px;background:var(--bg);color:var(--sub);font-size:11.5px;font-weight:700}
+.gchip{display:inline-block;margin-left:5px;padding:1px 6px;border-radius:4px;background:var(--bg);color:var(--sub);font-size:11.5px;font-weight:700}
 .pnote .katex{font-size:1.5em;color:var(--ink)}
 .katex .frac-line{border-bottom-style:solid!important;border-bottom-color:currentColor;min-height:1px}
 .pnote .frac-line{border-bottom-width:1.6px!important}
-.pnote{font-size:14px;font-weight:600;color:var(--sub);background:var(--bg);border-radius:10px;padding:8px 12px;margin-bottom:6px;line-height:1.5}
+.pnote{font-size:14px;font-weight:600;color:var(--sub);background:var(--bg);border-radius:6px;padding:8px 12px;margin-bottom:6px;line-height:1.5}
 .prob img{max-width:100%;display:block;margin:14px auto 4px;border-radius:10px;background:#fff}
 .prob .katex-display{overflow-x:auto;overflow-y:hidden;padding:4px 0;margin:.5em 0}
 .katex{font-size:1.06em}
 .bar{height:8px;background:var(--line);border-radius:8px;overflow:hidden;margin:6px 0}
-.bar>div{height:100%;background:linear-gradient(90deg,#2b6bff,#5b9bff);width:100%;border-radius:8px}
+.bar>div{height:100%;background:var(--main);width:100%;border-radius:8px}
 .timer{font-size:24px;font-weight:800;font-variant-numeric:tabular-nums;letter-spacing:-.02em}
 .res{font-size:28px;font-weight:800;letter-spacing:-.04em}.ok{color:var(--ok)}.bad{color:var(--bad)}
 .eimg{max-width:100%;display:block;margin:8px auto;border-radius:8px;background:#fff}
-.expl{white-space:pre-wrap;border-left:3px solid var(--main);padding:10px 14px;margin:12px 0;background:var(--bg);border-radius:0 12px 12px 0;line-height:1.75;overflow-wrap:anywhere}
+.expl{white-space:pre-wrap;border-left:3px solid var(--main);padding:10px 14px;margin:12px 0;background:var(--bg);border-radius:0 8px 8px 0;line-height:1.75;overflow-wrap:anywhere}
 .err{color:var(--bad);min-height:20px;margin-top:8px;font-size:14px}
 table{width:100%;border-collapse:collapse;font-size:14px}
 th{color:var(--sub);font-weight:600;font-size:12.5px}
 th,td{border-bottom:1px solid var(--line);padding:10px 6px;text-align:left}
 tr:last-child td{border-bottom:none}
 .tabs{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:14px}
-.tabs button{padding:8px 13px;border-radius:999px}
+.tabs button{padding:8px 13px;border-radius:6px}
 .tabs button.on{background:var(--ink);color:var(--bg);border-color:var(--ink)}
 .row{display:flex;gap:8px;flex-wrap:wrap;align-items:center}
 .row>*{flex:1 1 140px}.row>button{flex:0 0 auto}
@@ -94,7 +94,7 @@ code{background:var(--bg);padding:1px 6px;border-radius:6px;font-size:.92em}
 .pcard{display:flex;justify-content:space-between;align-items:center;gap:10px}
 .pcard .pts{font-size:36px}
 .tiles{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:12px}
-.tile{display:flex;flex-direction:column;align-items:center;gap:8px;padding:18px 10px;border-radius:20px;background:var(--card);border:1px solid var(--line);box-shadow:var(--shadow);font-weight:700;font-size:14.5px;color:var(--ink)}
+.tile{display:flex;flex-direction:column;align-items:center;gap:8px;padding:18px 10px;border-radius:10px;background:var(--card);border:1px solid var(--line);font-weight:700;font-size:14.5px;color:var(--ink)}
 .tile svg{width:26px;height:26px;stroke:var(--main)}
 .prog{margin-top:10px}.prog .l{display:flex;justify-content:space-between;font-size:14px;font-weight:700}
 .prog .l span{font-variant-numeric:tabular-nums}
@@ -119,7 +119,7 @@ code{background:var(--bg);padding:1px 6px;border-radius:6px;font-size:.92em}
 .prob img,.eimg{pointer-events:none;-webkit-user-drag:none}
 .wm{position:relative}
 body.cover .prob,body.cover .eimg{filter:blur(22px);transition:filter .05s}
-@media print{#app{display:none!important}body::before{content:"인쇄할 수 없어요";display:block;padding:40px;font-size:20px}}
+@media print{#app{display:none!important}body::before{content:"인쇄할 수 없습니다";display:block;padding:40px;font-size:20px}}
 </style>
 </head>
 <body>
@@ -136,15 +136,15 @@ const fa = (s) => /^[ㄱ-ㅎ]+$/.test(String(s)) ? String(s).split('').join(', '
 // 모든 기능은 Supabase 함수 castle_api 하나로 갑니다 (규칙·정답·비밀번호 검사는 Supabase 안에서 해요).
 async function api(path, body) {
   const cfg = window.CASTLE_CONFIG || {};
-  if (!cfg.url || !cfg.anonKey) throw new Error('config.js 에 Supabase 주소와 anon 키를 넣어 주세요.');
+  if (!cfg.url || !cfg.anonKey) throw new Error('config.js 에 Supabase 주소와 anon 키를 넣어 주십시오.');
   const r = await fetch(cfg.url.replace(/\/$/, '') + '/rest/v1/rpc/castle_api', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json', apikey: cfg.anonKey, Authorization: 'Bearer ' + cfg.anonKey },
     body: JSON.stringify({ p_path: path, p_token: token || null, p_body: body === undefined ? {} : body }),
-  }).catch(() => { throw new Error('인터넷 연결을 확인해 주세요.'); });
+  }).catch(() => { throw new Error('인터넷 연결을 확인해 주십시오.'); });
   const j = await r.json().catch(() => ({}));
-  if (r.status === 401) { if (token) logout(); throw new Error(j.message || '다시 로그인해 주세요.'); }
-  if (!r.ok) throw new Error(j.message || '오류가 났어요.');
+  if (r.status === 401) { if (token) logout(); throw new Error(j.message || '다시 로그인해 주십시오.'); }
+  if (!r.ok) throw new Error(j.message || '오류가 났습니다.');
   if (j && j.error) throw new Error(j.error);
   return j;
 }
@@ -195,12 +195,12 @@ function bindNav() {
 
 // ---------- 로그인 ----------
 function renderLogin(msg, signup) {
-  app(`<div style="text-align:center;margin:9vh 0 26px"><img class="logo logo-big" src="logo.png" alt="캐슬수학" style="margin:0 auto 18px"><h1>캐슬 포인트 헌터</h1><p class="sub" style="margin-top:6px">${signup ? '아이디와 비밀번호만 정하면 바로 시작해요' : '수학문제를 풀고 포인트를 모아보세요.<br>주말, 공휴일 오전 7시~9시에는 2배 이벤트!! 🔥'}</p></div>
+  app(`<div style="text-align:center;margin:9vh 0 26px"><img class="logo logo-big" src="logo.png" alt="캐슬수학" style="margin:0 auto 18px"><h1>캐슬 포인트 헌터</h1><p class="sub" style="margin-top:6px">${signup ? '아이디와 비밀번호만 정하면 바로 시작합니다' : '수학문제를 풀고 포인트를 모아보십시오.<br>주말, 공휴일 오전 7시~9시에는 2배 이벤트!! 🔥'}</p></div>
   <div class="card"><label style="margin-top:0">아이디${signup ? ' (한글·영문·숫자 2~20자)' : ''}</label><input id="id" autocomplete="username" autocapitalize="none" autocorrect="off">
   <label>비밀번호${signup ? ' (4자 이상)' : ''}</label><input id="pw" type="password" autocomplete="${signup ? 'new-password' : 'current-password'}">
   <div class="err" id="err">${esc(msg || '')}</div>
   <button class="primary btn-big" id="go" style="margin-top:6px">${signup ? '가입하고 시작하기' : '로그인'}</button></div>
-  ${signup ? '' : '<p class="sub" style="text-align:center;margin:14px 8px 0">비밀번호를 잊은 경우<br><b>차성빈 원장</b>에게 초기화를 요청하세요.</p>'}`, true);
+  ${signup ? '' : '<p class="sub" style="text-align:center;margin:14px 8px 0">비밀번호를 잊은 경우<br><b>차성빈 원장</b>에게 초기화를 요청하십시오.</p>'}`, true);
   const go = async () => {
     try {
       const r = await api(signup ? 'register' : 'login', { id: $('#id').value, pw: $('#pw').value });
@@ -213,13 +213,13 @@ function renderLogin(msg, signup) {
 function renderSetPw() {
   app(`<button class="back" id="bk" style="margin-top:14px">${IC.back}로그인 화면으로</button>
   <div class="card" style="margin-top:10px"><h1>비밀번호 설정</h1>
-  <p class="sub">처음 로그인했어요! 나만 아는 비밀번호를 정해 주세요. (4자 이상, 0000은 사용할 수 없어요)</p>
+  <p class="sub">최초 로그인입니다. 사용할 비밀번호를 정해 주십시오. (4자 이상, 0000은 사용할 수 없습니다)</p>
   <label>새 비밀번호 (4자 이상)</label><input id="p1" type="password" autocomplete="new-password">
   <label>한 번 더 입력</label><input id="p2" type="password" autocomplete="new-password">
   <div class="err" id="err"></div><button class="primary btn-big" id="go">저장하고 시작하기</button></div>`);
   $('#bk').onclick = logout;
   $('#go').onclick = async () => {
-    if ($('#p1').value !== $('#p2').value) return showErr('두 번 입력한 비밀번호가 달라요.');
+    if ($('#p1').value !== $('#p2').value) return showErr('두 번 입력한 비밀번호가 다릅니다.');
     try { await api('setpw', { pw: $('#p1').value }); start(); } catch (e) { showErr(e.message); }
   };
 }
@@ -243,7 +243,7 @@ function head() {
   const m = me.mult;
   const fire = m.value > 1 ? `<div class="banner">🔥 포인트 2배 적용 중${m.morning ? ' · 주말·공휴일 아침 타임' : ''}${m.daily ? ` · 오늘 ${me.cfg.DAILY_BONUS_COUNT}문제 맞힘` : ''}</div>` : '';
   return `<div class="top"><img class="logo" src="logo.png" alt="캐슬수학"><span style="display:flex;gap:4px;align-items:center"><button id="tomode" class="back">모드 선택</button>${me.isAdmin ? '<button id="toadm" class="back">관리자 화면</button>' : ''}<button id="out" class="back" style="margin-right:-4px">${IC.out}로그아웃</button></span></div>
-  <div class="hello"><h1>${esc(me.name)}${esc(me.title || '님')}</h1><div class="sub">오늘도 좋은 하루예요</div></div>
+  <div class="hello"><h1>${esc(me.name)}${esc(me.title || '님')}</h1></div>
   <div class="card pcard"><div><div class="sub">총 포인트</div><div class="pts">${fmt(me.points)}<span style="font-size:16px;font-weight:700;color:var(--sub);margin-left:3px">P</span></div></div></div>
   <div class="tiles"><button class="tile" id="nt">${IC.note}오답노트</button><button class="tile" id="hist">${IC.list}내 기록</button></div>${fire}`;
 }
@@ -258,7 +258,7 @@ function renderHome(notice, toRank) {
   <div class="grades">${me.grades.map((g) => `<button data-g="${g}" class="${g === pickedGrade ? 'on' : ''}">${g}</button>`).join('')}</div>
   <p class="sub" style="margin:12px 0 0">미리보기 ${c.PREVIEW_SEC}초 (-${c.PREVIEW_COST}P) · 풀기 -${c.ACCEPT_COST}P · 제한시간 ${c.TIME_LIMIT_SEC / 60}분 · 정답 +${c.REWARD}P</p>
   <div class="err" id="err">${esc(notice || '')}</div></div>
-  <button class="primary btn-big" id="pv" ${pickedGrade ? '' : 'disabled'}>${pickedGrade ? '학습 시작하기 · ' + pickedGrade : '학년을 먼저 골라 주세요'}</button>
+  <button class="primary btn-big" id="pv" ${pickedGrade ? '' : 'disabled'}>${pickedGrade ? '학습 시작하기 · ' + pickedGrade : '학년을 먼저 골라 주십시오'}</button>
   <div class="card" id="rk" style="margin-top:14px"><h2>헌터 순위</h2><div class="sub">불러오는 중…</div></div>
   ${navBar(toRank ? 'rk' : 'home')}`);
   bindHead();
@@ -266,10 +266,10 @@ function renderHome(notice, toRank) {
     const el = $('#rk'); if (!el) return;
     const draw = (k) => {
       const grade = k === 'grade', list = grade ? r.gradeTop : r.top;
-      const sum = grade ? (r.myGradeRank ? `내 학년 순위 ${r.myGradeRank}위 / ${r.gradeTotal}명` : '1,000P 이상부터 순위에 올라요') : (r.myRank ? `내 순위 ${r.myRank}위 / ${r.total}명` : '1,000P 이상부터 순위에 올라요');
+      const sum = grade ? (r.myGradeRank ? `내 학년 순위 ${r.myGradeRank}위 / ${r.gradeTotal}명` : '1,000P 이상부터 순위에 오릅니다') : (r.myRank ? `내 순위 ${r.myRank}위 / ${r.total}명` : '1,000P 이상부터 순위에 오릅니다');
       el.innerHTML = `<h2 style="display:flex;align-items:center;gap:8px">${trophy('#f5b82e')}헌터 순위</h2>
       <div class="seg"><button data-k="all" class="${grade ? '' : 'on'}">전체</button><button data-k="grade" class="${grade ? 'on' : ''}">내 학년${r.grade ? ' · ' + esc(r.grade) : ''}</button></div>
-      <div class="sub" style="font-weight:600;margin-bottom:6px">${sum}</div>${list.length ? rankRows(list) : '<p class="sub">아직 순위에 오른 학생이 없어요.</p>'}`;
+      <div class="sub" style="font-weight:600;margin-bottom:6px">${sum}</div>${list.length ? rankRows(list) : '<p class="sub">아직 순위에 오른 학생이 없습니다.</p>'}`;
       el.querySelectorAll('.seg button').forEach((b) => b.onclick = () => draw(b.dataset.k));
     };
     draw(window.__rk || 'all');
@@ -302,7 +302,7 @@ function renderPreview(a) {
     const left = a.previewEndsAt - nowS();
     if (left <= 0) {
       clearInterval(tick); $('#t').textContent = '0초'; $('#b').style.width = '0%';
-      $('#pv').innerHTML = '<div style="height:220px;background:#fff;display:flex;align-items:center;justify-content:center;color:var(--sub);font-weight:600">미리보기 시간이 끝났어요</div>';
+      $('#pv').innerHTML = '<div style="height:220px;background:#fff;display:flex;align-items:center;justify-content:center;color:var(--sub);font-weight:600">미리보기 시간이 끝났습니다</div>';
       return;
     }
     $('#t').textContent = Math.ceil(left / 1000) + '초'; $('#b').style.width = (left / total * 100) + '%';
@@ -319,7 +319,7 @@ function renderSolve(a) {
   const isSet = a.problem.kind === 'set';
   app(`<div class="top"><button class="back" id="hm">${IC.back}${a.season ? '시즌 랭킹전' : esc(a.problem.grade)} · ${isSet ? '보기의 기호를 입력' : '숫자만 입력'}</button><div class="timer" id="t"></div></div>
   <div class="card">${probHtml(a.problem)}</div>
-  <div class="card">${isSet ? `<label>정답 (해당하는 보기의 기호를 모두 쓰세요. 예: ㄱ, ㄷ)</label><div class="row" style="flex-wrap:nowrap"><input id="ans" autocomplete="off" enterkeyhint="done" placeholder="예: ㄱ, ㄷ"></div>` : `<label>정답 (숫자만, 예: 12 / -3 / 0.5)</label><div class="row" style="flex-wrap:nowrap"><input id="ans" inputmode="decimal" autocomplete="off" enterkeyhint="done"><button id="neg" style="flex:0 0 92px;font-size:15px" title="마이너스 부호 넣기/빼기">− (부호)</button></div>`}
+  <div class="card">${isSet ? `<label>정답 (해당하는 보기의 기호를 모두 쓰십시오. 예: ㄱ, ㄷ)</label><div class="row" style="flex-wrap:nowrap"><input id="ans" autocomplete="off" enterkeyhint="done" placeholder="예: ㄱ, ㄷ"></div>` : `<label>정답 (숫자만, 예: 12 / -3 / 0.5)</label><div class="row" style="flex-wrap:nowrap"><input id="ans" inputmode="decimal" autocomplete="off" enterkeyhint="done"><button id="neg" style="flex:0 0 92px;font-size:15px" title="마이너스 부호 넣기/빼기">− (부호)</button></div>`}
   <div class="err" id="err"></div><button class="primary btn-big" id="sub">답안 제출</button></div>`, true);
   let done = false;
   const submit = async () => {
@@ -332,9 +332,9 @@ function renderSolve(a) {
     const s = Math.ceil(left / 1000); $('#t').textContent = String(Math.floor(s / 60)).padStart(2, '0') + ':' + String(s % 60).padStart(2, '0');
   };
   upd(); tick = setInterval(upd, 500);
-  $('#sub').onclick = () => { if ($('#ans').value.trim()) submit(); else showErr('정답을 입력해 주세요.'); };
+  $('#sub').onclick = () => { if ($('#ans').value.trim()) submit(); else showErr('정답을 입력해 주십시오.'); };
   $('#hm').onclick = async () => {
-    if (!confirm('지금 나가면 이 문제는 포기(오답) 처리돼요. 나갈까요?')) return;
+    if (!confirm('지금 나가면 이 문제는 포기(오답) 처리됩니다. 나가시겠습니까?')) return;
     done = true; clearInterval(tick);
     try { await api('submit', { answer: '' }); } catch (e) {}
     loadMe();
@@ -345,15 +345,15 @@ function renderSolve(a) {
 function renderResult(r) {
   me.points = r.points;
   if (r.season) return renderSeasonResult(r);
-  app(`<div class="card"><div class="res ${r.correct ? 'ok' : 'bad'}">${r.correct ? '정답이에요' : r.timeout ? '시간 초과' : '오답이에요'}</div>
+  app(`<div class="card"><div class="res ${r.correct ? 'ok' : 'bad'}">${r.correct ? '정답입니다' : r.timeout ? '시간 초과' : '오답입니다'}</div>
   ${r.correct ? `<p class="fire">+${fmt(r.reward)}P ${r.mult > 1 ? '🔥 (2배 적용)' : ''}</p>` : ''}
   <p>정답: <b>${esc(fa(r.answer))}</b></p><p class="pts">${fmt(r.points)} P</p></div>
-  <div class="card"><h2>해설</h2>${r.explImage ? `<div class="wm"><img class="eimg" src="${esc(r.explImage)}" alt=""></div>` : ''}${r.explanation || !r.explImage ? `<div class="expl">${esc(dm(r.explanation)) || '(해설이 아직 없어요)'}</div>` : ''}
+  <div class="card"><h2>해설</h2>${r.explImage ? `<div class="wm"><img class="eimg" src="${esc(r.explImage)}" alt=""></div>` : ''}${r.explanation || !r.explImage ? `<div class="expl">${esc(dm(r.explanation)) || '(해설이 아직 없습니다)'}</div>` : ''}
   ${r.extra ? `<div class="expl">${esc(dm(r.extra))}</div>` : ''}</div>
   <button class="btn-big soft" id="nb">오답노트에 담기</button>
   <button class="primary btn-big" id="nx">다음 문제 도전 (-${me.cfg.PREVIEW_COST}P)</button>
   <button class="back" id="hm" style="margin:10px auto 0">${IC.home}홈으로</button>`, true);
-  $('#nb').onclick = async () => { try { await api('note/add', { pid: r.pid }); $('#nb').textContent = '오답노트에 담았어요'; $('#nb').disabled = true; } catch (e) { alert(e.message); } };
+  $('#nb').onclick = async () => { try { await api('note/add', { pid: r.pid }); $('#nb').textContent = '오답노트에 담았습니다'; $('#nb').disabled = true; } catch (e) { alert(e.message); } };
   if (r.correct) $('#nb').textContent = '오답노트에 담기 (맞힌 문제)';
   $('#nx').onclick = () => nextPreview(pickedGrade);
   $('#hm').onclick = () => loadMe();
@@ -364,9 +364,9 @@ async function renderHistory() {
   ${h.map((x) => `<div class="card"><div class="sub">${esc(x.grade)} · ${new Date(x.t).toLocaleString('ko-KR')} · <b class="${x.correct ? 'ok' : 'bad'}">${x.correct ? '정답 +' + x.reward : x.timeout ? '시간초과' : '오답'}</b></div>
   ${probHtml(x)}
   <p>내 답: ${esc(x.myAnswer || '-')} / 정답: <b>${esc(fa(x.answer))}</b></p>
-  ${x.explImage ? `<div class="wm"><img class="eimg" src="${esc(x.explImage)}" alt=""></div>` : ''}${x.explanation ? `<div class="expl">${esc(dm(x.explanation))}</div>` : ''}${x.extra ? `<div class="expl">${esc(dm(x.extra))}</div>` : ''}${x.pid ? `<button class="nbh" data-p="${esc(x.pid)}">오답노트에 담기</button>` : ''}</div>`).join('') || '<div class="card sub">아직 푼 문제가 없어요.</div>'}${navBar('hist')}`);
+  ${x.explImage ? `<div class="wm"><img class="eimg" src="${esc(x.explImage)}" alt=""></div>` : ''}${x.explanation ? `<div class="expl">${esc(dm(x.explanation))}</div>` : ''}${x.extra ? `<div class="expl">${esc(dm(x.extra))}</div>` : ''}${x.pid ? `<button class="nbh" data-p="${esc(x.pid)}">오답노트에 담기</button>` : ''}</div>`).join('') || '<div class="card sub">아직 푼 문제가 없습니다.</div>'}${navBar('hist')}`);
   bindNav();
-  document.querySelectorAll('.nbh').forEach((b) => b.onclick = async () => { try { await api('note/add', { pid: b.dataset.p }); b.textContent = '담았어요'; b.disabled = true; } catch (e) { alert(e.message); } });
+  document.querySelectorAll('.nbh').forEach((b) => b.onclick = async () => { try { await api('note/add', { pid: b.dataset.p }); b.textContent = '담았습니다'; b.disabled = true; } catch (e) { alert(e.message); } });
 }
 // 오답노트: 학생마다 따로, 메모와 분류 이름을 직접 정리한다
 let noteTag = '';
@@ -378,10 +378,10 @@ async function renderNotes() {
   ${list.length ? `<div class="row" style="margin-bottom:10px"><button data-t="" class="${noteTag === '' ? 'primary' : ''}" style="flex:0 0 auto">전체</button>${tags.map((t) => `<button data-t="${esc(t)}" class="${noteTag === t ? 'primary' : ''}" style="flex:0 0 auto">${esc(t)}</button>`).join('')}<button data-t="__none" class="${noteTag === '__none' ? 'primary' : ''}" style="flex:0 0 auto">분류 없음</button></div>` : ''}
   ${shown.map((n) => `<div class="card" data-p="${esc(n.pid)}"><div class="sub">${esc(n.grade)} · ${new Date(n.t).toLocaleDateString('ko-KR')}에 담음</div>
   ${probHtml(n)}
-  <button class="sh">정답·해설 보기</button><div class="shw" style="display:none"><p>정답: <b>${esc(fa(n.answer))}</b></p>${n.explImage ? `<div class="wm"><img class="eimg" src="${esc(n.explImage)}" alt=""></div>` : ''}${n.explanation || !n.explImage ? `<div class="expl">${esc(dm(n.explanation)) || '(해설이 아직 없어요)'}</div>` : ''}${n.extra ? `<div class="expl">${esc(dm(n.extra))}</div>` : ''}</div>
+  <button class="sh">정답·해설 보기</button><div class="shw" style="display:none"><p>정답: <b>${esc(fa(n.answer))}</b></p>${n.explImage ? `<div class="wm"><img class="eimg" src="${esc(n.explImage)}" alt=""></div>` : ''}${n.explanation || !n.explImage ? `<div class="expl">${esc(dm(n.explanation)) || '(해설이 아직 없습니다)'}</div>` : ''}${n.extra ? `<div class="expl">${esc(dm(n.extra))}</div>` : ''}</div>
   <label>분류 이름 (예: 집합, 실수, 다시 풀기)</label><input class="ntg" maxlength="20" value="${esc(n.tag)}" list="tgl">
-  <label>내 메모</label><textarea class="nmm" maxlength="1000" placeholder="왜 틀렸는지, 기억할 점을 적어 두세요">${esc(n.memo)}</textarea>
-  <div class="row"><button class="primary nsv">저장</button><button class="danger ndl">오답노트에서 빼기</button></div></div>`).join('') || `<div class="card sub">${list.length ? '이 분류에는 문제가 없어요.' : '아직 담은 문제가 없어요. 결과 화면이나 내 기록에서 “오답노트에 담기”를 눌러 보세요.'}</div>`}
+  <label>내 메모</label><textarea class="nmm" maxlength="1000" placeholder="왜 틀렸는지, 기억할 점을 적어 두십시오">${esc(n.memo)}</textarea>
+  <div class="row"><button class="primary nsv">저장</button><button class="danger ndl">오답노트에서 빼기</button></div></div>`).join('') || `<div class="card sub">${list.length ? '이 분류에는 문제가 없습니다.' : '아직 담은 문제가 없습니다. 결과 화면이나 내 기록에서 “오답노트에 담기”를 눌러 보십시오.'}</div>`}
   <datalist id="tgl">${tags.map((t) => `<option value="${esc(t)}">`).join('')}</datalist>${navBar('nt')}`);
   bindNav();
   document.querySelectorAll('[data-t]').forEach((b) => b.onclick = () => { noteTag = b.dataset.t; renderNotes(); });
@@ -389,7 +389,7 @@ async function renderNotes() {
     const pid = c.dataset.p;
     c.querySelector('.sh').onclick = () => { const w = c.querySelector('.shw'); w.style.display = w.style.display === 'none' ? '' : 'none'; math(w); };
     c.querySelector('.nsv').onclick = async () => { try { await api('note/update', { pid, memo: c.querySelector('.nmm').value, tag: c.querySelector('.ntg').value }); renderNotes(); } catch (e) { alert(e.message); } };
-    c.querySelector('.ndl').onclick = async () => { if (confirm('오답노트에서 뺄까요?')) { await api('note/del', { pid }); renderNotes(); } };
+    c.querySelector('.ndl').onclick = async () => { if (confirm('오답노트에서 빼시겠습니까?')) { await api('note/del', { pid }); renderNotes(); } };
   });
 }
 
@@ -404,12 +404,12 @@ const ago = (ms, now) => { if (!ms) return '기록 없음'; const m = Math.floor
 function renderModes() {
   setMode(null);
   app(`<div class="top"><img class="logo" src="logo.png" alt="캐슬수학"><button id="out" class="back" style="margin-right:-4px">${IC.out}로그아웃</button></div>
-  <div class="hello"><h1>${esc(me.name)}${esc(me.title || '님')}</h1><div class="sub">오늘은 어떤 모드로 할까요?</div></div>
+  <div class="hello"><h1>${esc(me.name)}${esc(me.title || '님')}</h1><div class="sub">모드를 선택하십시오.</div></div>
   <div class="modes">
-    <button class="mode hunt" id="m-normal"><b>🎯 포인트 사냥</b><span>문제를 풀고 포인트를 모아요</span></button>
-    <button class="mode season" id="m-season"><b>🏆 시즌 랭킹전</b><span>포인트 대신 순위 경쟁 · 더 어려운 문제 · 시즌이 끝나면 상품 이벤트</span></button>
-    ${me.isTeacher ? '<button class="mode roster" id="m-roster"><b>담당 학생 현황</b><span>내 반 학생들의 학습 현황을 봐요</span></button>' : ''}
-    ${me.isAdmin ? '<button class="mode adm" id="m-admin"><b>관리자 화면</b><span>학생 · 문제 · 시즌을 관리해요</span></button>' : ''}
+    <button class="mode hunt" id="m-normal"><b>포인트 사냥</b><span>문제를 풀어 포인트를 모읍니다.</span></button>
+    <button class="mode season" id="m-season"><b>시즌 랭킹전</b><span>포인트 없이 순위로 겨룹니다. 난이도가 높은 문제가 출제되고, 시즌이 끝나면 상품 이벤트가 있습니다.</span></button>
+    ${me.isTeacher ? '<button class="mode roster" id="m-roster"><b>담당 학생 현황</b><span>내 반 학생의 학습 현황을 확인합니다.</span></button>' : ''}
+    ${me.isAdmin ? '<button class="mode adm" id="m-admin"><b>관리자 화면</b><span>학생, 문제, 시즌을 관리합니다.</span></button>' : ''}
   </div>`, true);
   $('#out').onclick = logout;
   $('#m-normal').onclick = () => { setMode('normal'); renderHome(); };
@@ -426,23 +426,23 @@ async function renderSeason(notice) {
   const s = d.season;
   const head2 = `<div class="top"><button class="back" id="bk">${IC.back}모드 선택</button><span class="chip">시즌 랭킹전</span></div>`;
   if (!s) {
-    app(`${head2}<div class="card"><h2>🏆 시즌 랭킹전</h2><p class="sub">현재 진행중인 시즌이 없습니다.</p></div>`, true);
+    app(`${head2}<div class="card"><h2>시즌 랭킹전</h2><p class="sub">현재 진행중인 시즌이 없습니다.</p></div>`, true);
     $('#bk').onclick = renderModes; return;
   }
   const active = s.status === 'active', upcoming = s.status === 'upcoming';
   const left = Math.max(0, s.endsAt - d.serverNow), days = Math.floor(left / 86400000), hrs = Math.floor(left / 3600000) % 24;
-  const state = active ? `진행 중 · 종료까지 ${days > 0 ? days + '일 ' : ''}${hrs}시간` : upcoming ? `${fmtDay(s.startsAt)}에 시작해요` : '시즌이 끝났어요';
+  const state = active ? `진행 중 · 종료까지 ${days > 0 ? days + '일 ' : ''}${hrs}시간` : upcoming ? `${fmtDay(s.startsAt)}에 시작합니다` : '시즌이 끝났습니다';
   const draw = () => {
-    $('#sl').innerHTML = d.top.length ? seasonRows(d.top) : '<p class="sub">아직 점수를 낸 학생이 없어요.</p>';
+    $('#sl').innerHTML = d.top.length ? seasonRows(d.top) : '<p class="sub">아직 점수를 낸 학생이 없습니다.</p>';
   };
   app(`${head2}
   <div class="card"><h2 style="margin-bottom:4px">${esc(s.name)}</h2>
     <div class="sub">${fmtDay(s.startsAt)} ~ ${fmtDay(s.endsAt)} · ${state}</div>
-    ${s.prize ? `<div class="pbox">🎁 시즌 종료 후 상품 이벤트<br><span style="font-weight:600">${esc(s.prize)}</span></div>` : '<div class="pbox">🎁 시즌이 끝나면 상위 학생에게 상품 이벤트가 있어요</div>'}
+    ${s.prize ? `<div class="pbox">시즌 종료 후 상품 이벤트<br><span style="font-weight:600">${esc(s.prize)}</span></div>` : '<div class="pbox">시즌이 끝나면 상위 학생에게 상품 이벤트가 있습니다.</div>'}
     <div class="stat3"><div><b>${fmt(d.me.score)}</b><span>내 점수</span></div><div><b>${d.me.rank ? d.me.rank + '위' : '-'}</b><span>전체 순위</span></div><div><b>${d.total}명</b><span>참가 인원</span></div></div>
-    <ul class="rules"><li><b>학년 구분 없이 모두 함께</b> 순위를 겨뤄요. (중1부터 고2까지 한 판!)</li><li>포인트는 쓰지도, 받지도 않아요. 순위로만 겨뤄요.</li><li>포인트 사냥보다 어려운 문제(난이도 <b>${LV[s.minLevel]}</b> 이상)만 나와요.</li><li>맞히면 <b>난이도×10점</b>, 틀려도 감점은 없어요.</li><li>한 번 푼 문제는 이번 시즌에 다시 나오지 않아요.</li><li>한 문제당 제한시간 ${Math.round(s.timeLimitSec / 60)}분이에요.</li></ul>
+    <ul class="rules"><li><b>학년 구분 없이 모두 함께</b> 순위를 겨룹니다.</li><li>포인트는 쓰지도, 받지도 않습니다. 순위로만 겨룹니다.</li><li>포인트 사냥보다 어려운 문제(난이도 <b>${LV[s.minLevel]}</b> 이상)만 나옵니다.</li><li>맞히면 <b>난이도×10점</b>, 틀려도 감점은 없습니다.</li><li>한 번 푼 문제는 이번 시즌에 다시 나오지 않습니다.</li><li>문제당 제한시간 ${Math.round(s.timeLimitSec / 60)}분입니다.</li></ul>
     <div class="err" id="err">${esc(notice || '')}</div>
-    ${active && d.canPlay ? (d.poolLeft > 0 ? `<button class="primary btn-big" id="go">도전하기 (남은 문제 ${d.poolLeft}개)</button>` : '<p class="sub" style="margin-top:12px">이번 시즌 문제를 모두 풀었어요! 🎉</p>') : (!d.canPlay ? '<p class="sub" style="margin-top:12px">선생님·관리자는 순위만 볼 수 있어요.</p>' : '')}
+    ${active && d.canPlay ? (d.poolLeft > 0 ? `<button class="primary btn-big" id="go">도전하기 (남은 문제 ${d.poolLeft}개)</button>` : '<p class="sub" style="margin-top:12px">이번 시즌의 문제를 모두 풀었습니다.</p>') : (!d.canPlay ? '<p class="sub" style="margin-top:12px">선생님·관리자는 순위만 볼 수 있습니다.</p>' : '')}
   </div>
   <div class="card"><h2 style="display:flex;align-items:center;gap:8px">${trophy('#f5b82e')}시즌 순위 <span class="sub" style="font-weight:600">${d.total}명 참가</span></h2><div id="sl"></div></div>`, true);
   draw();
@@ -454,22 +454,22 @@ async function startSeason() {
   catch (e) { showErr(e.message); }
 }
 function renderSeasonResult(r) {
-  app(`<div class="card"><div class="res ${r.correct ? 'ok' : 'bad'}">${r.correct ? '정답이에요' : r.timeout ? '시간 초과' : '오답이에요'}</div>
-  <p class="fire">${r.correct ? `+${r.score}점 🏆` : '이번엔 점수를 얻지 못했어요'}</p>
+  app(`<div class="card"><div class="res ${r.correct ? 'ok' : 'bad'}">${r.correct ? '정답입니다' : r.timeout ? '시간 초과' : '오답입니다'}</div>
+  <p class="fire">${r.correct ? `+${r.score}점` : '점수를 얻지 못했습니다.'}</p>
   <p>정답: <b>${esc(fa(r.answer))}</b></p></div>
-  <div class="card"><h2>해설</h2>${r.explImage ? `<div class="wm"><img class="eimg" src="${esc(r.explImage)}" alt=""></div>` : ''}${r.explanation || !r.explImage ? `<div class="expl">${esc(dm(r.explanation)) || '(해설이 아직 없어요)'}</div>` : ''}
+  <div class="card"><h2>해설</h2>${r.explImage ? `<div class="wm"><img class="eimg" src="${esc(r.explImage)}" alt=""></div>` : ''}${r.explanation || !r.explImage ? `<div class="expl">${esc(dm(r.explanation)) || '(해설이 아직 없습니다)'}</div>` : ''}
   ${r.extra ? `<div class="expl">${esc(dm(r.extra))}</div>` : ''}</div>
   <button class="btn-big soft" id="nb">오답노트에 담기</button>
   <button class="primary btn-big" id="nx">다음 문제 도전</button>
   <button class="back" id="hm" style="margin:10px auto 0">${IC.rank}시즌 순위 보기</button>`, true);
-  $('#nb').onclick = async () => { try { await api('note/add', { pid: r.pid }); $('#nb').textContent = '오답노트에 담았어요'; $('#nb').disabled = true; } catch (e) { alert(e.message); } };
+  $('#nb').onclick = async () => { try { await api('note/add', { pid: r.pid }); $('#nb').textContent = '오답노트에 담았습니다'; $('#nb').disabled = true; } catch (e) { alert(e.message); } };
   $('#nx').onclick = async () => { try { const x = await api('season/start'); skew = x.serverNow - Date.now(); renderSolve(x.active); } catch (e) { renderSeason(e.message); } };
   $('#hm').onclick = () => renderSeason();
 }
 
 // 선생님: 담당 학생 현황
 function rosterTable(list, now, edit) {
-  if (!list.length) return '<p class="sub">배정된 학생이 없어요.</p>';
+  if (!list.length) return '<p class="sub">배정된 학생이 없습니다.</p>';
   const tdy = list.filter((s) => s.today > 0).length;
   return `<div class="stat3"><div><b>${list.length}</b><span>학생 수</span></div><div><b>${tdy}</b><span>오늘 푼 학생</span></div><div><b>${list.reduce((a, s) => a + s.week, 0)}</b><span>7일간 푼 문제</span></div></div>
   <div class="tbw"><table><tr>${edit ? '<th></th>' : ''}<th>학생</th><th>오늘 맞힘</th><th>7일 푼/맞힘</th><th>정답률</th><th>포인트</th><th>마지막</th></tr>
@@ -493,7 +493,7 @@ async function renderAdmin(tab) {
     if (tab === 'students') {
       const list = await api('admin/students');
       app(`${tabs(tab)}
-      <div class="card"><h2>학생 등록</h2><p class="sub">한 줄에 한 명씩 <b>학교이름+이름</b>으로 쓰세요 (예: 해원고이시현). 이 글자가 그대로 아이디가 돼요. 처음 비밀번호는 0000이고, 처음 로그인할 때 바꿔요.</p>
+      <div class="card"><h2>학생 등록</h2><p class="sub">한 줄에 한 명씩 <b>학교이름+이름</b>으로 쓰십시오 (예: 해원고이시현). 이 글자가 그대로 아이디가 됩니다. 처음 비밀번호는 0000이고, 처음 로그인할 때 바꿉니다.</p>
       <textarea id="nw" placeholder="해원고이시현&#10;신현고황서윤"></textarea><div class="err" id="err"></div><button class="primary" id="add">등록</button></div>
       <div class="card"><h2>포인트 지급 / 차감</h2><div class="row"><input id="amt" type="number" placeholder="포인트 (차감은 -)"><input id="why" placeholder="사유 (예: 일일테스트 우수)"><button class="primary" id="give">선택한 학생에게 적용</button></div><div class="err" id="err2"></div></div>
       <div class="card"><div class="row"><h2 style="flex:1">학생 ${list.length}명</h2><input id="q" placeholder="이름 검색"></div>
@@ -505,16 +505,16 @@ async function renderAdmin(tab) {
       $('#q').oninput = (e) => document.querySelectorAll('tr[data-id]').forEach((r) => r.style.display = r.dataset.id.includes(e.target.value.trim()) ? '' : 'none');
       $('#give').onclick = async () => {
         const ids = [...document.querySelectorAll('.ck:checked')].map((c) => c.value);
-        if (!ids.length) return ($('#err2').textContent = '학생을 먼저 선택해 주세요.');
-        try { const r = await api('admin/points', { ids, delta: $('#amt').value, reason: $('#why').value }); alert(r.count + '명에게 적용했어요.'); renderAdmin(tab); } catch (e) { $('#err2').textContent = e.message; }
+        if (!ids.length) return ($('#err2').textContent = '학생을 먼저 선택해 주십시오.');
+        try { const r = await api('admin/points', { ids, delta: $('#amt').value, reason: $('#why').value }); alert(r.count + '명에게 적용했습니다.'); renderAdmin(tab); } catch (e) { $('#err2').textContent = e.message; }
       };
-      document.querySelectorAll('.rs').forEach((b) => b.onclick = async () => { if (confirm(b.dataset.id + ' 비밀번호를 0000으로 초기화할까요?')) { await api('admin/resetpw', { id: b.dataset.id }); renderAdmin(tab); } });
-      document.querySelectorAll('.dl').forEach((b) => b.onclick = async () => { if (confirm(b.dataset.id + ' 학생을 삭제할까요? 되돌릴 수 없어요.')) { await api('admin/deletestudent', { id: b.dataset.id }); renderAdmin(tab); } });
+      document.querySelectorAll('.rs').forEach((b) => b.onclick = async () => { if (confirm(b.dataset.id + ' 비밀번호를 0000으로 초기화하시겠습니까?')) { await api('admin/resetpw', { id: b.dataset.id }); renderAdmin(tab); } });
+      document.querySelectorAll('.dl').forEach((b) => b.onclick = async () => { if (confirm(b.dataset.id + ' 학생을 삭제하시겠습니까? 되돌릴 수 없습니다.')) { await api('admin/deletestudent', { id: b.dataset.id }); renderAdmin(tab); } });
     } else if (tab === 'problems') {
       const list = await api('admin/problems');
       app(`${tabs(tab)}
       <div class="card"><div class="top"><h2>문제 ${list.length}개</h2><button class="danger" id="dall" ${list.length ? '' : 'disabled'}>전체 삭제</button></div>
-      <p class="sub">문제는 PDF·이미지로 올려 두었어요. 여기에서는 학생에게 보일지(켬/끔)와 삭제만 할 수 있어요.</p>
+      <p class="sub">문제는 PDF·이미지로 올려 두었습니다. 여기에서는 학생에게 보일지(켬/끔)와 삭제만 할 수 있습니다.</p>
       <div class="tbw"><table><tr><th>분류</th><th>문제</th><th>난이도</th><th>정답</th><th></th></tr>
       ${list.map((p, i) => `<tr><td>${esc(p.grade)}${p.active === false ? ' <span class="sub">(끔)</span>' : ''}<div class="sub">${esc([p.term, p.subject, p.unit_large, p.unit].filter(Boolean).join(' · '))}</div>${p.book ? `<div class="sub">출처: ${esc(p.book)}</div>` : ''}</td><td>${p.text ? esc(p.text.slice(0, 40)) + (p.text.length > 40 ? '…' : '') : `<span class="sub">${esc(p.src || '그림 문제')}</span>`}</td><td>${p.level ? LV[p.level] : '-'}</td><td>${esc(p.answer)}</td><td style="white-space:nowrap"><button class="tg" data-i="${i}">${p.active === false ? '켜기' : '끄기'}</button> <button class="danger dp" data-id="${p.id}">삭제</button></td></tr>`).join('')}</table></div></div>`);
       bindTabs();
@@ -522,8 +522,8 @@ async function renderAdmin(tab) {
         const p = list[b.dataset.i];
         try { await api('admin/problem', { id: p.id, grade: p.grade, answer: p.answer, text: p.text, explanation: p.explanation, extra: p.extra, image: p.image, expl_image: '@keep', active: p.active === false }); renderAdmin(tab); } catch (e) { alert(e.message); }
       });
-      $('#dall').onclick = async () => { if (!confirm(`등록된 문제 ${list.length}개를 전부 삭제할까요?\n되돌릴 수 없어요.`)) return; if (prompt('정말 전부 삭제하려면 "삭제"라고 입력하세요.') !== '삭제') return; try { const r = await api('admin/deleteall'); alert(`${r.deleted}개 삭제했어요.`); renderAdmin(tab); } catch (e) { alert(e.message); } };
-      document.querySelectorAll('.dp').forEach((b) => b.onclick = async () => { if (confirm('이 문제를 삭제할까요?')) { await api('admin/deleteproblem', { id: b.dataset.id }); renderAdmin(tab); } });
+      $('#dall').onclick = async () => { if (!confirm(`등록된 문제 ${list.length}개를 전부 삭제하시겠습니까?\n되돌릴 수 없습니다.`)) return; if (prompt('정말 전부 삭제하려면 "삭제"라고 입력하십시오.') !== '삭제') return; try { const r = await api('admin/deleteall'); alert(`${r.deleted}개 삭제했습니다.`); renderAdmin(tab); } catch (e) { alert(e.message); } };
+      document.querySelectorAll('.dp').forEach((b) => b.onclick = async () => { if (confirm('이 문제를 삭제하시겠습니까?')) { await api('admin/deleteproblem', { id: b.dataset.id }); renderAdmin(tab); } });
     } else if (tab === 'units') {
       const G = ['중1', '중2', '중3', '고1', '고2', '고3'], d = await api('admin/units');
       let cur = window.__ug || (G.find((g) => d.units.some((u) => u.grade === g)) || '고1');
@@ -532,11 +532,11 @@ async function renderAdmin(tab) {
         const key = (u) => `${u.subject}|${u.unit_large}|${u.unit}`, groups = [];
         us.forEach((u) => { const gk = u.subject + '|' + u.unit_large; let g = groups.find((x) => x.k === gk); if (!g) groups.push(g = { k: gk, subject: u.subject, large: u.unit_large, items: [] }); g.items.push(u); });
         app(`${tabs('units')}<div class="card"><h2>학생에게 보여줄 단원</h2>
-        <p class="sub">학년을 고르고, 지금 학생들에게 출제할 <b>대단원·중단원</b>에 체크한 뒤 저장하세요. 시험 시기에 맞춰 바꾸면 돼요. 체크한 단원의 문제만 나오고, <b>아무것도 저장하지 않은 학년은 모든 문제가 나와요.</b> 단원이 비어 있는 문제는 제한을 걸면 나오지 않아요.</p>
+        <p class="sub">학년을 고르고, 지금 학생들에게 출제할 <b>대단원·중단원</b>에 체크한 뒤 저장하십시오. 시험 시기에 맞춰 바꾸면 됩니다. 체크한 단원의 문제만 나오고, <b>아무것도 저장하지 않은 학년은 모든 문제가 나옵니다.</b> 단원이 비어 있는 문제는 제한을 걸면 나오지 않습니다.</p>
         <div class="grades" style="grid-template-columns:repeat(6,1fr);margin:10px 0">${G.map((g) => `<button data-g="${g}" class="${g === cur ? 'on' : ''}">${g}${Array.isArray(d.selected[g]) ? ' ✓' : ''}</button>`).join('')}</div>
-        <div class="banner" >${cur}: ${limited ? `선택한 ${sel.length}개 중단원의 문제만 출제 중` : '제한 없음 (등록된 모든 문제가 출제돼요)'}</div>
+        <div class="banner" >${cur}: ${limited ? `선택한 ${sel.length}개 중단원의 문제만 출제 중` : '제한 없음 (등록된 모든 문제가 출제됩니다)'}</div>
         ${us.length ? groups.map((g, gi) => `<div class="hist"><label style="margin:0;color:var(--ink)"><input type="checkbox" class="lg" data-gi="${gi}" style="width:auto"> <b>${esc(g.subject ? g.subject + ' · ' : '')}${esc(g.large || '(대단원 없음)')}</b> <span class="sub">${g.items.reduce((a, u) => a + u.n, 0)}문제</span></label>
-          ${g.items.map((u) => `<label style="margin:2px 0 2px 26px;color:var(--ink)"><input type="checkbox" class="un" data-gi="${gi}" value="${esc(key(u))}" ${limited && sel.includes(key(u)) ? 'checked' : ''} style="width:auto"> ${esc(u.unit || '(중단원 없음)')} <span class="sub">${u.n}문제</span></label>`).join('')}</div>`).join('') : '<p class="sub">이 학년에는 등록된 문제가 없어요.</p>'}
+          ${g.items.map((u) => `<label style="margin:2px 0 2px 26px;color:var(--ink)"><input type="checkbox" class="un" data-gi="${gi}" value="${esc(key(u))}" ${limited && sel.includes(key(u)) ? 'checked' : ''} style="width:auto"> ${esc(u.unit || '(중단원 없음)')} <span class="sub">${u.n}문제</span></label>`).join('')}</div>`).join('') : '<p class="sub">이 학년에는 등록된 문제가 없습니다.</p>'}
         <div class="row" style="margin-top:12px"><button class="primary" id="sv" ${us.length ? '' : 'disabled'}>저장</button><button id="all2">모두 체크</button><button id="none2">모두 해제</button><button class="danger" id="rel" ${limited ? '' : 'disabled'}>제한 풀기</button></div><div class="err" id="err"></div></div>`);
         bindTabs();
         document.querySelectorAll('[data-g]').forEach((b) => b.onclick = () => { cur = window.__ug = b.dataset.g; draw(); });
@@ -545,9 +545,9 @@ async function renderAdmin(tab) {
         document.querySelectorAll('.un').forEach((x) => x.onchange = sync); sync();
         $('#all2').onclick = () => { document.querySelectorAll('.un').forEach((x) => x.checked = true); sync(); };
         $('#none2').onclick = () => { document.querySelectorAll('.un').forEach((x) => x.checked = false); sync(); };
-        const save = async (units) => { try { await api('admin/setunits', { grade: cur, units }); if (units.length) d.selected[cur] = units; else delete d.selected[cur]; alert(units.length ? `${cur}: ${units.length}개 중단원만 출제돼요.` : `${cur}: 제한을 풀었어요. 모든 문제가 출제돼요.`); draw(); } catch (e) { showErr(e.message); } };
-        $('#sv').onclick = () => { const u = [...document.querySelectorAll('.un:checked')].map((x) => x.value); if (!u.length && !confirm('아무것도 체크하지 않으면 제한이 풀리고 모든 문제가 출제돼요. 계속할까요?')) return; save(u); };
-        $('#rel').onclick = () => { if (confirm(cur + ' 제한을 풀고 모든 문제를 출제할까요?')) save([]); };
+        const save = async (units) => { try { await api('admin/setunits', { grade: cur, units }); if (units.length) d.selected[cur] = units; else delete d.selected[cur]; alert(units.length ? `${cur}: ${units.length}개 중단원만 출제됩니다.` : `${cur}: 제한을 풀었습니다. 모든 문제가 출제됩니다.`); draw(); } catch (e) { showErr(e.message); } };
+        $('#sv').onclick = () => { const u = [...document.querySelectorAll('.un:checked')].map((x) => x.value); if (!u.length && !confirm('아무것도 체크하지 않으면 제한이 풀리고 모든 문제가 출제됩니다. 계속하시겠습니까?')) return; save(u); };
+        $('#rel').onclick = () => { if (confirm(cur + ' 제한을 풀고 모든 문제를 출제하시겠습니까?')) save([]); };
       };
       draw();
     } else if (tab === 'teams') {
@@ -555,10 +555,10 @@ async function renderAdmin(tab) {
       const sel = d.teachers.find((x) => x.id === window.__tt) ? window.__tt : (d.teachers[0] && d.teachers[0].id), t = d.teachers.find((x) => x.id === sel);
       app(`${tabs(tab)}<div class="card"><h2>선생님별 학생 현황</h2>
       <div class="seg">${d.teachers.map((x) => `<button class="tt ${x.id === sel ? 'on' : ''}" data-t="${esc(x.id)}">${esc(x.name)}${esc(x.title)} (${x.students.length})</button>`).join('')}</div>
-      ${t ? rosterTable(t.students, d.serverNow, true) : '<p class="sub">선생님 계정이 없어요.</p>'}
+      ${t ? rosterTable(t.students, d.serverNow, true) : '<p class="sub">선생님 계정이 없습니다.</p>'}
       ${t && t.students.length ? '<button class="danger" id="rrm" style="margin-top:8px">선택한 학생 이 반에서 빼기</button>' : ''}</div>
       ${t ? `<div class="card"><h2>${esc(t.name)}${esc(t.title)} 반에 학생 추가</h2>
-      <p class="sub">아이디를 한 줄에 하나씩 쓰거나, 아래 <b>아직 반이 없는 학생</b>에서 골라 주세요.</p>
+      <p class="sub">아이디를 한 줄에 하나씩 쓰거나, 아래 <b>아직 반이 없는 학생</b>에서 골라 주십시오.</p>
       <textarea id="radd" placeholder="해원고이시현&#10;신현고황서윤"></textarea>
       ${d.unassigned.length ? `<label>아직 반이 없는 학생 ${d.unassigned.length}명</label><div>${d.unassigned.map((u) => `<label class="pick"><input type="checkbox" class="ua" value="${esc(u.id)}">${esc(u.id)}<span class="gchip">${esc(u.grade || '-')}</span></label>`).join('')}</div>` : ''}
       <div class="err" id="err"></div><button class="primary" id="radd-go">추가</button></div>` : ''}`);
@@ -566,13 +566,13 @@ async function renderAdmin(tab) {
       document.querySelectorAll('.tt').forEach((b) => b.onclick = () => { window.__tt = b.dataset.t; renderAdmin('teams'); });
       if ($('#radd-go')) $('#radd-go').onclick = async () => {
         const ids = [...$('#radd').value.split(/\r?\n/).map((x) => x.trim()).filter(Boolean), ...[...document.querySelectorAll('.ua:checked')].map((c) => c.value)];
-        if (!ids.length) return showErr('추가할 학생을 골라 주세요.');
+        if (!ids.length) return showErr('추가할 학생을 골라 주십시오.');
         try { const r = await api('admin/roster_edit', { teacher: sel, add: ids }); if (r.missing) alert('없는 아이디: ' + r.missing); renderAdmin('teams'); } catch (e) { showErr(e.message); }
       };
       if ($('#rrm')) $('#rrm').onclick = async () => {
         const ids = [...document.querySelectorAll('.rk:checked')].map((c) => c.value);
-        if (!ids.length) return alert('빼려는 학생을 골라 주세요.');
-        if (!confirm(`${ids.length}명을 이 반에서 뺄까요? (학생 계정은 그대로 남아요)`)) return;
+        if (!ids.length) return alert('빼려는 학생을 골라 주십시오.');
+        if (!confirm(`${ids.length}명을 이 반에서 빼시겠습니까? (학생 계정은 그대로 남습니다)`)) return;
         try { await api('admin/roster_edit', { teacher: sel, remove: ids }); renderAdmin('teams'); } catch (e) { alert(e.message); }
       };
     } else if (tab === 'season') {
@@ -580,15 +580,15 @@ async function renderAdmin(tab) {
       const loc = (ms) => { const t = new Date(ms); return `${t.getFullYear()}-${z(t.getMonth() + 1)}-${z(t.getDate())}T${z(t.getHours())}:${z(t.getMinutes())}`; };
       const st = (s) => d.serverNow < s.startsAt ? '예정' : d.serverNow < s.endsAt ? '진행 중' : '종료';
       app(`${tabs(tab)}<div class="card"><h2 id="sft">새 시즌 만들기</h2>
-      <p class="sub">랭킹전 문제는 <b>난이도가 정해진 문제</b> 중에서 나와요. 지금 문제 수: 중 이상 <b>${d.pools[2]}개</b> · 상 이상 <b>${d.pools[3]}개</b> · 최상 <b>${d.pools[4]}개</b>. 시즌이 끝나면 아래에서 최종 순위를 보고 상품을 주세요.</p>
+      <p class="sub">랭킹전 문제는 <b>난이도가 정해진 문제</b> 중에서 나옵니다. 지금 문제 수: 중 이상 <b>${d.pools[2]}개</b> · 상 이상 <b>${d.pools[3]}개</b> · 최상 <b>${d.pools[4]}개</b>. 시즌이 끝나면 아래에서 최종 순위를 보고 상품을 주십시오.</p>
       <input type="hidden" id="sid"><label>시즌 이름</label><input id="sn" placeholder="예: 2026 겨울 시즌 1" maxlength="40">
       <div class="row"><div><label>시작</label><input id="ss" type="datetime-local" value="${loc(Date.now())}"></div><div><label>종료</label><input id="se" type="datetime-local" value="${loc(Date.now() + 14 * 86400000)}"></div></div>
       <label>나오는 문제 난이도 (이 난이도 이상)</label><select id="sl">${[1, 2, 3, 4, 5].map((n) => `<option value="${n}" ${n === 3 ? 'selected' : ''}>${LV[n]} 이상</option>`).join('')}</select>
-      <label>상품 안내 (학생 화면에 보여요)</label><input id="sp" placeholder="예: 1등 문화상품권 3만원, 2·3등 간식 쿠폰" maxlength="300">
+      <label>상품 안내 (학생 화면에 보입니다)</label><input id="sp" placeholder="예: 1등 문화상품권 3만원, 2·3등 간식 쿠폰" maxlength="300">
       <div class="err" id="err"></div><div class="row"><button class="primary" id="ssv">저장</button><button id="scl">새로 만들기</button></div></div>
       ${d.seasons.map((s) => `<div class="card"><div class="row" style="flex-wrap:nowrap"><h2 style="flex:1;margin:0">${esc(s.name)} <span class="chip">${st(s)}</span></h2><button class="se" data-i="${s.id}">수정</button><button class="danger sd" data-i="${s.id}">삭제</button></div>
-      <div class="sub" style="margin:6px 0">${fmtDay(s.startsAt)} ~ ${fmtDay(s.endsAt)} · 난이도 ${LV[s.minLevel]} 이상 문제 ${s.pool}개 · 참가 ${s.players}명${s.prize ? ' · 🎁 ' + esc(s.prize) : ''}</div>
-      ${s.top.length ? `<table><tr><th>순위</th><th>학생</th><th>학년</th><th>점수</th><th>맞힘</th></tr>${s.top.map((x) => `<tr><td>${x.rank}</td><td>${esc(x.id)}</td><td>${esc(x.grade || '-')}</td><td><b>${fmt(x.score)}</b></td><td>${x.ok}</td></tr>`).join('')}</table>` : '<p class="sub">아직 점수를 낸 학생이 없어요.</p>'}</div>`).join('')}`);
+      <div class="sub" style="margin:6px 0">${fmtDay(s.startsAt)} ~ ${fmtDay(s.endsAt)} · 난이도 ${LV[s.minLevel]} 이상 문제 ${s.pool}개 · 참가 ${s.players}명${s.prize ? ' · 상품: ' + esc(s.prize) : ''}</div>
+      ${s.top.length ? `<table><tr><th>순위</th><th>학생</th><th>학년</th><th>점수</th><th>맞힘</th></tr>${s.top.map((x) => `<tr><td>${x.rank}</td><td>${esc(x.id)}</td><td>${esc(x.grade || '-')}</td><td><b>${fmt(x.score)}</b></td><td>${x.ok}</td></tr>`).join('')}</table>` : '<p class="sub">아직 점수를 낸 학생이 없습니다.</p>'}</div>`).join('')}`);
       bindTabs();
       const clear = () => { $('#sft').textContent = '새 시즌 만들기'; $('#sid').value = ''; $('#sn').value = ''; $('#sp').value = ''; };
       $('#scl').onclick = clear;
@@ -602,14 +602,14 @@ async function renderAdmin(tab) {
         const s = d.seasons.find((x) => x.id === +b.dataset.i); $('#sft').textContent = '시즌 수정'; $('#sid').value = s.id; $('#sn').value = s.name; $('#ss').value = loc(s.startsAt); $('#se').value = loc(s.endsAt); $('#sl').value = s.minLevel; $('#sp').value = s.prize; scrollTo(0, 0);
       });
       document.querySelectorAll('.sd').forEach((b) => b.onclick = async () => {
-        if (!confirm('이 시즌과 시즌 기록을 모두 지울까요? 되돌릴 수 없어요.')) return;
+        if (!confirm('이 시즌과 시즌 기록을 모두 지우시겠습니까? 되돌릴 수 없습니다.')) return;
         try { await api('admin/season_delete', { id: +b.dataset.i }); renderAdmin('season'); } catch (e) { alert(e.message); }
       });
     } else if (tab === 'sus') {
       const days = window.__sd || 14, fast = window.__sf || 20, d = await api('admin/suspects', { days, fast });
-      app(`${tabs(tab)}<div class="card"><h2>풀이 분석</h2><p class="sub">정답을 <b>${fast}초 안에</b> 맞힌 횟수를 학생별로 보여 줘요. ${fast}초 안에 3번 이상, 맞힌 문제의 절반 이상이 그렇다면 <b>확인 필요</b>로 표시해요. AI나 다른 사람의 도움을 받았다는 증거는 아니고, 직접 물어볼 학생을 좁히는 용도예요.</p>
+      app(`${tabs(tab)}<div class="card"><h2>풀이 분석</h2><p class="sub">정답을 <b>${fast}초 안에</b> 맞힌 횟수를 학생별로 보여 줍니다. ${fast}초 안에 3번 이상, 맞힌 문제의 절반 이상이 그렇다면 <b>확인 필요</b>로 표시합니다. AI나 다른 사람의 도움을 받았다는 증거는 아니고, 직접 물어볼 학생을 좁히는 용도입니다.</p>
       <div class="row"><select id="sd">${[7, 14, 30, 90].map((x) => `<option value="${x}" ${x === days ? 'selected' : ''}>최근 ${x}일</option>`).join('')}</select><select id="sf">${[10, 15, 20, 30, 45, 60].map((x) => `<option value="${x}" ${x === fast ? 'selected' : ''}>${x}초 안에 정답</option>`).join('')}</select></div>
-      ${d.length ? `<table><tr><th>학생</th><th>푼 수</th><th>정답률</th><th>중간 시간</th><th>빠른 정답</th><th></th></tr>${d.map((r) => `<tr><td>${esc(r.sid)}</td><td>${r.n}</td><td>${r.rate}%</td><td>${r.median}초</td><td><b>${r.fastCount}</b></td><td>${r.flag ? '<b class="bad">확인 필요</b>' : ''}</td></tr>${r.fast.length ? `<tr><td colspan="6" class="sub" style="font-size:12px">${r.fast.map((f) => `${esc(f.src || '삭제된 문제')} ${f.sec}초`).join(' · ')}</td></tr>` : ''}`).join('')}</table>` : '<p class="sub">이 기간에 푼 기록이 없어요.</p>'}</div>`);
+      ${d.length ? `<table><tr><th>학생</th><th>푼 수</th><th>정답률</th><th>중간 시간</th><th>빠른 정답</th><th></th></tr>${d.map((r) => `<tr><td>${esc(r.sid)}</td><td>${r.n}</td><td>${r.rate}%</td><td>${r.median}초</td><td><b>${r.fastCount}</b></td><td>${r.flag ? '<b class="bad">확인 필요</b>' : ''}</td></tr>${r.fast.length ? `<tr><td colspan="6" class="sub" style="font-size:12px">${r.fast.map((f) => `${esc(f.src || '삭제된 문제')} ${f.sec}초`).join(' · ')}</td></tr>` : ''}`).join('')}</table>` : '<p class="sub">이 기간에 푼 기록이 없습니다.</p>'}</div>`);
       bindTabs();
       $('#sd').onchange = (e) => { window.__sd = +e.target.value; renderAdmin('sus'); };
       $('#sf').onchange = (e) => { window.__sf = +e.target.value; renderAdmin('sus'); };
@@ -622,19 +622,19 @@ async function renderAdmin(tab) {
       const c = await api('admin/cfg');
       const F = [['START_POINTS', '처음 지급 포인트 (새 학생에게만)'], ['PREVIEW_COST', '미리보기 차감 포인트'], ['PREVIEW_SEC', '미리보기 시간 (초)'], ['ACCEPT_COST', '풀기 선택 차감 포인트'], ['TIME_LIMIT_MIN', '문제 제한시간 (분)'], ['REWARD', '정답 보상 포인트'], ['MORNING_FROM', '주말·공휴일 2배 시작 (시)'], ['MORNING_TO', '주말·공휴일 2배 끝 (시)'], ['DAILY_BONUS_COUNT', '하루 맞힌 문제 N개 이상이면 2배']];
       c.TIME_LIMIT_MIN = c.TIME_LIMIT_SEC / 60;
-      app(`${tabs(tab)}<div class="card"><h2>규칙 값</h2><p class="sub">바꾼 값은 바로 적용돼요. 진행 중인 문제의 제한시간은 그대로예요.</p>
+      app(`${tabs(tab)}<div class="card"><h2>규칙 값</h2><p class="sub">바꾼 값은 바로 적용됩니다. 진행 중인 문제의 제한시간은 그대로입니다.</p>
       ${F.map(([k, n]) => `<label>${n}</label><input class="cf" data-k="${k}" type="number" value="${c[k]}">`).join('')}
       <div class="err" id="err"></div><button class="primary" id="sv">저장</button></div>`);
       bindTabs();
       $('#sv').onclick = async () => {
         const v = {}; document.querySelectorAll('.cf').forEach((i) => v[i.dataset.k] = i.value);
         v.TIME_LIMIT_SEC = Number(v.TIME_LIMIT_MIN) * 60; delete v.TIME_LIMIT_MIN;
-        try { await api('admin/setcfg', v); alert('저장했어요.'); } catch (e) { showErr(e.message); }
+        try { await api('admin/setcfg', v); alert('저장했습니다.'); } catch (e) { showErr(e.message); }
       };
     } else {
       app(`${tabs(tab)}<div class="card"><h2>관리자 비밀번호 변경</h2><input id="np" type="password" placeholder="새 비밀번호 (4자 이상)"><div class="err" id="err"></div><button class="primary" id="sv">변경</button></div>`);
       bindTabs();
-      $('#sv').onclick = async () => { try { await api('admin/adminpw', { pw: $('#np').value }); alert('변경했어요.'); $('#np').value = ''; } catch (e) { showErr(e.message); } };
+      $('#sv').onclick = async () => { try { await api('admin/adminpw', { pw: $('#np').value }); alert('변경했습니다.'); $('#np').value = ''; } catch (e) { showErr(e.message); } };
     }
   } catch (e) { if (token) alert(e.message); }
 }
