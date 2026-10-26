@@ -36,6 +36,10 @@ label{display:block;font-size:13px;font-weight:700;color:var(--sub);margin:14px 
 .grades button.on{background:var(--main);color:var(--main-ink);box-shadow:0 6px 16px rgba(43,107,255,.25)}
 .banner{background:var(--tint);color:var(--main);border:none;border-radius:14px;padding:11px 14px;margin-bottom:12px;font-weight:700;font-size:14px}
 .prob{white-space:pre-wrap;font-size:17.5px;line-height:1.8;padding:2px 0;word-break:keep-all;overflow-wrap:anywhere}
+/* 줄바꿈은 낱말(의미) 단위로: 한글이 글자 중간에서 끊기지 않게 */
+body{word-break:keep-all;overflow-wrap:break-word;line-break:strict}
+h1,h2,h3,.sub,.pbox,.rules li,.mode span,.banner,label,p{text-wrap:balance}
+td,th,input,textarea,.rk-nm,.chip,.gchip{overflow-wrap:anywhere;word-break:normal}
 .modes{display:grid;gap:12px;margin:18px 0}
 .mode{display:flex;flex-direction:column;align-items:flex-start;gap:5px;text-align:left;padding:19px 18px 18px;border-radius:20px;border:none;color:#fff;box-shadow:0 6px 18px rgba(20,30,60,.12);width:100%}
 .mode b{font-size:18.5px;letter-spacing:-.02em}
@@ -422,7 +426,7 @@ async function renderSeason(notice) {
   const s = d.season;
   const head2 = `<div class="top"><button class="back" id="bk">${IC.back}모드 선택</button><span class="chip">시즌 랭킹전</span></div>`;
   if (!s) {
-    app(`${head2}<div class="card"><h2>🏆 시즌 랭킹전</h2><p class="sub">아직 열린 시즌이 없어요. 시즌이 시작되면 여기에서 순위 경쟁에 참여할 수 있어요.</p></div>`, true);
+    app(`${head2}<div class="card"><h2>🏆 시즌 랭킹전</h2><p class="sub">아직 열린 시즌이 없어요.<br>시즌이 시작되면 여기에서 순위 경쟁에 참여할 수 있어요.</p></div>`, true);
     $('#bk').onclick = renderModes; return;
   }
   const active = s.status === 'active', upcoming = s.status === 'upcoming';
