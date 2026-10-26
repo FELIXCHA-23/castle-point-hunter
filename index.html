@@ -173,7 +173,8 @@ function renderLogin(msg, signup) {
   <div class="card"><label style="margin-top:0">아이디${signup ? ' (한글·영문·숫자 2~20자)' : ''}</label><input id="id" autocomplete="username" autocapitalize="none" autocorrect="off">
   <label>비밀번호${signup ? ' (4자 이상)' : ''}</label><input id="pw" type="password" autocomplete="${signup ? 'new-password' : 'current-password'}">
   <div class="err" id="err">${esc(msg || '')}</div>
-  <button class="primary btn-big" id="go" style="margin-top:6px">${signup ? '가입하고 시작하기' : '로그인'}</button></div>`, true);
+  <button class="primary btn-big" id="go" style="margin-top:6px">${signup ? '가입하고 시작하기' : '로그인'}</button></div>
+  ${signup ? '' : '<p class="sub" style="text-align:center;margin:14px 8px 0">비밀번호를 잊은 경우<br><b>차성빈 원장</b>에게 초기화를 요청하세요.</p>'}`, true);
   const go = async () => {
     try {
       const r = await api(signup ? 'register' : 'login', { id: $('#id').value, pw: $('#pw').value });
@@ -184,11 +185,13 @@ function renderLogin(msg, signup) {
   $('#go').onclick = go; $('#pw').onkeydown = (e) => { if (e.key === 'Enter') go(); };
 }
 function renderSetPw() {
-  app(`<div class="card" style="margin-top:8vh"><h1>비밀번호 설정</h1>
+  app(`<button class="back" id="bk" style="margin-top:14px">${IC.back}로그인 화면으로</button>
+  <div class="card" style="margin-top:10px"><h1>비밀번호 설정</h1>
   <p class="sub">처음 로그인했어요! 나만 아는 비밀번호를 정해 주세요. (4자 이상, 0000은 사용할 수 없어요)</p>
   <label>새 비밀번호 (4자 이상)</label><input id="p1" type="password" autocomplete="new-password">
   <label>한 번 더 입력</label><input id="p2" type="password" autocomplete="new-password">
   <div class="err" id="err"></div><button class="primary btn-big" id="go">저장하고 시작하기</button></div>`);
+  $('#bk').onclick = logout;
   $('#go').onclick = async () => {
     if ($('#p1').value !== $('#p2').value) return showErr('두 번 입력한 비밀번호가 달라요.');
     try { await api('setpw', { pw: $('#p1').value }); start(); } catch (e) { showErr(e.message); }
