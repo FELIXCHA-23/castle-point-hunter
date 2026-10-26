@@ -90,6 +90,10 @@ create or replace function castle.allowed_grades(st castle.students) returns tex
     else (select array_agg(g order by o) from unnest(castle.grades()) with ordinality as t(g, o)
           where o >= array_position(castle.grades(), st.grade)) end $$;
 
+-- 시즌 랭킹전: 점수는 학년 구분 없이 겨루되, 문제는 본인 학년 것만 나온다 (학년이 없는 계정은 전체)
+create or replace function castle.season_grade_ok(st_grade text, p_grade text) returns boolean language sql immutable as $$
+  select not (st_grade = any (castle.grades())) or st_grade = p_grade $$;
+
 create or replace function castle.cfg_all() returns jsonb language sql stable as $$
   select '{"START_POINTS":5000,"PREVIEW_COST":10,"PREVIEW_SEC":10,"ACCEPT_COST":100,"TIME_LIMIT_SEC":1800,"REWARD":500,"MORNING_FROM":7,"MORNING_TO":9,"DAILY_BONUS_COUNT":15}'::jsonb
          || coalesce((select data from castle.cfg where id = 1), '{}'::jsonb) $$;
@@ -818,7 +822,7 @@ begin
   end if;
   if s.id is null then return jsonb_build_object('season', null, 'serverNow', castle.ms(clock_timestamp())); end if;
   select jsonb_build_object('score', b.score, 'rank', b.r, 'gradeRank', b.gr, 'ok', b.ok, 'n', b.n) into v_me from castle.season_board(s.id) b where b.sid = st.id;
-  select count(*) into v_pool from castle.problems p where p.active and p.level >= s.min_level
+  select count(*) into v_pool from castle.problems p where p.active and p.level >= s.min_level and castle.season_grade_ok(st.grade, p.grade)
     and not exists (select 1 from castle.attempts x where x.sid = st.id and x.season_id = s.id and x.pid = p.id);
   return jsonb_build_object('serverNow', castle.ms(clock_timestamp()), 'grade', st.grade, 'canPlay', not st.is_teacher and not st.is_admin,
     'season', jsonb_build_object('id', s.id, 'name', s.name, 'status', v_status, 'startsAt', castle.ms(s.starts_at), 'endsAt', castle.ms(s.ends_at),
@@ -840,7 +844,7 @@ begin
     perform castle.fail(400, '진행 중인 문제가 있습니다.');
   end if;
   if s.id is null then perform castle.fail(400, '지금 진행 중인 시즌이 없습니다.'); end if;
-  select * into p from castle.problems q where q.active and q.level >= s.min_level
+  select * into p from castle.problems q where q.active and q.level >= s.min_level and castle.season_grade_ok(st.grade, q.grade)
     and not exists (select 1 from castle.attempts x where x.sid = st.id and x.season_id = s.id and x.pid = q.id) order by random() limit 1;
   if not found then perform castle.fail(400, '이번 시즌의 문제를 모두 풀었습니다. 새 문제가 등록되면 다시 도전할 수 있습니다.'); end if;
   insert into castle.attempts (sid, pid, grade, state, season_id, start_at, deadline, mult)
