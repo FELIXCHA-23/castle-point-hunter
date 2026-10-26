@@ -250,7 +250,7 @@ function renderPreview(a) {
   <div class="bar"><div id="b"></div></div>
   <div class="card" style="margin-top:12px" id="pv">${probHtml(a.problem)}</div>
   <button class="primary btn-big" id="ac">이 문제 풀기 (-${me.cfg.ACCEPT_COST}P)</button>
-  <button class="btn-big soft" id="sk" style="border-color:transparent">넘기기 (다음 문제)</button><div class="err" id="err"></div>`, true);
+  <button class="btn-big soft" id="sk" style="border-color:transparent">다음 문제로 넘기기 (-${me.cfg.PREVIEW_COST}P)</button><div class="err" id="err"></div>`, true);
   pickedGrade = a.problem.grade;
   const total = me.cfg.PREVIEW_SEC * 1000;
   const upd = () => {
