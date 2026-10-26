@@ -25,6 +25,7 @@ alter table castle.problems add column if not exists unit_large text not null de
 alter table castle.problems add column if not exists unit text not null default '';       -- 중단원 (2022 개정)
 alter table castle.problems add column if not exists src text not null default '';        -- 출처 (예: RPM 공통수학2 0312). 같은 출처로 다시 올리면 덮어씀
 create unique index if not exists problems_src_uq on castle.problems (src) where src <> '';
+alter table castle.problems add column if not exists expl_image text not null default '';  -- 해설을 그림(캡처)으로 올릴 때
 create table if not exists castle.attempts (
   id bigserial primary key, sid text not null references castle.students(id) on delete cascade,
   pid text not null, grade text not null, state text not null,
@@ -189,23 +190,27 @@ create or replace function castle.mask_name(n text) returns text language sql im
 
 create or replace function castle.upsert_problem(b jsonb) returns jsonb language plpgsql as $$
 declare v_id text := nullif(b->>'id', ''); v_ans text := castle.norm(b->>'answer'); v_txt text := left(btrim(coalesce(b->>'text', '')), 4000);
-        v_img text := coalesce(b->>'image', ''); v_src text := left(btrim(coalesce(b->>'src', '')), 200);
+        v_img text := coalesce(b->>'image', ''); v_eimg text := coalesce(b->>'expl_image', ''); v_src text := left(btrim(coalesce(b->>'src', '')), 200);
 begin
   if not ((b->>'grade') = any (castle.grades())) then perform castle.fail(400, '학년이 올바르지 않아요.'); end if;
-  if v_txt = '' then perform castle.fail(400, '문제 내용을 입력해 주세요.'); end if;
+  if v_txt = '' and v_img = '' then perform castle.fail(400, '문제 내용을 입력해 주세요.'); end if;
   if v_ans !~ '^-?[0-9]+(\.[0-9]+)?$' and v_ans !~ '^[ㄱ-ㅎ]+$' then perform castle.fail(400, '정답은 숫자(예: 12, -3, 0.5) 또는 보기 기호(예: ㄱ, ㄷ)만 쓸 수 있어요.'); end if;
-  if v_img <> '' and (v_img !~ '^data:image/(jpeg|png|webp|gif);base64,[A-Za-z0-9+/=]+$' or length(v_img) > 600000) then
+  if v_img not in ('', '@keep') and (v_img !~ '^data:image/(jpeg|png|webp|gif);base64,[A-Za-z0-9+/=]+$' or length(v_img) > 600000) then
     perform castle.fail(400, '그림이 올바르지 않거나 너무 커요.');
+  end if;
+  if v_eimg not in ('', '@keep') and (v_eimg !~ '^data:image/(jpeg|png|webp|gif);base64,[A-Za-z0-9+/=]+$' or length(v_eimg) > 600000) then
+    perform castle.fail(400, '해설 그림이 올바르지 않거나 너무 커요.');
   end if;
   if v_id is null and v_src <> '' then select id into v_id from castle.problems where src = v_src; end if;
   if v_id is null or not exists (select 1 from castle.problems where id = v_id) then
     v_id := encode(extensions.gen_random_bytes(5), 'hex');
-    insert into castle.problems (id, grade, text, answer, image, explanation, extra, active, term, subject, unit_large, unit, src)
-    values (v_id, b->>'grade', v_txt, v_ans, v_img, left(coalesce(b->>'explanation', ''), 6000), left(coalesce(b->>'extra', ''), 6000),
+    insert into castle.problems (id, grade, text, answer, image, expl_image, explanation, extra, active, term, subject, unit_large, unit, src)
+    values (v_id, b->>'grade', v_txt, v_ans, case when v_img = '@keep' then '' else v_img end, case when v_eimg = '@keep' then '' else v_eimg end, left(coalesce(b->>'explanation', ''), 6000), left(coalesce(b->>'extra', ''), 6000),
             coalesce((b->>'active')::boolean, true), left(coalesce(b->>'term', ''), 40), left(coalesce(b->>'subject', ''), 40),
             left(coalesce(b->>'unit_large', ''), 60), left(coalesce(b->>'unit', ''), 60), v_src);
   else
-    update castle.problems set grade = b->>'grade', text = v_txt, answer = v_ans, image = v_img,
+    update castle.problems set grade = b->>'grade', text = v_txt, answer = v_ans,
+           image = case when v_img = '@keep' then image else v_img end, expl_image = case when v_eimg = '@keep' then expl_image else v_eimg end,
            explanation = left(coalesce(b->>'explanation', ''), 6000), extra = left(coalesce(b->>'extra', ''), 6000),
            active = coalesce((b->>'active')::boolean, true),
            term = left(coalesce(b->>'term', term), 40), subject = left(coalesce(b->>'subject', subject), 40),
@@ -363,7 +368,7 @@ begin
   select * into p from castle.problems where id = a.pid;
   return jsonb_build_object('pid', a.pid, 'correct', a.correct, 'timeout', a.timeout, 'reward', a.reward, 'mult', a.mult,
     'points', (select points from castle.students where id = st.id),
-    'answer', coalesce(p.answer, ''), 'explanation', coalesce(p.explanation, ''), 'extra', coalesce(p.extra, ''));
+    'answer', coalesce(p.answer, ''), 'explanation', coalesce(p.explanation, ''), 'extra', coalesce(p.extra, ''), 'explImage', coalesce(p.expl_image, ''));
 end $$;
 
 create or replace function castle.r_history(tok text) returns jsonb language plpgsql as $$
@@ -372,8 +377,8 @@ begin
   return (select coalesce(jsonb_agg(jsonb_build_object('pid', q.pid, 't', castle.ms(q.end_at), 'grade', q.grade,
             'text', coalesce(q.ptext, '(삭제된 문제)'), 'image', case when q.rn <= 10 then coalesce(q.pimage, '') else '' end,
             'correct', q.correct, 'timeout', q.timeout, 'reward', q.reward, 'myAnswer', q.answer, 'answer', q.panswer,
-            'explanation', q.pexpl, 'extra', q.pextra) order by q.id desc), '[]')
-          from (select a.*, p.text as ptext, p.image as pimage, p.answer as panswer, p.explanation as pexpl, p.extra as pextra,
+            'explanation', q.pexpl, 'extra', q.pextra, 'explImage', case when q.rn <= 10 then coalesce(q.pexi, '') else '' end) order by q.id desc), '[]')
+          from (select a.*, p.text as ptext, p.image as pimage, p.answer as panswer, p.explanation as pexpl, p.extra as pextra, p.expl_image as pexi,
                        row_number() over (order by a.id desc) as rn
                 from castle.attempts a left join castle.problems p on p.id = a.pid
                 where a.sid = st.id and a.state = 'done' order by a.id desc limit 30) q);
@@ -385,7 +390,7 @@ declare st castle.students := castle.stu(tok);
 begin
   return (select coalesce(jsonb_agg(jsonb_build_object('pid', n.pid, 'memo', n.memo, 'tag', n.tag, 't', castle.ms(n.created_at),
             'grade', coalesce(p.grade, ''), 'text', coalesce(p.text, '(삭제된 문제)'), 'image', coalesce(p.image, ''),
-            'answer', coalesce(p.answer, ''), 'explanation', coalesce(p.explanation, ''), 'extra', coalesce(p.extra, ''))
+            'answer', coalesce(p.answer, ''), 'explanation', coalesce(p.explanation, ''), 'extra', coalesce(p.extra, ''), 'explImage', coalesce(p.expl_image, ''))
             order by n.created_at desc), '[]')
           from castle.notes n left join castle.problems p on p.id = n.pid where n.sid = st.id);
 end $$;
@@ -535,8 +540,8 @@ end $$;
 create or replace function castle.r_admin_problems(tok text) returns jsonb language plpgsql as $$
 begin
   perform castle.auth(tok, 'admin');
-  return (select coalesce(jsonb_agg(jsonb_build_object('id', id, 'grade', grade, 'text', text, 'answer', answer, 'image', image,
-            'explanation', explanation, 'extra', extra, 'active', active,
+  return (select coalesce(jsonb_agg(jsonb_build_object('id', id, 'grade', grade, 'text', text, 'answer', answer, 'image', case when length(image) > 30000 then '@keep' else image end,
+            'expl_image', case when expl_image <> '' then '@keep' else '' end, 'explanation', explanation, 'extra', extra, 'active', active,
             'term', term, 'subject', subject, 'unit_large', unit_large, 'unit', unit, 'src', src) order by created_at, id), '[]') from castle.problems);
 end $$;
 

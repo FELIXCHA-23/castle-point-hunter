@@ -43,6 +43,7 @@ label{display:block;font-size:13px;font-weight:700;color:var(--sub);margin:14px 
 .bar>div{height:100%;background:linear-gradient(90deg,#2b6bff,#5b9bff);width:100%;border-radius:8px}
 .timer{font-size:24px;font-weight:800;font-variant-numeric:tabular-nums;letter-spacing:-.02em}
 .res{font-size:28px;font-weight:800;letter-spacing:-.04em}.ok{color:var(--ok)}.bad{color:var(--bad)}
+.eimg{max-width:100%;display:block;margin:8px auto;border-radius:8px;background:#fff}
 .expl{white-space:pre-wrap;border-left:3px solid var(--main);padding:10px 14px;margin:12px 0;background:var(--bg);border-radius:0 12px 12px 0;line-height:1.75;overflow-wrap:anywhere}
 .err{color:var(--bad);min-height:20px;margin-top:8px;font-size:14px}
 table{width:100%;border-collapse:collapse;font-size:14px}
@@ -278,7 +279,7 @@ function renderResult(r) {
   app(`<div class="card"><div class="res ${r.correct ? 'ok' : 'bad'}">${r.correct ? '정답이에요' : r.timeout ? '시간 초과' : '오답이에요'}</div>
   ${r.correct ? `<p class="fire">+${fmt(r.reward)}P ${r.mult > 1 ? '(2배 적용)' : ''}</p>` : ''}
   <p>정답: <b>${esc(fa(r.answer))}</b></p><p class="pts">${fmt(r.points)} P</p></div>
-  <div class="card"><h2>해설</h2><div class="expl">${esc(dm(r.explanation)) || '(해설이 아직 없어요)'}</div>
+  <div class="card"><h2>해설</h2>${r.explImage ? `<img class="eimg" src="${esc(r.explImage)}" alt="">` : ''}${r.explanation || !r.explImage ? `<div class="expl">${esc(dm(r.explanation)) || '(해설이 아직 없어요)'}</div>` : ''}
   ${r.extra ? `<div class="expl">${esc(dm(r.extra))}</div>` : ''}</div>
   <button class="btn-big soft" id="nb">오답노트에 담기</button>
   <button class="primary btn-big" id="nx">다음 문제 도전 (-${me.cfg.PREVIEW_COST}P)</button>
@@ -294,7 +295,7 @@ async function renderHistory() {
   ${h.map((x) => `<div class="card"><div class="sub">${esc(x.grade)} · ${new Date(x.t).toLocaleString('ko-KR')} · <b class="${x.correct ? 'ok' : 'bad'}">${x.correct ? '정답 +' + x.reward : x.timeout ? '시간초과' : '오답'}</b></div>
   <div class="prob">${esc(dm(x.text))}${x.image ? `<img src="${esc(x.image)}" alt="">` : ''}</div>
   <p>내 답: ${esc(x.myAnswer || '-')} / 정답: <b>${esc(fa(x.answer))}</b></p>
-  <div class="expl">${esc(dm(x.explanation))}</div>${x.extra ? `<div class="expl">${esc(dm(x.extra))}</div>` : ''}${x.pid ? `<button class="nbh" data-p="${esc(x.pid)}">오답노트에 담기</button>` : ''}</div>`).join('') || '<div class="card sub">아직 푼 문제가 없어요.</div>'}${navBar('hist')}`);
+  ${x.explImage ? `<img class="eimg" src="${esc(x.explImage)}" alt="">` : ''}${x.explanation ? `<div class="expl">${esc(dm(x.explanation))}</div>` : ''}${x.extra ? `<div class="expl">${esc(dm(x.extra))}</div>` : ''}${x.pid ? `<button class="nbh" data-p="${esc(x.pid)}">오답노트에 담기</button>` : ''}</div>`).join('') || '<div class="card sub">아직 푼 문제가 없어요.</div>'}${navBar('hist')}`);
   bindNav();
   document.querySelectorAll('.nbh').forEach((b) => b.onclick = async () => { try { await api('note/add', { pid: b.dataset.p }); b.textContent = '담았어요'; b.disabled = true; } catch (e) { alert(e.message); } });
 }
@@ -308,7 +309,7 @@ async function renderNotes() {
   ${list.length ? `<div class="row" style="margin-bottom:10px"><button data-t="" class="${noteTag === '' ? 'primary' : ''}" style="flex:0 0 auto">전체</button>${tags.map((t) => `<button data-t="${esc(t)}" class="${noteTag === t ? 'primary' : ''}" style="flex:0 0 auto">${esc(t)}</button>`).join('')}<button data-t="__none" class="${noteTag === '__none' ? 'primary' : ''}" style="flex:0 0 auto">분류 없음</button></div>` : ''}
   ${shown.map((n) => `<div class="card" data-p="${esc(n.pid)}"><div class="sub">${esc(n.grade)} · ${new Date(n.t).toLocaleDateString('ko-KR')}에 담음</div>
   <div class="prob">${esc(dm(n.text))}${n.image ? `<img src="${esc(n.image)}" alt="">` : ''}</div>
-  <button class="sh">정답·해설 보기</button><div class="shw" style="display:none"><p>정답: <b>${esc(fa(n.answer))}</b></p><div class="expl">${esc(dm(n.explanation)) || '(해설이 아직 없어요)'}</div>${n.extra ? `<div class="expl">${esc(dm(n.extra))}</div>` : ''}</div>
+  <button class="sh">정답·해설 보기</button><div class="shw" style="display:none"><p>정답: <b>${esc(fa(n.answer))}</b></p>${n.explImage ? `<img class="eimg" src="${esc(n.explImage)}" alt="">` : ''}${n.explanation || !n.explImage ? `<div class="expl">${esc(dm(n.explanation)) || '(해설이 아직 없어요)'}</div>` : ''}${n.extra ? `<div class="expl">${esc(dm(n.extra))}</div>` : ''}</div>
   <label>분류 이름 (예: 집합, 실수, 다시 풀기)</label><input class="ntg" maxlength="20" value="${esc(n.tag)}" list="tgl">
   <label>내 메모</label><textarea class="nmm" maxlength="1000" placeholder="왜 틀렸는지, 기억할 점을 적어 두세요">${esc(n.memo)}</textarea>
   <div class="row"><button class="primary nsv">저장</button><button class="danger ndl">오답노트에서 빼기</button></div></div>`).join('') || `<div class="card sub">${list.length ? '이 분류에는 문제가 없어요.' : '아직 담은 문제가 없어요. 결과 화면이나 내 기록에서 “오답노트에 담기”를 눌러 보세요.'}</div>`}
@@ -381,7 +382,7 @@ async function renderAdmin(tab) {
         };
         im.onerror = () => showErr('그림을 읽을 수 없어요.'); im.src = u;
       };
-      $('#sv').onclick = async () => { try { await api('admin/problem', { id: $('#pid').value || undefined, grade: $('#gr').value, answer: $('#an').value, text: $('#tx').value, explanation: $('#ex').value, extra: $('#xt').value, image: img, active: $('#ac').checked }); renderAdmin(tab); } catch (e) { showErr(e.message); } };
+      $('#sv').onclick = async () => { try { await api('admin/problem', { id: $('#pid').value || undefined, grade: $('#gr').value, answer: $('#an').value, text: $('#tx').value, explanation: $('#ex').value, extra: $('#xt').value, image: img, expl_image: '@keep', active: $('#ac').checked }); renderAdmin(tab); } catch (e) { showErr(e.message); } };
       $('#cl').onclick = () => renderAdmin(tab);
       $('#imp').onclick = async () => { try { const r = await api('admin/import', { items: JSON.parse($('#js').value) }); alert(`등록 ${r.count}개` + (r.errors.length ? '\n' + r.errors.join('\n') : '')); renderAdmin(tab); } catch (e) { $('#err3').textContent = e.message; } };
       document.querySelectorAll('.ed').forEach((b) => b.onclick = () => { const p = list[b.dataset.i]; $('#ft').textContent = '문제 수정'; $('#pid').value = p.id; $('#gr').value = p.grade; $('#an').value = p.answer; $('#tx').value = p.text; $('#ex').value = p.explanation; $('#xt').value = p.extra; $('#ac').checked = p.active !== false; pvw(); img = p.image || ''; $('#imn').textContent = img ? '그림이 붙어 있어요 (새 그림을 고르면 바뀌어요)' : ''; scrollTo(0, 0); });
