@@ -348,6 +348,7 @@ function head() {
 }
 function bindHead() { $('#out').onclick = logout; if ($('#tomode')) $('#tomode').onclick = renderModes; if ($('#toadm')) $('#toadm').onclick = () => switchTo('admin'); $('#hist').onclick = renderHistory; $('#nt').onclick = renderNotes; bindNav(); }
 function renderHome(notice, toRank) {
+  if (!me.grades.includes(pickedGrade)) pickedGrade = me.grades.includes(me.grade) ? me.grade : null;
   const c = me.cfg, cnt = Math.min(me.todayCount, c.DAILY_BONUS_COUNT), left = Math.max(0, c.DAILY_BONUS_COUNT - me.todayCount);
   app(`${head()}
   <div class="card"><h2>오늘 맞힌 문제</h2>

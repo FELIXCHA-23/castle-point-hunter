@@ -84,6 +84,12 @@ create or replace function castle.ms(t timestamptz) returns bigint language sql 
 create or replace function castle.grades() returns text[] language sql immutable as $$
   select array['중1','중2','중3','고1','고2','고3'] $$;
 
+-- 본인 학년과 그 위 학년만 풀 수 있음 (아래 학년 제외). 학년 미지정·선생님·관리자는 전체.
+create or replace function castle.allowed_grades(st castle.students) returns text[] language sql immutable as $$
+  select case when st.is_admin or st.is_teacher or not (st.grade = any (castle.grades())) then castle.grades()
+    else (select array_agg(g order by o) from unnest(castle.grades()) with ordinality as t(g, o)
+          where o >= array_position(castle.grades(), st.grade)) end $$;
+
 create or replace function castle.cfg_all() returns jsonb language sql stable as $$
   select '{"START_POINTS":5000,"PREVIEW_COST":10,"PREVIEW_SEC":10,"ACCEPT_COST":100,"TIME_LIMIT_SEC":1800,"REWARD":500,"MORNING_FROM":7,"MORNING_TO":9,"DAILY_BONUS_COUNT":15}'::jsonb
          || coalesce((select data from castle.cfg where id = 1), '{}'::jsonb) $$;
@@ -350,7 +356,7 @@ declare st castle.students := castle.stu(tok); a castle.attempts := castle.settl
 begin
   select points into v_pts from castle.students where id = st.id;
   return jsonb_build_object('id', st.id, 'name', st.name, 'points', v_pts, 'mustChange', st.must_change, 'isAdmin', st.is_admin, 'isTeacher', st.is_teacher, 'title', st.title, 'grade', st.grade,
-    'grades', to_jsonb(castle.grades()), 'cfg', castle.cfg_all(), 'mult', castle.next_mult(st.id),
+    'grades', to_jsonb(castle.allowed_grades(st)), 'cfg', castle.cfg_all(), 'mult', castle.next_mult(st.id),
     'todayCount', castle.today_count(st.id), 'active', castle.active_view(a), 'serverNow', castle.ms(clock_timestamp()));
 end $$;
 
@@ -376,7 +382,7 @@ create or replace function castle.r_preview(tok text, b jsonb) returns jsonb lan
 declare st castle.students := castle.stu(tok); a castle.attempts := castle.settle(st.id); p castle.problems; v_g text := b->>'grade';
 begin
   if a.id is not null then perform castle.fail(400, '진행 중인 문제가 있습니다.'); end if;
-  if v_g is null or not (v_g = any (castle.grades())) then perform castle.fail(400, '학년을 선택해 주십시오.'); end if;
+  if v_g is null or not (v_g = any (castle.allowed_grades(st))) then perform castle.fail(400, '본인 학년 이상의 문제만 풀 수 있습니다.'); end if;
   if st.points < castle.c('PREVIEW_COST') then perform castle.fail(400, '포인트가 부족합니다.'); end if;
   select * into p from castle.problems where grade = v_g and active and not (id = any (st.done))
     and castle.unit_ok(v_g, subject, unit_large, unit)
