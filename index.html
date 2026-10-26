@@ -642,12 +642,12 @@ async function renderSeason(notice) {
     <div class="stat3"><div><b>${fmt(d.me.score)}</b><span>내 점수</span></div><div><b>${d.me.rank ? d.me.rank + '위' : '-'}</b><span>전체 순위</span></div><div><b>${d.total}명</b><span>참가 인원</span></div></div>
     <ul class="rules"><li>순위는 <b>학년 구분 없이 모두 함께</b> 겨룹니다.</li><li>문제는 <b>본인 학년의 문제</b>만 나옵니다.</li><li>랭킹전은 포인트의 적립 및 사용과 무관하며, 오직 점수제로만 운영됩니다.</li><li>랭킹전은 포인트 대신 순위만 있습니다.</li><li>포인트 사냥보다 어려운 문제(난이도 <b>${LV[s.minLevel]}</b> 이상)만 나옵니다.</li><li>점수는 문항의 난이도별로 다르고, 오답을 제출하면 감점이 됩니다. 맞히면 <b>난이도×10점</b>, 오답을 제출하면 <b>난이도×5점</b>이 감점됩니다. 시간 초과는 감점이 없습니다.</li><li>한 번 푼 문제는 이번 시즌에 다시 나오지 않습니다.</li><li>문제당 제한시간 ${Math.round(s.timeLimitSec / 60)}분입니다.</li></ul>
     <div class="err" id="err">${esc(notice || '')}</div>
-    ${d.pickGrades ? `<label style="margin-top:12px">도전할 학년</label><div class="seg" id="sg">${d.pickGrades.map((g) => `<button data-g="${g}" class="${g === d.selGrade ? 'on' : ''}">${g}</button>`).join('')}</div>` : ''}
+    ${d.lockedGrade ? `<div class="pbox">도전 학년 <b>${esc(d.lockedGrade)}</b> · 이번 시즌 동안 고정되어 바꿀 수 없습니다.</div>` : d.pickGrades ? `<label style="margin-top:12px">도전할 학년 (한 번 고르면 이번 시즌 동안 바꿀 수 없습니다)</label><div class="seg" id="sg">${d.pickGrades.map((g) => `<button data-g="${g}" class="${g === d.selGrade ? 'on' : ''}">${g}</button>`).join('')}</div>` : ''}
     ${active && d.canPlay ? (d.poolLeft > 0 ? `<button class="primary btn-big" id="go">도전하기 (남은 문제 ${d.poolLeft}개)</button>` : '<p class="sub" style="margin-top:12px">이번 시즌의 문제를 모두 풀었습니다.</p>') : (!d.canPlay ? '<p class="sub" style="margin-top:12px">선생님·관리자는 순위만 볼 수 있습니다.</p>' : '')}
   </div>
   <div class="card"><h2 style="display:flex;align-items:center;gap:8px">${trophy('#f5b82e')}시즌 순위 <span class="sub" style="font-weight:600">${d.total}명 참가</span></h2><div id="sl"></div></div>${navBar('season')}`);
   draw(); bindNav();
-  if ($('#go')) $('#go').onclick = startSeason;
+  if ($('#go')) $('#go').onclick = () => { if (d.pickGrades && !d.lockedGrade && !confirm(d.selGrade + ' 문제로 도전합니다. 이번 시즌 동안 학년을 바꿀 수 없습니다. 시작하시겠습니까?')) return; startSeason(); };
   document.querySelectorAll('#sg button').forEach((b) => b.onclick = () => { seasonGrade = b.dataset.g; renderSeason(); });
 }
 async function startSeason() {

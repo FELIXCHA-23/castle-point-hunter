@@ -863,7 +863,7 @@ language sql stable as $$
 
 create or replace function castle.r_season_info(tok text, b jsonb default '{}') returns jsonb language plpgsql as $$
 declare st castle.students := castle.stu(tok); s castle.seasons := castle.season_cur(); v_status text := 'active'; v_me jsonb; v_pool int := 0;
-        v_al text[] := castle.season_grades(st); v_pick boolean := coalesce(array_length(st.season_grades, 1), 0) > 1; v_sel text := nullif(b->>'grade', '');
+        v_al text[] := castle.season_grades(st); v_pick boolean := coalesce(array_length(st.season_grades, 1), 0) > 1; v_sel text := nullif(b->>'grade', ''); v_lock text;
 begin
   if s.id is null then
     select * into s from castle.seasons where now() < starts_at order by starts_at limit 1; v_status := 'upcoming';
@@ -871,6 +871,8 @@ begin
   end if;
   if s.id is null then return jsonb_build_object('season', null, 'serverNow', castle.ms(clock_timestamp())); end if;
   select jsonb_build_object('score', b.score, 'rank', b.r, 'gradeRank', b.gr, 'ok', b.ok, 'n', b.n) into v_me from castle.season_board(s.id) b where b.sid = st.id;
+  select a.grade into v_lock from castle.attempts a where a.sid = st.id and a.season_id = s.id order by a.id limit 1;   -- 한 번 고른 학년은 이번 시즌 동안 고정
+  if v_pick and v_lock = any (v_al) then v_sel := v_lock; end if;
   if v_pick and (v_sel is null or not (v_sel = any (v_al))) then v_sel := v_al[1]; end if;
   select count(*) into v_pool from castle.problems p where p.active and p.level >= s.min_level and (case when v_pick then p.grade = v_sel else p.grade = any (v_al) end)
     and not exists (select 1 from castle.attempts x where x.sid = st.id and x.season_id = s.id and x.pid = p.id);
@@ -878,7 +880,7 @@ begin
     'season', jsonb_build_object('id', s.id, 'name', s.name, 'status', v_status, 'startsAt', castle.ms(s.starts_at), 'endsAt', castle.ms(s.ends_at),
                                  'prize', s.prize, 'minLevel', s.min_level, 'timeLimitSec', castle.c('TIME_LIMIT_SEC')),
     'me', coalesce(v_me, jsonb_build_object('score', 0, 'rank', null, 'gradeRank', null, 'ok', 0, 'n', 0)), 'poolLeft', v_pool,
-    'pickGrades', case when v_pick then to_jsonb(v_al) end, 'selGrade', v_sel,
+    'pickGrades', case when v_pick then to_jsonb(v_al) end, 'selGrade', v_sel, 'lockedGrade', case when v_pick and v_lock = any (v_al) then v_lock end,
     'total', (select count(*) from castle.season_board(s.id)),
     'top', (select coalesce(jsonb_agg(jsonb_build_object('rank', b.r, 'name', castle.mask_name(b.name), 'grade', b.grade, 'score', b.score, 'ok', b.ok, 'me', b.sid = st.id) order by b.r), '[]')
             from castle.season_board(s.id) b where b.r <= 20),
@@ -888,7 +890,7 @@ end $$;
 
 create or replace function castle.r_season_start(tok text, b jsonb default '{}') returns jsonb language plpgsql as $$
 declare st castle.students := castle.stu(tok); a castle.attempts := castle.settle(st.id); s castle.seasons := castle.season_cur(); p castle.problems;
-        v_al text[] := castle.season_grades(st); v_pick boolean := coalesce(array_length(st.season_grades, 1), 0) > 1; v_sel text := nullif(b->>'grade', '');
+        v_al text[] := castle.season_grades(st); v_pick boolean := coalesce(array_length(st.season_grades, 1), 0) > 1; v_sel text := nullif(b->>'grade', ''); v_lock text;
 begin
   if st.is_teacher or st.is_admin then perform castle.fail(403, '시즌 랭킹전은 학생만 참가할 수 있습니다.'); end if;
   if a.id is not null then
@@ -896,7 +898,11 @@ begin
     perform castle.fail(400, '진행 중인 문제가 있습니다.');
   end if;
   if s.id is null then perform castle.fail(400, '지금 진행 중인 시즌이 없습니다.'); end if;
-  if v_pick and (v_sel is null or not (v_sel = any (v_al))) then perform castle.fail(400, '도전할 학년을 선택해 주십시오.'); end if;
+  if v_pick then
+    select x.grade into v_lock from castle.attempts x where x.sid = st.id and x.season_id = s.id order by x.id limit 1;
+    if v_lock = any (v_al) then v_sel := v_lock; end if;
+    if v_sel is null or not (v_sel = any (v_al)) then perform castle.fail(400, '도전할 학년을 선택해 주십시오.'); end if;
+  end if;
   select * into p from castle.problems q where q.active and q.level >= s.min_level and (case when v_pick then q.grade = v_sel else q.grade = any (v_al) end)
     and not exists (select 1 from castle.attempts x where x.sid = st.id and x.season_id = s.id and x.pid = q.id) order by random() limit 1;
   if not found then perform castle.fail(400, '이번 시즌의 문제를 모두 풀었습니다. 새 문제가 등록되면 다시 도전할 수 있습니다.'); end if;
