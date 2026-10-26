@@ -516,7 +516,7 @@ async function renderStats() {
 async function renderNotices() {
   const list = await api('notices');
   app(`${subTop('공지사항')}
-  ${list.map((n) => `<div class="card"><div class="sub">${n.pinned ? '<span class="chip">고정</span> ' : ''}${new Date(n.t).toLocaleDateString('ko-KR')}</div><h2 style="margin:6px 0">${esc(n.title)}</h2><div style="white-space:pre-wrap;line-height:1.65">${esc(n.body)}</div></div>`).join('') || '<div class="card sub">등록된 공지가 없습니다.</div>'}${navBar('more')}`);
+  ${list.map((n) => `<div class="card"><div class="sub">${n.pinned ? '<span class="chip">고정</span> ' : ''}<span style="white-space:nowrap">${ymd(n.t)}</span></div><h2 style="margin:6px 0">${esc(n.title)}</h2><div style="white-space:pre-wrap;line-height:1.65">${esc(n.body)}</div></div>`).join('') || '<div class="card sub">등록된 공지가 없습니다.</div>'}${navBar('more')}`);
   bindNav(); $('#bk').onclick = renderMore;
 }
 function renderGuide() {
@@ -574,6 +574,7 @@ async function renderNotes() {
 
 // ---------- 모드 선택 · 시즌 랭킹전 · 선생님 화면 ----------
 const LV = ['', '하', '중하', '중', '상', '최상'];
+const ymd = (ms) => { const d = new Date(ms); return d.getFullYear() + '.' + (d.getMonth() + 1) + '.' + d.getDate(); };
 const fmtDay = (ms) => new Date(ms).toLocaleDateString('ko-KR', { month: 'numeric', day: 'numeric' });
 const ago = (ms, now) => { if (!ms) return '기록 없음'; const m = Math.floor((now - ms) / 60000); if (m < 1) return '방금'; if (m < 60) return m + '분 전'; const hh = Math.floor(m / 60); if (hh < 24) return hh + '시간 전'; return Math.floor(hh / 24) + '일 전'; };
 
@@ -797,7 +798,7 @@ async function renderAdmin(tab) {
       <input id="nt1" maxlength="60" placeholder="제목"><textarea id="nb1" maxlength="2000" placeholder="내용" style="margin-top:8px"></textarea>
       <label style="display:flex;gap:8px;align-items:center"><input type="checkbox" id="np1" style="width:auto"> 맨 위에 고정</label>
       <div class="err" id="err"></div><button class="primary" id="sv">등록</button></div>
-      ${list.map((n) => `<div class="card"><div class="sub">${n.pinned ? '<span class="chip">고정</span> ' : ''}${new Date(n.t).toLocaleDateString('ko-KR')}</div><h2 style="margin:6px 0">${esc(n.title)}</h2><div style="white-space:pre-wrap">${esc(n.body)}</div><button class="danger ndl" data-i="${n.id}" style="margin-top:10px">삭제</button></div>`).join('')}`);
+      ${list.map((n) => `<div class="card"><div class="sub">${n.pinned ? '<span class="chip">고정</span> ' : ''}<span style="white-space:nowrap">${ymd(n.t)}</span></div><h2 style="margin:6px 0">${esc(n.title)}</h2><div style="white-space:pre-wrap">${esc(n.body)}</div><button class="danger ndl" data-i="${n.id}" style="margin-top:10px">삭제</button></div>`).join('')}`);
       bindTabs();
       $('#sv').onclick = async () => { try { await api('admin/notice/save', { title: $('#nt1').value, body: $('#nb1').value, pinned: $('#np1').checked }); renderAdmin('notice'); } catch (e) { showErr(e.message); } };
       document.querySelectorAll('.ndl').forEach((b) => b.onclick = async () => { if (confirm('이 공지를 삭제하시겠습니까?')) { await api('admin/notice/del', { id: Number(b.dataset.i) }); renderAdmin('notice'); } });
