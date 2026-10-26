@@ -275,8 +275,8 @@ function renderLogin(msg, signup) {
   <div class="card">${signup ? '' : '<div class="pbox" style="margin:0 0 4px">아이디는 학교+이름으로 이미 등록되어 있습니다.<br><span style="font-weight:600">(예시: 신현고차캐슬, 해원중김캐슬)</span></div>'}<label style="margin-top:10px">아이디${signup ? ' (한글·영문·숫자 2~20자)' : ''}</label><input id="id" autocomplete="username" autocapitalize="none" autocorrect="off">
   <label>비밀번호${signup ? ' (4자 이상)' : ''}</label><input id="pw" type="password" autocomplete="${signup ? 'new-password' : 'current-password'}">
   <div class="err" id="err">${esc(msg || '')}</div>
-  <button class="primary btn-big" id="go" style="margin-top:6px">${signup ? '가입하고 시작하기' : '로그인'}</button></div>
-  ${signup ? '' : '<p class="sub" style="text-align:center;margin:14px 8px 8px">비밀번호를 잊은 경우<br><b>차성빈 원장</b>에게 초기화를 요청하십시오.</p><div class="row" style="flex-wrap:nowrap"><a class="btnlink" id="sms" href="' + smsHref('') + '">문자 보내기</a><a class="btnlink" href="' + KAKAO_URL + '" target="_blank" rel="noopener">카카오톡 오픈채팅</a></div><button id="gst" style="display:block;width:100%;margin-top:14px;background:none;border:none;color:var(--sub);text-decoration:underline;font-weight:600">로그인 없이 구경하기</button>'}`, true);
+  <button class="primary btn-big" id="go" style="margin-top:6px">${signup ? '가입하고 시작하기' : '로그인'}</button>${signup ? '' : '<button class="btn-big" id="gst" style="margin-top:8px">로그인 없이 구경하기</button>'}</div>
+  ${signup ? '' : '<p class="sub" style="text-align:center;margin:14px 8px 8px">비밀번호를 잊은 경우<br><b>차성빈 원장</b>에게 초기화를 요청하십시오.</p><div class="row" style="flex-wrap:nowrap"><a class="btnlink" id="sms" href="' + smsHref('') + '">문자 보내기</a><a class="btnlink" href="' + KAKAO_URL + '" target="_blank" rel="noopener">카카오톡 오픈채팅</a></div>'}`, true);
   const go = async () => {
     try {
       const r = await api(signup ? 'register' : 'login', { id: $('#id').value, pw: $('#pw').value });
