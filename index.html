@@ -426,7 +426,7 @@ async function renderSeason(notice) {
   const s = d.season;
   const head2 = `<div class="top"><button class="back" id="bk">${IC.back}모드 선택</button><span class="chip">시즌 랭킹전</span></div>`;
   if (!s) {
-    app(`${head2}<div class="card"><h2>🏆 시즌 랭킹전</h2><p class="sub">아직 열린 시즌이 없어요.<br>시즌이 시작되면 여기에서 순위 경쟁에 참여할 수 있어요.</p></div>`, true);
+    app(`${head2}<div class="card"><h2>🏆 시즌 랭킹전</h2><p class="sub">현재 진행중인 시즌이 없습니다.</p></div>`, true);
     $('#bk').onclick = renderModes; return;
   }
   const active = s.status === 'active', upcoming = s.status === 'upcoming';
