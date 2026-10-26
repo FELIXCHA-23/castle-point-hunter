@@ -407,7 +407,7 @@ function renderModes() {
   <div class="hello"><h1>${esc(me.name)}${esc(me.title || '님')}</h1><div class="sub">모드를 선택하십시오.</div></div>
   <div class="modes">
     <button class="mode hunt" id="m-normal"><b>포인트 사냥</b><span>문제를 풀어 포인트를 모읍니다.</span></button>
-    <button class="mode season" id="m-season"><b>시즌 랭킹전</b><span>포인트 없이 순위로 겨룹니다. 난이도가 높은 문제가 출제되고, 시즌이 끝나면 상품 이벤트가 있습니다.</span></button>
+    <button class="mode season" id="m-season"><b>시즌 랭킹전</b><span>포인트 대신 순위 경쟁🏅<br>난이도 중상 이상😈<br>시즌 종료 시 소정의 상품🎁</span></button>
     ${me.isTeacher ? '<button class="mode roster" id="m-roster"><b>담당 학생 현황</b><span>내 반 학생의 학습 현황을 확인합니다.</span></button>' : ''}
     ${me.isAdmin ? '<button class="mode adm" id="m-admin"><b>관리자 화면</b><span>학생, 문제, 시즌을 관리합니다.</span></button>' : ''}
   </div>`, true);
