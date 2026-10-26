@@ -227,7 +227,7 @@ async function guestApi(path, b) {
       days[6].n = G.hist.length; days[6].ok = G.hist.filter((x) => x.ok).length;
       return { total: G.hist.length, ok: days[6].ok, days, byGrade: Object.values(bg).sort((a, b) => a.grade < b.grade ? -1 : 1), weak: [] };
     }
-    case 'notes': case 'history': return [];
+    case 'notes': case 'history': case 'catchu': return [];
     case 'note/add': throw new Error('체험모드에서는 저장되지 않습니다.');
   }
   throw new Error('체험모드에서는 사용할 수 없는 기능입니다.');
@@ -571,6 +571,7 @@ async function renderNotes() {
   const shown = list.filter((n) => (!noteUnit || n.unit === noteUnit) && inPeriod(n)).sort((a, b) => noteSort === 'old' ? a.t - b.t : b.t - a.t);
   const opt = (v, t, cur) => `<option value="${esc(v)}" ${v === cur ? 'selected' : ''}>${esc(t)}</option>`;
   app(`<div class="top"><h1 style="font-size:22px">내 오답노트 <span class="sub">${shown.length === list.length ? list.length + '개' : shown.length + ' / ' + list.length + '개'}</span></h1></div>
+<div class="seg"><button data-v="mine" class="on">내가 담은 문제</button><button data-v="catchu">캐치유 테스트</button></div>
   ${list.length ? `<div class="row" style="margin-bottom:10px;flex-wrap:wrap"><select id="fsrt">${opt('new', '최근 순', noteSort)}${opt('old', '오래된 순', noteSort)}</select><select id="fper">${opt('', '전체 기간', notePeriod)}${opt('7', '최근 7일', notePeriod)}${opt('30', '최근 30일', notePeriod)}${months.map((m) => opt(m, m.replace('-', '년 ') + '월', notePeriod)).join('')}</select>${units.length ? `<select id="funit">${opt('', '전체 단원', noteUnit)}${units.map((u) => opt(u, u, noteUnit)).join('')}</select>` : ''}</div>` : ''}
   ${shown.map((n) => `<div class="card" data-p="${esc(n.pid)}"><div class="sub">${esc(n.grade)}${n.unit ? ' · ' + esc(n.unit) : ''} · ${ymd(n.t)}에 담음</div>
   ${probHtml(n)}
@@ -579,6 +580,7 @@ async function renderNotes() {
   <div class="row"><button class="primary nsv">저장</button><button class="danger ndl">오답노트에서 빼기</button></div></div>`).join('') || `<div class="card sub">${list.length ? '조건에 맞는 문제가 없습니다.' : '아직 담은 문제가 없습니다. 결과 화면이나 내 기록에서 “오답노트에 담기”를 눌러 보십시오.'}</div>`}
   ${navBar('nt')}`);
   bindNav();
+  document.querySelectorAll('.seg [data-v=catchu]').forEach((b) => b.onclick = renderCatchu);
   if ($('#fsrt')) $('#fsrt').onchange = (e) => { noteSort = e.target.value; renderNotes(); };
   if ($('#fper')) $('#fper').onchange = (e) => { notePeriod = e.target.value; renderNotes(); };
   if ($('#funit')) $('#funit').onchange = (e) => { noteUnit = e.target.value; renderNotes(); };
@@ -590,6 +592,24 @@ async function renderNotes() {
   });
 }
 
+
+// 캐치유 테스트 오답: KMMS 에서 복사해 온 주차별 테스트 결과 (본인 것만 조회됨)
+async function renderCatchu() {
+  const list = await api('catchu');
+  const nums = (a) => (a || []).map((n) => esc(n) + '번').join(', ');
+  app(`<div class="top"><h1 style="font-size:22px">내 오답노트</h1></div>
+  <div class="seg"><button data-v="mine">내가 담은 문제</button><button data-v="catchu" class="on">캐치유 테스트</button></div>
+  ${list.map((r) => {
+    const wr = r.wrong || [], sw = r.stillWrong;
+    const retest = Array.isArray(sw) ? (sw.length ? `재시험 ${r.retestDate ? ymd(r.retestDate) : ''} · 아직 틀린 문항 <b>${nums(sw)}</b>` : `재시험 ${r.retestDate ? ymd(r.retestDate) : ''} · 모두 맞혔습니다`) : (wr.length ? '재시험 기록이 아직 없습니다' : '');
+    return `<div class="card"><div class="sub">${esc(r.grade)} · ${r.date ? ymd(r.date) : ''}</div><h2 style="margin:6px 0">${esc(r.title)}</h2>
+    ${wr.length ? `<p style="margin:0 0 6px">틀린 문항 <b>${nums(wr)}</b>${r.total ? ` <span class="sub">(전체 ${r.total}문항 중 ${wr.length}개)</span>` : ''}</p>` : '<p style="margin:0 0 6px">틀린 문항이 없습니다.</p>'}
+    ${retest ? `<p class="sub" style="margin:0">${retest}</p>` : ''}</div>`;
+  }).join('') || `<div class="card sub">${guest ? '체험모드에서는 캐치유 테스트 기록이 없습니다.' : '아직 가져온 캐치유 테스트 기록이 없습니다. 10월 4주차 테스트부터 이곳에 모입니다.'}</div>`}
+  ${navBar('nt')}`);
+  bindNav();
+  document.querySelectorAll('.seg [data-v=mine]').forEach((b) => b.onclick = renderNotes);
+}
 
 // ---------- 모드 선택 · 시즌 랭킹전 · 선생님 화면 ----------
 const LV = ['', '하', '중하', '중', '상', '최상'];
