@@ -519,16 +519,37 @@ create table if not exists castle.catchu_wrong (
   sid text not null references castle.students(id) on delete cascade,
   wrong jsonb not null default '[]', retest_date date, still_wrong jsonb,
   primary key (round_id, sid));
+create table if not exists castle.catchu_items (
+  round_id text not null references castle.catchu_rounds(id) on delete cascade,
+  no int not null, prob text not null default '', expl text not null default '',
+  primary key (round_id, no));
 alter table castle.catchu_rounds enable row level security;
+alter table castle.catchu_items enable row level security;
 alter table castle.catchu_wrong enable row level security;
 
 create or replace function castle.r_catchu(tok text) returns jsonb language plpgsql as $$
 declare st castle.students := castle.stu(tok);
 begin
   return (select coalesce(jsonb_agg(jsonb_build_object('id', r.id, 'title', r.title, 'date', r.date, 'grade', r.grade, 'total', r.total,
-            'wrong', w.wrong, 'retestDate', w.retest_date, 'stillWrong', w.still_wrong) order by r.date desc nulls last, r.title), '[]')
+            'wrong', w.wrong, 'retestDate', w.retest_date, 'stillWrong', w.still_wrong, 'have', to_jsonb(castle.catchu_have(r.id))) order by r.date desc nulls last, r.title), '[]')
           from castle.catchu_wrong w join castle.catchu_rounds r on r.id = w.round_id where w.sid = st.id);
 end $$;
+
+-- 본인이 틀린 문항의 문제·해설 이미지만 내려준다 (다른 문항·다른 학생 것은 내려주지 않음)
+create or replace function castle.r_catchu_item(tok text, b jsonb) returns jsonb language plpgsql as $$
+declare st castle.students := castle.stu(tok); v_no int := (b->>'no')::int; r castle.catchu_items;
+begin
+  if not exists (select 1 from castle.catchu_wrong w where w.round_id = b->>'roundId' and w.sid = st.id and w.wrong @> to_jsonb(v_no)) then
+    perform castle.fail(404, '해당 문항이 없습니다.');
+  end if;
+  select * into r from castle.catchu_items where round_id = b->>'roundId' and no = v_no;
+  if not found then return jsonb_build_object('prob', '', 'expl', ''); end if;
+  return jsonb_build_object('prob', r.prob, 'expl', r.expl);
+end $$;
+
+-- 문항 이미지가 올라가 있는 번호 목록 (이미지가 아직 없는 문항은 번호만 보임)
+create or replace function castle.catchu_have(p_round text) returns int[] language sql stable as $$
+  select coalesce(array_agg(no order by no), '{}') from castle.catchu_items where round_id = p_round and prob <> '' $$;
 
 -- KMMS 에서 뽑은 JSON ({rounds:[...], rows:[{roundId, sid, wrong, retestDate, stillWrong}]})을 넣는다. SQL 편집기에서만 호출 (앱 경로에는 연결하지 않음).
 create or replace function castle.catchu_import(j jsonb) returns jsonb language plpgsql as $$
@@ -1081,6 +1102,7 @@ begin
     when 'history' then return castle.r_history(tok);
     when 'stats' then return castle.r_stats(tok);
     when 'catchu' then return castle.r_catchu(tok);
+    when 'catchu/item' then return castle.r_catchu_item(tok, b);
     when 'notices' then return castle.r_notices(tok);
     when 'admin/notice/save' then return castle.r_admin_notice_save(tok, b);
     when 'admin/notice/del' then return castle.r_admin_notice_del(tok, b);

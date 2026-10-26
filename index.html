@@ -120,6 +120,8 @@ code{background:var(--bg);padding:1px 6px;border-radius:6px;font-size:.92em}
 .mpop .mrow:first-child{border-top:none}
 .mrow .sub{font-size:12.5px;font-weight:500;margin:0}
 .mrow i{font-style:normal;color:var(--sub);font-weight:400}
+.cn{padding:4px 11px;border-radius:6px;font-size:14px;font-weight:700;margin:0 2px 4px 0}
+.eimg{display:block;max-width:100%;height:auto}
 .dchart{display:flex;gap:6px;align-items:flex-end;height:120px;margin:12px 0 4px}
 .dcol{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:flex-end;height:100%;gap:4px;font-size:11.5px;color:var(--sub)}
 .dcol em{font-style:normal;font-weight:700;color:var(--ink);font-size:12px;font-variant-numeric:tabular-nums}
@@ -603,12 +605,24 @@ async function renderCatchu() {
     const wr = r.wrong || [], sw = r.stillWrong;
     const retest = Array.isArray(sw) ? (sw.length ? `재시험 ${r.retestDate ? ymd(r.retestDate) : ''} · 아직 틀린 문항 <b>${nums(sw)}</b>` : `재시험 ${r.retestDate ? ymd(r.retestDate) : ''} · 모두 맞혔습니다`) : (wr.length ? '재시험 기록이 아직 없습니다' : '');
     return `<div class="card"><div class="sub">${esc(r.grade)} · ${r.date ? ymd(r.date) : ''}</div><h2 style="margin:6px 0">${esc(r.title)}</h2>
-    ${wr.length ? `<p style="margin:0 0 6px">틀린 문항 <b>${nums(wr)}</b>${r.total ? ` <span class="sub">(전체 ${r.total}문항 중 ${wr.length}개)</span>` : ''}</p>` : '<p style="margin:0 0 6px">틀린 문항이 없습니다.</p>'}
+    ${wr.length ? `<p style="margin:0 0 6px">틀린 문항 ${wr.map((n) => (r.have || []).includes(n) ? `<button class="cn" data-r="${esc(r.id)}" data-n="${n}">${n}번</button>` : `<b>${n}번</b>`).join(' ')}${r.total ? ` <span class="sub">(전체 ${r.total}문항 중 ${wr.length}개)</span>` : ''}</p>${(r.have || []).some((n) => wr.includes(n)) ? '<p class="sub" style="margin:0 0 6px">번호를 누르면 문제와 해설이 보입니다.</p>' : ''}` : '<p style="margin:0 0 6px">틀린 문항이 없습니다.</p>'}
+    <div class="citem" data-r="${esc(r.id)}"></div>
     ${retest ? `<p class="sub" style="margin:0">${retest}</p>` : ''}</div>`;
   }).join('') || `<div class="card sub">${guest ? '체험모드에서는 캐치유 테스트 기록이 없습니다.' : '아직 가져온 캐치유 테스트 기록이 없습니다. 10월 4주차 테스트부터 이곳에 모입니다.'}</div>`}
   ${navBar('nt')}`);
   bindNav();
   document.querySelectorAll('.seg [data-v=mine]').forEach((b) => b.onclick = renderNotes);
+  document.querySelectorAll('.cn').forEach((b) => b.onclick = async () => {
+    const box = b.closest('.card').querySelector('.citem'), key = b.dataset.r + ':' + b.dataset.n;
+    if (box.dataset.k === key) { box.innerHTML = ''; box.dataset.k = ''; return; }
+    box.dataset.k = key; box.innerHTML = '<p class="sub">불러오는 중…</p>';
+    try {
+      const x = await api('catchu/item', { roundId: b.dataset.r, no: Number(b.dataset.n) });
+      box.innerHTML = `<div class="wm" style="margin-top:8px"><img class="eimg" src="${esc(x.prob)}" alt="${b.dataset.n}번 문제"></div>
+      ${x.expl ? `<button class="sh2" style="margin-top:8px">정답·해설 보기</button><div class="shw2" style="display:none;margin-top:8px"><div class="wm"><img class="eimg" src="${esc(x.expl)}" alt="해설"></div></div>` : ''}`;
+      const sb = box.querySelector('.sh2'); if (sb) sb.onclick = () => { const w = box.querySelector('.shw2'); w.style.display = w.style.display === 'none' ? '' : 'none'; };
+    } catch (e) { box.innerHTML = '<p class="sub">' + esc(e.message) + '</p>'; }
+  });
 }
 
 // ---------- 모드 선택 · 시즌 랭킹전 · 선생님 화면 ----------
