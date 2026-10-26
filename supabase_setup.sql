@@ -40,6 +40,7 @@ create table if not exists castle.seasons (
   min_level int not null default 4, prize text not null default '', created_at timestamptz not null default now());
 create table if not exists castle.reset_requests (
   id serial primary key, student text not null, created_at timestamptz not null default now(), done boolean not null default false);
+alter table castle.students add column if not exists season_grades text[];   -- 시즌 랭킹전에서 고를 수 있는 학년 (예외). 비우면 본인 학년만
 alter table castle.students add column if not exists last_seen timestamptz;   -- 마지막으로 앱을 연 시각 (관리자 화면에서 정렬용)
 alter table castle.reset_requests enable row level security;
 alter table castle.roster enable row level security;
@@ -92,8 +93,10 @@ create or replace function castle.allowed_grades(st castle.students) returns tex
           where o >= array_position(castle.grades(), st.grade)) end $$;
 
 -- 시즌 랭킹전: 점수는 학년 구분 없이 겨루되, 문제는 본인 학년 것만 나온다 (학년이 없는 계정은 전체)
-create or replace function castle.season_grade_ok(st_grade text, p_grade text) returns boolean language sql immutable as $$
-  select not (st_grade = any (castle.grades())) or st_grade = p_grade $$;
+create or replace function castle.season_grades(st castle.students) returns text[] language sql immutable as $$
+  select case when coalesce(array_length(st.season_grades, 1), 0) > 0 then st.season_grades
+              when st.grade = any (castle.grades()) then array[st.grade]
+              else castle.grades() end $$;
 
 create or replace function castle.cfg_all() returns jsonb language sql stable as $$
   select '{"START_POINTS":5000,"PREVIEW_COST":10,"PREVIEW_SEC":10,"ACCEPT_COST":100,"TIME_LIMIT_SEC":1800,"REWARD":500,"MORNING_FROM":7,"MORNING_TO":9,"DAILY_BONUS_COUNT":15}'::jsonb
@@ -858,8 +861,9 @@ language sql stable as $$
          row_number() over (partition by x.grade order by sc.score desc, sc.last_at asc)
   from sc join castle.students x on x.id = sc.sid $$;
 
-create or replace function castle.r_season_info(tok text) returns jsonb language plpgsql as $$
+create or replace function castle.r_season_info(tok text, b jsonb default '{}') returns jsonb language plpgsql as $$
 declare st castle.students := castle.stu(tok); s castle.seasons := castle.season_cur(); v_status text := 'active'; v_me jsonb; v_pool int := 0;
+        v_al text[] := castle.season_grades(st); v_pick boolean := coalesce(array_length(st.season_grades, 1), 0) > 1; v_sel text := nullif(b->>'grade', '');
 begin
   if s.id is null then
     select * into s from castle.seasons where now() < starts_at order by starts_at limit 1; v_status := 'upcoming';
@@ -867,12 +871,14 @@ begin
   end if;
   if s.id is null then return jsonb_build_object('season', null, 'serverNow', castle.ms(clock_timestamp())); end if;
   select jsonb_build_object('score', b.score, 'rank', b.r, 'gradeRank', b.gr, 'ok', b.ok, 'n', b.n) into v_me from castle.season_board(s.id) b where b.sid = st.id;
-  select count(*) into v_pool from castle.problems p where p.active and p.level >= s.min_level and castle.season_grade_ok(st.grade, p.grade)
+  if v_pick and (v_sel is null or not (v_sel = any (v_al))) then v_sel := v_al[1]; end if;
+  select count(*) into v_pool from castle.problems p where p.active and p.level >= s.min_level and (case when v_pick then p.grade = v_sel else p.grade = any (v_al) end)
     and not exists (select 1 from castle.attempts x where x.sid = st.id and x.season_id = s.id and x.pid = p.id);
   return jsonb_build_object('serverNow', castle.ms(clock_timestamp()), 'grade', st.grade, 'canPlay', not st.is_teacher and not st.is_admin,
     'season', jsonb_build_object('id', s.id, 'name', s.name, 'status', v_status, 'startsAt', castle.ms(s.starts_at), 'endsAt', castle.ms(s.ends_at),
                                  'prize', s.prize, 'minLevel', s.min_level, 'timeLimitSec', castle.c('TIME_LIMIT_SEC')),
     'me', coalesce(v_me, jsonb_build_object('score', 0, 'rank', null, 'gradeRank', null, 'ok', 0, 'n', 0)), 'poolLeft', v_pool,
+    'pickGrades', case when v_pick then to_jsonb(v_al) end, 'selGrade', v_sel,
     'total', (select count(*) from castle.season_board(s.id)),
     'top', (select coalesce(jsonb_agg(jsonb_build_object('rank', b.r, 'name', castle.mask_name(b.name), 'grade', b.grade, 'score', b.score, 'ok', b.ok, 'me', b.sid = st.id) order by b.r), '[]')
             from castle.season_board(s.id) b where b.r <= 20),
@@ -880,8 +886,9 @@ begin
             from castle.season_board(s.id) b where st.grade <> '' and b.grade = st.grade and b.gr <= 10));
 end $$;
 
-create or replace function castle.r_season_start(tok text) returns jsonb language plpgsql as $$
+create or replace function castle.r_season_start(tok text, b jsonb default '{}') returns jsonb language plpgsql as $$
 declare st castle.students := castle.stu(tok); a castle.attempts := castle.settle(st.id); s castle.seasons := castle.season_cur(); p castle.problems;
+        v_al text[] := castle.season_grades(st); v_pick boolean := coalesce(array_length(st.season_grades, 1), 0) > 1; v_sel text := nullif(b->>'grade', '');
 begin
   if st.is_teacher or st.is_admin then perform castle.fail(403, '시즌 랭킹전은 학생만 참가할 수 있습니다.'); end if;
   if a.id is not null then
@@ -889,7 +896,8 @@ begin
     perform castle.fail(400, '진행 중인 문제가 있습니다.');
   end if;
   if s.id is null then perform castle.fail(400, '지금 진행 중인 시즌이 없습니다.'); end if;
-  select * into p from castle.problems q where q.active and q.level >= s.min_level and castle.season_grade_ok(st.grade, q.grade)
+  if v_pick and (v_sel is null or not (v_sel = any (v_al))) then perform castle.fail(400, '도전할 학년을 선택해 주십시오.'); end if;
+  select * into p from castle.problems q where q.active and q.level >= s.min_level and (case when v_pick then q.grade = v_sel else q.grade = any (v_al) end)
     and not exists (select 1 from castle.attempts x where x.sid = st.id and x.season_id = s.id and x.pid = q.id) order by random() limit 1;
   if not found then perform castle.fail(400, '이번 시즌의 문제를 모두 풀었습니다. 새 문제가 등록되면 다시 도전할 수 있습니다.'); end if;
   insert into castle.attempts (sid, pid, grade, state, season_id, start_at, deadline, mult)
@@ -1077,8 +1085,8 @@ begin
     when 'admin/deletestudent' then return castle.r_admin_deletestudent(tok, b);
     when 'admin/adminpw' then return castle.r_admin_adminpw(tok, b);
     when 'switch' then return castle.r_switch(tok, b);
-    when 'season/info' then return castle.r_season_info(tok);
-    when 'season/start' then return castle.r_season_start(tok);
+    when 'season/info' then return castle.r_season_info(tok, b);
+    when 'season/start' then return castle.r_season_start(tok, b);
     when 'roster' then return castle.r_roster(tok);
     when 'admin/rosters' then return castle.r_admin_rosters(tok);
     when 'admin/roster_edit' then return castle.r_admin_roster_edit(tok, b);
