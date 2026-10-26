@@ -116,10 +116,24 @@ end $$;
 create or replace function castle.today_count(p_sid text) returns int language sql stable as $$
   select count(*)::int from castle.attempts where sid = p_sid and day = castle.kst_today() and correct is true $$;  -- 오늘 맞힌 문제 수만 센다
 
+-- 한국 공휴일(평일에 걸리는 날 + 대체공휴일). 해마다 새로 채워 넣어야 해요. 주말은 따로 계산해요.
+create or replace function castle.is_holiday(p_day date) returns boolean language sql immutable as $$
+  select p_day = any (array[
+    -- 2026
+    '2026-01-01', '2026-02-16', '2026-02-17', '2026-02-18', '2026-03-02', '2026-05-05', '2026-05-25', '2026-06-03',
+    '2026-08-17', '2026-09-24', '2026-09-25', '2026-10-05', '2026-10-09', '2026-12-25',
+    -- 2027
+    '2027-01-01', '2027-02-08', '2027-02-09', '2027-03-01', '2027-05-05', '2027-05-13', '2027-06-07', '2027-08-16',
+    '2027-09-14', '2027-09-15', '2027-09-16', '2027-10-04', '2027-10-11', '2027-12-27'
+  ]::date[]) $$;
+
 create or replace function castle.next_mult(p_sid text) returns jsonb language plpgsql stable as $$
 declare h int := extract(hour from now() at time zone 'Asia/Seoul')::int; m boolean; d boolean;
+        v_day date := (now() at time zone 'Asia/Seoul')::date;
 begin
-  m := h >= castle.c('MORNING_FROM') and h < castle.c('MORNING_TO');
+  -- 주말·공휴일 아침 시간대(기본 7~9시)에만 2배 이벤트
+  m := h >= castle.c('MORNING_FROM') and h < castle.c('MORNING_TO')
+       and (extract(dow from v_day) in (0, 6) or castle.is_holiday(v_day));
   d := castle.today_count(p_sid) >= castle.c('DAILY_BONUS_COUNT');  -- 오늘 맞힌 문제가 N개 이상이면 그 뒤부터 2배
   return jsonb_build_object('morning', m, 'daily', d, 'value', case when m or d then 2 else 1 end);
 end $$;

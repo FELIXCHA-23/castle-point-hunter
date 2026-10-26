@@ -169,7 +169,7 @@ function bindNav() {
 
 // ---------- 로그인 ----------
 function renderLogin(msg, signup) {
-  app(`<div style="text-align:center;margin:9vh 0 26px"><img class="logo logo-big" src="logo.png" alt="캐슬수학" style="margin:0 auto 18px"><h1>캐슬 포인트 헌터</h1><p class="sub" style="margin-top:6px">${signup ? '아이디와 비밀번호만 정하면 바로 시작해요' : '문제를 풀고 포인트를 모아 보세요'}</p></div>
+  app(`<div style="text-align:center;margin:9vh 0 26px"><img class="logo logo-big" src="logo.png" alt="캐슬수학" style="margin:0 auto 18px"><h1>캐슬 포인트 헌터</h1><p class="sub" style="margin-top:6px">${signup ? '아이디와 비밀번호만 정하면 바로 시작해요' : '수학문제를 풀고 포인트를 모아보세요.<br>주말, 공휴일 오전 7시~9시에는 2배 이벤트!! 🔥'}</p></div>
   <div class="card"><label style="margin-top:0">아이디${signup ? ' (한글·영문·숫자 2~20자)' : ''}</label><input id="id" autocomplete="username" autocapitalize="none" autocorrect="off">
   <label>비밀번호${signup ? ' (4자 이상)' : ''}</label><input id="pw" type="password" autocomplete="${signup ? 'new-password' : 'current-password'}">
   <div class="err" id="err">${esc(msg || '')}</div>
@@ -212,7 +212,7 @@ async function loadMe(notice) {
 }
 function head() {
   const m = me.mult;
-  const fire = m.value > 1 ? `<div class="banner">🔥 포인트 2배 적용 중${m.morning ? ' · 아침 7~9시 타임' : ''}${m.daily ? ` · 오늘 ${me.cfg.DAILY_BONUS_COUNT}문제 맞힘` : ''}</div>` : '';
+  const fire = m.value > 1 ? `<div class="banner">🔥 포인트 2배 적용 중${m.morning ? ' · 주말·공휴일 아침 타임' : ''}${m.daily ? ` · 오늘 ${me.cfg.DAILY_BONUS_COUNT}문제 맞힘` : ''}</div>` : '';
   return `<div class="top"><img class="logo" src="logo.png" alt="캐슬수학"><span style="display:flex;gap:4px;align-items:center">${me.isAdmin ? '<button id="toadm" class="back">관리자 화면</button>' : ''}<button id="out" class="back" style="margin-right:-4px">${IC.out}로그아웃</button></span></div>
   <div class="hello"><h1>${esc(me.name)}님</h1><div class="sub">오늘도 좋은 하루예요</div></div>
   <div class="card pcard"><div><div class="sub">총 포인트</div><div class="pts">${fmt(me.points)}<span style="font-size:16px;font-weight:700;color:var(--sub);margin-left:3px">P</span></div></div></div>
@@ -461,7 +461,7 @@ async function renderAdmin(tab) {
       bindTabs();
     } else if (tab === 'rules') {
       const c = await api('admin/cfg');
-      const F = [['START_POINTS', '처음 지급 포인트 (새 학생에게만)'], ['PREVIEW_COST', '미리보기 차감 포인트'], ['PREVIEW_SEC', '미리보기 시간 (초)'], ['ACCEPT_COST', '풀기 선택 차감 포인트'], ['TIME_LIMIT_MIN', '문제 제한시간 (분)'], ['REWARD', '정답 보상 포인트'], ['MORNING_FROM', '아침 2배 시작 (시)'], ['MORNING_TO', '아침 2배 끝 (시)'], ['DAILY_BONUS_COUNT', '하루 맞힌 문제 N개 이상이면 2배']];
+      const F = [['START_POINTS', '처음 지급 포인트 (새 학생에게만)'], ['PREVIEW_COST', '미리보기 차감 포인트'], ['PREVIEW_SEC', '미리보기 시간 (초)'], ['ACCEPT_COST', '풀기 선택 차감 포인트'], ['TIME_LIMIT_MIN', '문제 제한시간 (분)'], ['REWARD', '정답 보상 포인트'], ['MORNING_FROM', '주말·공휴일 2배 시작 (시)'], ['MORNING_TO', '주말·공휴일 2배 끝 (시)'], ['DAILY_BONUS_COUNT', '하루 맞힌 문제 N개 이상이면 2배']];
       c.TIME_LIMIT_MIN = c.TIME_LIMIT_SEC / 60;
       app(`${tabs(tab)}<div class="card"><h2>규칙 값</h2><p class="sub">바꾼 값은 바로 적용돼요. 진행 중인 문제의 제한시간은 그대로예요.</p>
       ${F.map(([k, n]) => `<label>${n}</label><input class="cf" data-k="${k}" type="number" value="${c[k]}">`).join('')}
