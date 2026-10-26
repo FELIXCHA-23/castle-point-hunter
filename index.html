@@ -61,6 +61,8 @@ td,th,input,textarea,.rk-nm,.chip,.gchip{overflow-wrap:anywhere;word-break:norma
 .tbw table{min-width:480px;font-size:13px}
 .pick{display:inline-flex;align-items:center;gap:6px;margin:3px 8px 3px 0;font-size:13.5px;font-weight:600;color:var(--ink)}
 .pick input{width:auto}
+.btnlink{display:inline-block;text-align:center;font-weight:700;color:var(--ink);background:var(--card);border:1px solid var(--line);padding:11px 15px;border-radius:8px;text-decoration:none;white-space:nowrap}
+.btnlink.wide{display:block;padding:14px}
 .gchip{display:inline-block;margin-left:5px;padding:1px 6px;border-radius:4px;background:var(--bg);color:var(--sub);font-size:11.5px;font-weight:700}
 .pnote .katex{font-size:1.5em;color:var(--ink)}
 .katex .frac-line{border-bottom-style:solid!important;border-bottom-color:currentColor;min-height:1px}
@@ -200,7 +202,7 @@ function renderLogin(msg, signup) {
   <label>비밀번호${signup ? ' (4자 이상)' : ''}</label><input id="pw" type="password" autocomplete="${signup ? 'new-password' : 'current-password'}">
   <div class="err" id="err">${esc(msg || '')}</div>
   <button class="primary btn-big" id="go" style="margin-top:6px">${signup ? '가입하고 시작하기' : '로그인'}</button></div>
-  ${signup ? '' : '<p class="sub" style="text-align:center;margin:14px 8px 8px">비밀번호를 잊은 경우<br><b>차성빈 원장</b>에게 초기화를 요청하십시오.</p><button id="rq" style="display:block;margin:0 auto">비밀번호 초기화 요청</button>'}`, true);
+  ${signup ? '' : '<p class="sub" style="text-align:center;margin:14px 8px 8px">비밀번호를 잊은 경우<br><b>차성빈 원장</b>에게 초기화를 요청하십시오.</p><div class="row" style="justify-content:center;flex-wrap:nowrap"><button id="rq">비밀번호 초기화 요청</button><a class="btnlink" id="sms" href="' + smsHref('') + '">문자 보내기</a></div>'}`, true);
   const go = async () => {
     try {
       const r = await api(signup ? 'register' : 'login', { id: $('#id').value, pw: $('#pw').value });
@@ -210,14 +212,19 @@ function renderLogin(msg, signup) {
   };
   $('#go').onclick = go; $('#pw').onkeydown = (e) => { if (e.key === 'Enter') go(); };
   if ($('#rq')) $('#rq').onclick = () => renderResetRequest($('#id').value);
+  if ($('#sms')) $('#sms').onclick = () => { $('#sms').href = smsHref($('#id').value.trim()); };
 }
+const SMS_NO = '01026462308';
+const smsHref = (id) => 'sms:' + SMS_NO + '?&body=' + encodeURIComponent('[캐슬 포인트 헌터] 비밀번호 초기화 요청\n아이디: ' + (id || ''));
 function renderResetRequest(id0) {
   app(`<button class="back" id="bk" style="margin-top:14px">${IC.back}로그인 화면으로</button>
   <div class="card" style="margin-top:10px"><h1>비밀번호 초기화 요청</h1>
   <p class="sub" style="margin-top:8px">아이디를 입력하고 요청하면 원장에게 전달됩니다. 확인 후 비밀번호가 0000으로 초기화되며, 다음 로그인 때 새 비밀번호를 정하게 됩니다.</p>
   <label>아이디 (예: 해원고이시현)</label><input id="rid" autocomplete="username" autocapitalize="none" autocorrect="off" value="${esc(id0 || '')}">
-  <div class="err" id="err"></div><button class="primary btn-big" id="go">초기화 요청</button></div>`, true);
+  <div class="err" id="err"></div><button class="primary btn-big" id="go">초기화 요청</button>
+  <p class="sub" style="margin:14px 0 6px">바로 연락하려면 원장에게 문자를 보낼 수 있습니다.</p><a class="btnlink wide" id="sms2" href="${smsHref(id0)}">원장에게 문자 보내기</a></div>`, true);
   $('#bk').onclick = () => renderLogin();
+  $('#sms2').onclick = () => { $('#sms2').href = smsHref($('#rid').value.trim()); };
   $('#go').onclick = async () => {
     try {
       const r = await api('reset/request', { id: $('#rid').value });
