@@ -38,6 +38,9 @@ create table if not exists castle.roster (
 create table if not exists castle.seasons (
   id serial primary key, name text not null, starts_at timestamptz not null, ends_at timestamptz not null,
   min_level int not null default 4, prize text not null default '', created_at timestamptz not null default now());
+create table if not exists castle.reset_requests (
+  id serial primary key, student text not null, created_at timestamptz not null default now(), done boolean not null default false);
+alter table castle.reset_requests enable row level security;
 alter table castle.roster enable row level security;
 alter table castle.seasons enable row level security;
 alter table castle.problems add column if not exists expl_image text not null default '';  -- 해설을 그림(캡처)으로 올릴 때
@@ -561,7 +564,32 @@ begin
   update castle.students set pw_hash = extensions.crypt('0000', extensions.gen_salt('bf', 6)), must_change = true where id = b->>'id';
   if not found then perform castle.fail(404, '학생이 없습니다.'); end if;
   delete from castle.sessions where id = b->>'id';
+  update castle.reset_requests set done = true where student = b->>'id' and not done;
   return jsonb_build_object('ok', true);
+end $$;
+
+-- 비밀번호 초기화 요청 (로그인 전에 학생이 보냄)
+create or replace function castle.r_reset_request(b jsonb) returns jsonb language plpgsql as $$
+declare v_id text := regexp_replace(normalize(coalesce(b->>'id', ''), NFC), '\s', '', 'g');
+begin
+  if v_id = '' or lower(v_id) = 'admin' or not exists (select 1 from castle.students where id = v_id) then
+    perform castle.fail(400, '등록되지 않은 아이디입니다. 아이디를 다시 확인해 주십시오.');
+  end if;
+  if exists (select 1 from castle.reset_requests where student = v_id and not done) then
+    return jsonb_build_object('ok', true, 'dup', true);
+  end if;
+  if (select count(*) from castle.reset_requests where not done) >= 300 then
+    perform castle.fail(429, '요청이 많아 접수할 수 없습니다. 원장에게 직접 문의해 주십시오.');
+  end if;
+  insert into castle.reset_requests (student) values (v_id);
+  return jsonb_build_object('ok', true);
+end $$;
+
+create or replace function castle.r_admin_resets(tok text) returns jsonb language plpgsql as $$
+begin
+  perform castle.auth(tok, 'admin');
+  return (select coalesce(jsonb_agg(jsonb_build_object('id', q.student, 'name', x.name, 'grade', x.grade, 't', castle.ms(q.created_at)) order by q.id), '[]')
+          from castle.reset_requests q join castle.students x on x.id = q.student where not q.done);
 end $$;
 
 create or replace function castle.r_admin_deletestudent(tok text, b jsonb) returns jsonb language plpgsql as $$
@@ -865,6 +893,8 @@ begin
   case p_path
     when 'login' then return castle.r_login(b);
     when 'register' then return castle.r_register(b);
+    when 'reset/request' then return castle.r_reset_request(b);
+    when 'admin/resets' then return castle.r_admin_resets(tok);
     when 'logout' then return castle.r_logout(tok);
     when 'setpw' then return castle.r_setpw(tok, b);
     when 'me' then return castle.r_me(tok);

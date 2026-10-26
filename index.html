@@ -195,12 +195,12 @@ function bindNav() {
 
 // ---------- 로그인 ----------
 function renderLogin(msg, signup) {
-  app(`<div style="text-align:center;margin:9vh 0 26px"><img class="logo logo-big" src="logo.png" alt="캐슬수학" style="margin:0 auto 18px"><h1>캐슬 포인트 헌터</h1><p class="sub" style="margin-top:6px">${signup ? '아이디와 비밀번호만 정하면 바로 시작합니다' : '수학문제를 풀고 포인트를 모아보십시오.<br>주말, 공휴일 오전 7시~9시에는 2배 이벤트!! 🔥'}</p></div>
+  app(`<div style="text-align:center;margin:9vh 0 26px"><img class="logo logo-big" src="logo.png" alt="캐슬수학" style="margin:0 auto 18px"><h1>캐슬 포인트 헌터</h1><p class="sub" style="margin-top:6px">${signup ? '아이디와 비밀번호만 정하면 바로 시작합니다' : '수학문제를 풀고 포인트를 모아보자!<br>주말, 공휴일 오전 7시~9시에는 2배 이벤트!! 🔥'}</p></div>
   <div class="card"><label style="margin-top:0">아이디${signup ? ' (한글·영문·숫자 2~20자)' : ''}</label><input id="id" autocomplete="username" autocapitalize="none" autocorrect="off">
   <label>비밀번호${signup ? ' (4자 이상)' : ''}</label><input id="pw" type="password" autocomplete="${signup ? 'new-password' : 'current-password'}">
   <div class="err" id="err">${esc(msg || '')}</div>
   <button class="primary btn-big" id="go" style="margin-top:6px">${signup ? '가입하고 시작하기' : '로그인'}</button></div>
-  ${signup ? '' : '<p class="sub" style="text-align:center;margin:14px 8px 0">비밀번호를 잊은 경우<br><b>차성빈 원장</b>에게 초기화를 요청하십시오.</p>'}`, true);
+  ${signup ? '' : '<p class="sub" style="text-align:center;margin:14px 8px 8px">비밀번호를 잊은 경우<br><b>차성빈 원장</b>에게 초기화를 요청하십시오.</p><button id="rq" style="display:block;margin:0 auto">비밀번호 초기화 요청</button>'}`, true);
   const go = async () => {
     try {
       const r = await api(signup ? 'register' : 'login', { id: $('#id').value, pw: $('#pw').value });
@@ -209,6 +209,22 @@ function renderLogin(msg, signup) {
     } catch (e) { showErr(e.message); }
   };
   $('#go').onclick = go; $('#pw').onkeydown = (e) => { if (e.key === 'Enter') go(); };
+  if ($('#rq')) $('#rq').onclick = () => renderResetRequest($('#id').value);
+}
+function renderResetRequest(id0) {
+  app(`<button class="back" id="bk" style="margin-top:14px">${IC.back}로그인 화면으로</button>
+  <div class="card" style="margin-top:10px"><h1>비밀번호 초기화 요청</h1>
+  <p class="sub" style="margin-top:8px">아이디를 입력하고 요청하면 원장에게 전달됩니다. 확인 후 비밀번호가 0000으로 초기화되며, 다음 로그인 때 새 비밀번호를 정하게 됩니다.</p>
+  <label>아이디 (예: 해원고이시현)</label><input id="rid" autocomplete="username" autocapitalize="none" autocorrect="off" value="${esc(id0 || '')}">
+  <div class="err" id="err"></div><button class="primary btn-big" id="go">초기화 요청</button></div>`, true);
+  $('#bk').onclick = () => renderLogin();
+  $('#go').onclick = async () => {
+    try {
+      const r = await api('reset/request', { id: $('#rid').value });
+      app(`<div class="card" style="margin-top:8vh"><h1>요청이 접수되었습니다</h1><p class="sub" style="margin-top:8px">${r.dup ? '이미 접수된 요청이 있습니다. ' : ''}원장이 확인하면 비밀번호가 0000으로 초기화됩니다. 초기화 후 로그인하여 새 비밀번호를 정해 주십시오.</p><button class="primary btn-big" id="ok">로그인 화면으로</button></div>`, true);
+      $('#ok').onclick = () => renderLogin();
+    } catch (e) { showErr(e.message); }
+  };
 }
 function renderSetPw() {
   app(`<button class="back" id="bk" style="margin-top:14px">${IC.back}로그인 화면으로</button>
@@ -491,8 +507,9 @@ function bindTabs() { $('#out').onclick = logout; if ($('#tostu')) $('#tostu').o
 async function renderAdmin(tab) {
   try {
     if (tab === 'students') {
-      const list = await api('admin/students');
+      const list = await api('admin/students'), reqs = await api('admin/resets');
       app(`${tabs(tab)}
+      ${reqs.length ? `<div class="card"><h2>비밀번호 초기화 요청 ${reqs.length}건</h2><table><tr><th>아이디</th><th>학년</th><th>요청</th><th></th></tr>${reqs.map((q) => `<tr><td>${esc(q.id)}</td><td>${esc(q.grade || '-')}</td><td class="sub">${ago(q.t, Date.now())}</td><td><button class="primary rq-do" data-id="${esc(q.id)}">초기화</button></td></tr>`).join('')}</table></div>` : ''}
       <div class="card"><h2>학생 등록</h2><p class="sub">한 줄에 한 명씩 <b>학교이름+이름</b>으로 쓰십시오 (예: 해원고이시현). 이 글자가 그대로 아이디가 됩니다. 처음 비밀번호는 0000이고, 처음 로그인할 때 바꿉니다.</p>
       <textarea id="nw" placeholder="해원고이시현&#10;신현고황서윤"></textarea><div class="err" id="err"></div><button class="primary" id="add">등록</button></div>
       <div class="card"><h2>포인트 지급 / 차감</h2><div class="row"><input id="amt" type="number" placeholder="포인트 (차감은 -)"><input id="why" placeholder="사유 (예: 일일테스트 우수)"><button class="primary" id="give">선택한 학생에게 적용</button></div><div class="err" id="err2"></div></div>
@@ -508,6 +525,7 @@ async function renderAdmin(tab) {
         if (!ids.length) return ($('#err2').textContent = '학생을 먼저 선택해 주십시오.');
         try { const r = await api('admin/points', { ids, delta: $('#amt').value, reason: $('#why').value }); alert(r.count + '명에게 적용했습니다.'); renderAdmin(tab); } catch (e) { $('#err2').textContent = e.message; }
       };
+      document.querySelectorAll('.rq-do').forEach((b) => b.onclick = async () => { if (confirm(b.dataset.id + ' 비밀번호를 0000으로 초기화하시겠습니까?')) { try { await api('admin/resetpw', { id: b.dataset.id }); renderAdmin(tab); } catch (e) { alert(e.message); } } });
       document.querySelectorAll('.rs').forEach((b) => b.onclick = async () => { if (confirm(b.dataset.id + ' 비밀번호를 0000으로 초기화하시겠습니까?')) { await api('admin/resetpw', { id: b.dataset.id }); renderAdmin(tab); } });
       document.querySelectorAll('.dl').forEach((b) => b.onclick = async () => { if (confirm(b.dataset.id + ' 학생을 삭제하시겠습니까? 되돌릴 수 없습니다.')) { await api('admin/deletestudent', { id: b.dataset.id }); renderAdmin(tab); } });
     } else if (tab === 'problems') {
