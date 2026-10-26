@@ -113,13 +113,13 @@ begin
 end $$;
 
 create or replace function castle.today_count(p_sid text) returns int language sql stable as $$
-  select count(*)::int from castle.attempts where sid = p_sid and day = castle.kst_today() $$;
+  select count(*)::int from castle.attempts where sid = p_sid and day = castle.kst_today() and correct is true $$;  -- 오늘 맞힌 문제 수만 센다
 
 create or replace function castle.next_mult(p_sid text) returns jsonb language plpgsql stable as $$
 declare h int := extract(hour from now() at time zone 'Asia/Seoul')::int; m boolean; d boolean;
 begin
   m := h >= castle.c('MORNING_FROM') and h < castle.c('MORNING_TO');
-  d := castle.today_count(p_sid) + 1 >= castle.c('DAILY_BONUS_COUNT');
+  d := castle.today_count(p_sid) >= castle.c('DAILY_BONUS_COUNT');  -- 오늘 맞힌 문제가 N개 이상이면 그 뒤부터 2배
   return jsonb_build_object('morning', m, 'daily', d, 'value', case when m or d then 2 else 1 end);
 end $$;
 

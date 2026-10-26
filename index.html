@@ -181,7 +181,7 @@ async function loadMe(notice) {
 }
 function head() {
   const m = me.mult;
-  const fire = m.value > 1 ? `<div class="banner">포인트 2배 적용 중${m.morning ? ' · 아침 7~9시 타임' : ''}${m.daily ? ` · 오늘 ${me.cfg.DAILY_BONUS_COUNT}문제 달성` : ''}</div>` : '';
+  const fire = m.value > 1 ? `<div class="banner">🔥 포인트 2배 적용 중${m.morning ? ' · 아침 7~9시 타임' : ''}${m.daily ? ` · 오늘 ${me.cfg.DAILY_BONUS_COUNT}문제 맞힘` : ''}</div>` : '';
   return `<div class="top"><img class="logo" src="logo.png" alt="캐슬수학"><button id="out" class="back" style="margin-right:-4px">${IC.out}로그아웃</button></div>
   <div class="hello"><h1>${esc(me.name)}님</h1><div class="sub">오늘도 좋은 하루예요</div></div>
   <div class="card pcard"><div><div class="sub">총 포인트</div><div class="pts">${fmt(me.points)}<span style="font-size:16px;font-weight:700;color:var(--sub);margin-left:3px">P</span></div></div></div>
@@ -191,8 +191,8 @@ function bindHead() { $('#out').onclick = logout; $('#hist').onclick = renderHis
 function renderHome(notice, toRank) {
   const c = me.cfg, cnt = Math.min(me.todayCount, c.DAILY_BONUS_COUNT), left = Math.max(0, c.DAILY_BONUS_COUNT - me.todayCount);
   app(`${head()}
-  <div class="card"><h2>오늘의 학습</h2>
-  <div class="prog"><div class="l"><span>${me.todayCount} / ${c.DAILY_BONUS_COUNT}</span><span class="sub" style="font-weight:600">${left > 0 ? `${left}문제 더 풀면 포인트 2배` : '오늘은 포인트 2배 적용 중'}</span></div>
+  <div class="card"><h2>오늘 맞힌 문제</h2>
+  <div class="prog"><div class="l"><span>${me.todayCount} / ${c.DAILY_BONUS_COUNT}</span><span class="sub" style="font-weight:600">${left > 0 ? `${left}문제 더 맞히면 🔥 포인트 2배` : '🔥 오늘은 포인트 2배 적용 중'}</span></div>
   <div class="bar"><div style="width:${Math.round(cnt / c.DAILY_BONUS_COUNT * 100)}%"></div></div></div></div>
   <div class="card"><h2>학년 선택</h2>
   <div class="grades">${me.grades.map((g) => `<button data-g="${g}" class="${g === pickedGrade ? 'on' : ''}">${g}</button>`).join('')}</div>
@@ -277,7 +277,7 @@ function renderSolve(a) {
 function renderResult(r) {
   me.points = r.points;
   app(`<div class="card"><div class="res ${r.correct ? 'ok' : 'bad'}">${r.correct ? '정답이에요' : r.timeout ? '시간 초과' : '오답이에요'}</div>
-  ${r.correct ? `<p class="fire">+${fmt(r.reward)}P ${r.mult > 1 ? '(2배 적용)' : ''}</p>` : ''}
+  ${r.correct ? `<p class="fire">+${fmt(r.reward)}P ${r.mult > 1 ? '🔥 (2배 적용)' : ''}</p>` : ''}
   <p>정답: <b>${esc(fa(r.answer))}</b></p><p class="pts">${fmt(r.points)} P</p></div>
   <div class="card"><h2>해설</h2>${r.explImage ? `<img class="eimg" src="${esc(r.explImage)}" alt="">` : ''}${r.explanation || !r.explImage ? `<div class="expl">${esc(dm(r.explanation)) || '(해설이 아직 없어요)'}</div>` : ''}
   ${r.extra ? `<div class="expl">${esc(dm(r.extra))}</div>` : ''}</div>
@@ -422,7 +422,7 @@ async function renderAdmin(tab) {
       bindTabs();
     } else if (tab === 'rules') {
       const c = await api('admin/cfg');
-      const F = [['START_POINTS', '처음 지급 포인트 (새 학생에게만)'], ['PREVIEW_COST', '미리보기 차감 포인트'], ['PREVIEW_SEC', '미리보기 시간 (초)'], ['ACCEPT_COST', '풀기 선택 차감 포인트'], ['TIME_LIMIT_MIN', '문제 제한시간 (분)'], ['REWARD', '정답 보상 포인트'], ['MORNING_FROM', '아침 2배 시작 (시)'], ['MORNING_TO', '아침 2배 끝 (시)'], ['DAILY_BONUS_COUNT', '하루 N문제째부터 2배']];
+      const F = [['START_POINTS', '처음 지급 포인트 (새 학생에게만)'], ['PREVIEW_COST', '미리보기 차감 포인트'], ['PREVIEW_SEC', '미리보기 시간 (초)'], ['ACCEPT_COST', '풀기 선택 차감 포인트'], ['TIME_LIMIT_MIN', '문제 제한시간 (분)'], ['REWARD', '정답 보상 포인트'], ['MORNING_FROM', '아침 2배 시작 (시)'], ['MORNING_TO', '아침 2배 끝 (시)'], ['DAILY_BONUS_COUNT', '하루 맞힌 문제 N개 이상이면 2배']];
       c.TIME_LIMIT_MIN = c.TIME_LIMIT_SEC / 60;
       app(`${tabs(tab)}<div class="card"><h2>규칙 값</h2><p class="sub">바꾼 값은 바로 적용돼요. 진행 중인 문제의 제한시간은 그대로예요.</p>
       ${F.map(([k, n]) => `<label>${n}</label><input class="cf" data-k="${k}" type="number" value="${c[k]}">`).join('')}
