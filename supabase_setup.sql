@@ -25,7 +25,20 @@ alter table castle.problems add column if not exists unit_large text not null de
 alter table castle.problems add column if not exists unit text not null default '';       -- 중단원 (2022 개정)
 alter table castle.problems add column if not exists src text not null default '';        -- 출처 (예: RPM 공통수학2 0312). 같은 출처로 다시 올리면 덮어씀
 create unique index if not exists problems_src_uq on castle.problems (src) where src <> '';
-alter table castle.students add column if not exists is_admin boolean not null default false;  -- 선생님 계정에 관리자 권한을 줄 때
+alter table castle.students add column if not exists is_admin boolean not null default false;      -- 선생님 계정에 관리자 권한을 줄 때
+alter table castle.students add column if not exists is_teacher boolean not null default false;  -- 선생님(담당 학생 현황을 볼 수 있음)
+alter table castle.students add column if not exists title text not null default '';             -- 호칭: 선생님 / 원장님 / 관리자님 (비우면 '님')
+alter table castle.students add column if not exists grade text not null default '';             -- 학생 학년: 중1 … 고3 (학년별 순위용)
+alter table castle.problems add column if not exists level int not null default 0;               -- 난이도 1하 2중하 3중 4상 5최상 (0=미정)
+create table if not exists castle.roster (
+  teacher text not null references castle.students(id) on delete cascade,
+  student text not null references castle.students(id) on delete cascade,
+  primary key (teacher, student));
+create table if not exists castle.seasons (
+  id serial primary key, name text not null, starts_at timestamptz not null, ends_at timestamptz not null,
+  min_level int not null default 4, prize text not null default '', created_at timestamptz not null default now());
+alter table castle.roster enable row level security;
+alter table castle.seasons enable row level security;
 alter table castle.problems add column if not exists expl_image text not null default '';  -- 해설을 그림(캡처)으로 올릴 때
 create table if not exists castle.attempts (
   id bigserial primary key, sid text not null references castle.students(id) on delete cascade,
@@ -33,6 +46,8 @@ create table if not exists castle.attempts (
   preview_at timestamptz not null default now(), start_at timestamptz, deadline timestamptz, day date,
   mult int, answer text, correct boolean, timeout boolean, end_at timestamptz, reward int not null default 0);
 create index if not exists attempts_sid_idx on castle.attempts (sid, id desc);
+alter table castle.attempts add column if not exists season_id int;                              -- 시즌 랭킹전에서 푼 시도
+alter table castle.attempts add column if not exists score int not null default 0;               -- 시즌 점수
 create table if not exists castle.log (
   id bigserial primary key, sid text not null, t timestamptz not null default now(),
   delta int not null, reason text not null, balance int not null);
@@ -162,6 +177,11 @@ begin
   select * into a from castle.attempts where id = p_aid;
   select * into p from castle.problems where id = a.pid;
   ok := not p_timeout and p.id is not null and castle.same(p_answer, p.answer);
+  if a.season_id is not null then  -- 시즌 랭킹전: 포인트 대신 점수(난이도×10)만 올라요
+    update castle.attempts set state = 'done', answer = left(coalesce(p_answer, ''), 60), correct = ok,
+           timeout = p_timeout, end_at = now(), reward = 0, score = case when ok then greatest(p.level, 1) * 10 else 0 end where id = a.id;
+    return;
+  end if;
   rw := case when ok then castle.c('REWARD') * a.mult else 0 end;
   update castle.attempts set state = 'done', answer = left(coalesce(p_answer, ''), 60), correct = ok,
          timeout = p_timeout, end_at = now(), reward = rw where id = a.id;
@@ -195,6 +215,7 @@ begin
   if not found then return null; end if;
   return jsonb_build_object('state', a.state,
     'problem', jsonb_build_object('id', p.id, 'grade', p.grade, 'text', p.text, 'image', p.image, 'kind', case when p.answer ~ '^[ㄱ-ㅎ]+$' then 'set' else 'num' end),
+    'season', a.season_id is not null,
     'previewEndsAt', castle.ms(a.preview_at + make_interval(secs => castle.c('PREVIEW_SEC')::double precision)),
     'deadline', coalesce(castle.ms(a.deadline), 0));
 end $$;
@@ -219,10 +240,10 @@ begin
   if v_id is null and v_src <> '' then select id into v_id from castle.problems where src = v_src; end if;
   if v_id is null or not exists (select 1 from castle.problems where id = v_id) then
     v_id := encode(extensions.gen_random_bytes(5), 'hex');
-    insert into castle.problems (id, grade, text, answer, image, expl_image, explanation, extra, active, term, subject, unit_large, unit, src)
+    insert into castle.problems (id, grade, text, answer, image, expl_image, explanation, extra, active, term, subject, unit_large, unit, src, level)
     values (v_id, b->>'grade', v_txt, v_ans, case when v_img = '@keep' then '' else v_img end, case when v_eimg = '@keep' then '' else v_eimg end, left(coalesce(b->>'explanation', ''), 6000), left(coalesce(b->>'extra', ''), 6000),
             coalesce((b->>'active')::boolean, true), left(coalesce(b->>'term', ''), 40), left(coalesce(b->>'subject', ''), 40),
-            left(coalesce(b->>'unit_large', ''), 60), left(coalesce(b->>'unit', ''), 60), v_src);
+            left(coalesce(b->>'unit_large', ''), 60), left(coalesce(b->>'unit', ''), 60), v_src, least(greatest(coalesce((b->>'level')::int, 0), 0), 5));
   else
     update castle.problems set grade = b->>'grade', text = v_txt, answer = v_ans,
            image = case when v_img = '@keep' then image else v_img end, expl_image = case when v_eimg = '@keep' then expl_image else v_eimg end,
@@ -230,7 +251,8 @@ begin
            active = coalesce((b->>'active')::boolean, true),
            term = left(coalesce(b->>'term', term), 40), subject = left(coalesce(b->>'subject', subject), 40),
            unit_large = left(coalesce(b->>'unit_large', unit_large), 60), unit = left(coalesce(b->>'unit', unit), 60),
-           src = case when b ? 'src' then v_src else src end where id = v_id;
+           src = case when b ? 'src' then v_src else src end,
+           level = case when b ? 'level' then least(greatest(coalesce((b->>'level')::int, 0), 0), 5) else level end where id = v_id;
   end if;
   return jsonb_build_object('id', v_id);
 end $$;
@@ -241,7 +263,7 @@ create or replace function castle.r_login(b jsonb) returns jsonb language plpgsq
 declare v_id text := regexp_replace(normalize(coalesce(b->>'id', ''), NFC), '\s', '', 'g');
         v_pw text := coalesce(b->>'pw', '');
         v_ip text := coalesce((nullif(current_setting('request.headers', true), '')::jsonb)->>'x-forwarded-for', '');
-        v_key text; t castle.tries; v_adm boolean := lower(v_id) = 'admin'; v_hash text; v_must boolean := false; v_tok text; v_staff boolean := false;
+        v_key text; t castle.tries; v_adm boolean := lower(v_id) = 'admin'; v_hash text; v_must boolean := false; v_tok text; v_staff boolean := false; v_name text := ''; v_title text := '';
 begin
   v_key := v_id || '|' || v_ip;
   select * into t from castle.tries where key = v_key;
@@ -249,7 +271,7 @@ begin
     return jsonb_build_object('error', '로그인 시도가 너무 많아요. 5분 뒤에 다시 해 주세요.');
   end if;
   if v_adm then select hash into v_hash from castle.admin where id = 1;
-  else select pw_hash, must_change, is_admin into v_hash, v_must, v_staff from castle.students where id = v_id; end if;
+  else select pw_hash, must_change, is_admin, name, title into v_hash, v_must, v_staff, v_name, v_title from castle.students where id = v_id; end if;
   v_staff := coalesce(v_staff, false);
   if v_hash is null or v_hash <> extensions.crypt(v_pw, v_hash) then
     insert into castle.tries as x (key, n) values (v_key, 1)
@@ -264,7 +286,7 @@ begin
   insert into castle.sessions values (v_tok, case when v_adm then 'admin' else v_id end,
     case when v_adm or (v_staff and not v_must) then 'admin' else 'student' end, now() + interval '7 days');
   return jsonb_build_object('token', v_tok, 'role', case when v_adm or (v_staff and not v_must) then 'admin' else 'student' end,
-    'mustChange', v_must and not v_adm, 'staff', v_staff);
+    'mustChange', v_must and not v_adm, 'staff', v_staff, 'name', v_name, 'title', v_title);
 end $$;
 
 -- 회원가입: 아이디와 비밀번호만 받는다. 가입하면 바로 로그인된다.
@@ -322,20 +344,27 @@ create or replace function castle.r_me(tok text) returns jsonb language plpgsql 
 declare st castle.students := castle.stu(tok); a castle.attempts := castle.settle(st.id); v_pts int;
 begin
   select points into v_pts from castle.students where id = st.id;
-  return jsonb_build_object('id', st.id, 'name', st.name, 'points', v_pts, 'mustChange', st.must_change, 'isAdmin', st.is_admin,
+  return jsonb_build_object('id', st.id, 'name', st.name, 'points', v_pts, 'mustChange', st.must_change, 'isAdmin', st.is_admin, 'isTeacher', st.is_teacher, 'title', st.title, 'grade', st.grade,
     'grades', to_jsonb(castle.grades()), 'cfg', castle.cfg_all(), 'mult', castle.next_mult(st.id),
     'todayCount', castle.today_count(st.id), 'active', castle.active_view(a), 'serverNow', castle.ms(clock_timestamp()));
 end $$;
 
 create or replace function castle.r_rank(tok text) returns jsonb language plpgsql as $$
-declare st castle.students := castle.stu(tok);
+declare st castle.students := castle.stu(tok); v_ok boolean := (not st.is_teacher and not st.is_admin);
 begin
-  -- 1,000P 이상인 학생만 순위에 보인다
-  return jsonb_build_object(
-    'top', (select coalesce(jsonb_agg(jsonb_build_object('rank', rk, 'name', castle.mask_name(name), 'points', points, 'me', id = st.id) order by rk), '[]')
-            from (select id, name, points, row_number() over (order by points desc, created_at) as rk from castle.students where points >= 1000) q where rk <= 10),
-    'myRank', case when st.points >= 1000 then 1 + (select count(*) from castle.students where points > st.points) end,
-    'total', (select count(*) from castle.students where points >= 1000));
+  -- 순위는 학생만, 1,000P 이상만 보인다 (전체 순위 + 내 학년 순위)
+  return jsonb_build_object('grade', st.grade,
+    'top', (select coalesce(jsonb_agg(jsonb_build_object('rank', rk, 'name', castle.mask_name(name), 'grade', grade, 'points', points, 'me', id = st.id) order by rk), '[]')
+            from (select id, name, grade, points, row_number() over (order by points desc, created_at) as rk
+                  from castle.students where points >= 1000 and not is_teacher and not is_admin) q where rk <= 10),
+    'myRank', case when v_ok and st.points >= 1000 then 1 + (select count(*) from castle.students where points > st.points and not is_teacher and not is_admin) end,
+    'total', (select count(*) from castle.students where points >= 1000 and not is_teacher and not is_admin),
+    'gradeTop', (select coalesce(jsonb_agg(jsonb_build_object('rank', rk, 'name', castle.mask_name(name), 'grade', grade, 'points', points, 'me', id = st.id) order by rk), '[]')
+            from (select id, name, grade, points, row_number() over (order by points desc, created_at) as rk
+                  from castle.students where points >= 1000 and not is_teacher and not is_admin and grade = st.grade and st.grade <> '') q where rk <= 10),
+    'myGradeRank', case when v_ok and st.grade <> '' and st.points >= 1000
+                   then 1 + (select count(*) from castle.students where points > st.points and not is_teacher and not is_admin and grade = st.grade) end,
+    'gradeTotal', (select count(*) from castle.students where points >= 1000 and not is_teacher and not is_admin and grade = st.grade and st.grade <> ''));
 end $$;
 
 create or replace function castle.r_preview(tok text, b jsonb) returns jsonb language plpgsql as $$
@@ -388,7 +417,8 @@ begin
   select * into p from castle.problems where id = a.pid;
   return jsonb_build_object('pid', a.pid, 'correct', a.correct, 'timeout', a.timeout, 'reward', a.reward, 'mult', a.mult,
     'points', (select points from castle.students where id = st.id),
-    'answer', coalesce(p.answer, ''), 'explanation', coalesce(p.explanation, ''), 'extra', coalesce(p.extra, ''), 'explImage', coalesce(p.expl_image, ''));
+    'answer', coalesce(p.answer, ''), 'explanation', coalesce(p.explanation, ''), 'extra', coalesce(p.extra, ''), 'explImage', coalesce(p.expl_image, ''),
+    'season', a.season_id is not null, 'score', a.score);
 end $$;
 
 create or replace function castle.r_history(tok text) returns jsonb language plpgsql as $$
@@ -401,7 +431,7 @@ begin
           from (select a.*, p.text as ptext, p.image as pimage, p.answer as panswer, p.explanation as pexpl, p.extra as pextra, p.expl_image as pexi,
                        row_number() over (order by a.id desc) as rn
                 from castle.attempts a left join castle.problems p on p.id = a.pid
-                where a.sid = st.id and a.state = 'done' order by a.id desc limit 30) q);
+                where a.sid = st.id and a.state = 'done' and a.season_id is null order by a.id desc limit 30) q);
 end $$;
 
 -- ----- 오답노트 -----
@@ -445,25 +475,36 @@ end $$;
 create or replace function castle.r_admin_students(tok text) returns jsonb language plpgsql as $$
 begin
   perform castle.auth(tok, 'admin');
-  return (select coalesce(jsonb_agg(jsonb_build_object('id', id, 'name', name, 'points', points, 'mustChange', must_change, 'isAdmin', is_admin,
+  return (select coalesce(jsonb_agg(jsonb_build_object('id', id, 'name', name, 'points', points, 'mustChange', must_change, 'isAdmin', is_admin, 'isTeacher', is_teacher, 'title', title, 'grade', grade,
             'today', castle.today_count(id), 'solved', coalesce(array_length(done, 1), 0)) order by id), '[]') from castle.students);
 end $$;
 
 create or replace function castle.r_admin_addstudents(tok text, b jsonb) returns jsonb language plpgsql as $$
-declare ln text; m text[]; v_id text; v_hash text; added jsonb := '[]'; skipped jsonb := '[]';
+declare ln text; tk text[]; t text; k int; v_id text; v_name text; v_grade text; v_digits text; v_hash text; added jsonb := '[]'; skipped jsonb := '[]';
 begin
   perform castle.auth(tok, 'admin');
   v_hash := extensions.crypt('0000', extensions.gen_salt('bf', 6));
+  -- 한 줄에 한 명: 아이디(학교이름+이름) [실제 이름] [학년]   예) 해원고이시현 이시현 고1
   foreach ln in array regexp_split_to_array(normalize(coalesce(b->>'text', ''), NFC), '\r?\n') loop
     ln := btrim(ln);
     if ln = '' then continue; end if;
-    m := regexp_match(ln, '^([가-힣A-Za-z·]+[0-9]?)[,[:space:]]*([0-9]{4})?$');
-    if m is null then skipped := skipped || to_jsonb(ln || ' (형식 오류)'); continue; end if;
-    v_id := m[1] || coalesce(m[2], '');  -- 숫자 없이 이름만 쓰면 아이디가 이름 그대로
+    tk := regexp_split_to_array(ln, '[,[:space:]]+');
+    v_id := tk[1]; v_name := null; v_grade := ''; v_digits := '';
+    if v_id !~ '^[가-힣A-Za-z·]+[0-9]?$' then skipped := skipped || to_jsonb(ln || ' (형식 오류)'); continue; end if;
+    for k in 2 .. coalesce(array_length(tk, 1), 1) loop
+      t := tk[k];
+      if t ~ '^(중|고)[1-3]$' then v_grade := t;
+      elsif t ~ '^[0-9]{4}$' then v_digits := t;
+      elsif t ~ '^[가-힣A-Za-z·]+$' then v_name := t;
+      else skipped := skipped || to_jsonb(ln || ' (형식 오류)'); v_id := null; exit; end if;
+    end loop;
+    if v_id is null then continue; end if;
+    v_id := v_id || v_digits;
     if lower(v_id) = 'admin' or exists (select 1 from castle.students where id = v_id) then
       skipped := skipped || to_jsonb(v_id || ' (이미 있음)'); continue;
     end if;
-    insert into castle.students (id, name, points, must_change, pw_hash) values (v_id, m[1], 0, true, v_hash);
+    insert into castle.students (id, name, points, must_change, pw_hash, grade)
+      values (v_id, coalesce(v_name, regexp_replace(v_id, '[0-9]+$', '')), 0, true, v_hash, v_grade);
     perform castle.add_pts(v_id, castle.c('START_POINTS'), '기본 포인트');
     added := added || to_jsonb(v_id);
   end loop;
@@ -606,7 +647,7 @@ create or replace function castle.r_admin_problems(tok text) returns jsonb langu
 begin
   perform castle.auth(tok, 'admin');
   return (select coalesce(jsonb_agg(jsonb_build_object('id', id, 'grade', grade, 'text', text, 'answer', answer, 'image', case when length(image) > 30000 then '@keep' else image end,
-            'expl_image', case when expl_image <> '' then '@keep' else '' end, 'explanation', explanation, 'extra', extra, 'active', active,
+            'expl_image', case when expl_image <> '' then '@keep' else '' end, 'explanation', explanation, 'extra', extra, 'active', active, 'level', level,
             'term', term, 'subject', subject, 'unit_large', unit_large, 'unit', unit, 'src', src) order by created_at, id), '[]') from castle.problems);
 end $$;
 
@@ -658,6 +699,165 @@ create or replace function castle.init_admin(pw text) returns void language sql 
   on conflict (id) do update set hash = excluded.hash $$;
 
 -- ---------- 문 하나: 화면은 이 함수만 부를 수 있습니다 ----------
+
+-- =====================================================================
+-- 시즌 랭킹전 / 선생님 담당 학생 현황 / 학년 순위
+-- =====================================================================
+create or replace function castle.season_cur() returns castle.seasons language sql stable as $$
+  select * from castle.seasons where now() >= starts_at and now() < ends_at order by id desc limit 1 $$;
+
+-- 시즌 순위 (학생만, 점수 높은 순 → 같으면 먼저 달성한 순)
+create or replace function castle.season_board(p_id int)
+returns table (sid text, name text, grade text, score int, ok int, n int, last_at timestamptz, r bigint, gr bigint)
+language sql stable as $$
+  with sc as (
+    select a.sid, sum(a.score)::int as score, (count(*) filter (where a.correct))::int as ok, count(*)::int as n, max(a.end_at) as last_at
+    from castle.attempts a join castle.students x on x.id = a.sid
+    where a.season_id = p_id and a.state = 'done' and not x.is_teacher and not x.is_admin group by a.sid)
+  select sc.sid, x.name, x.grade, sc.score, sc.ok, sc.n, sc.last_at,
+         row_number() over (order by sc.score desc, sc.last_at asc),
+         row_number() over (partition by x.grade order by sc.score desc, sc.last_at asc)
+  from sc join castle.students x on x.id = sc.sid $$;
+
+create or replace function castle.r_season_info(tok text) returns jsonb language plpgsql as $$
+declare st castle.students := castle.stu(tok); s castle.seasons := castle.season_cur(); v_status text := 'active'; v_me jsonb; v_pool int := 0;
+begin
+  if s.id is null then
+    select * into s from castle.seasons where now() < starts_at order by starts_at limit 1; v_status := 'upcoming';
+    if s.id is null then select * into s from castle.seasons order by ends_at desc limit 1; v_status := 'ended'; end if;
+  end if;
+  if s.id is null then return jsonb_build_object('season', null, 'serverNow', castle.ms(clock_timestamp())); end if;
+  select jsonb_build_object('score', b.score, 'rank', b.r, 'gradeRank', b.gr, 'ok', b.ok, 'n', b.n) into v_me from castle.season_board(s.id) b where b.sid = st.id;
+  select count(*) into v_pool from castle.problems p where p.active and p.level >= s.min_level
+    and not exists (select 1 from castle.attempts x where x.sid = st.id and x.season_id = s.id and x.pid = p.id);
+  return jsonb_build_object('serverNow', castle.ms(clock_timestamp()), 'grade', st.grade, 'canPlay', not st.is_teacher and not st.is_admin,
+    'season', jsonb_build_object('id', s.id, 'name', s.name, 'status', v_status, 'startsAt', castle.ms(s.starts_at), 'endsAt', castle.ms(s.ends_at),
+                                 'prize', s.prize, 'minLevel', s.min_level, 'timeLimitSec', castle.c('TIME_LIMIT_SEC')),
+    'me', coalesce(v_me, jsonb_build_object('score', 0, 'rank', null, 'gradeRank', null, 'ok', 0, 'n', 0)), 'poolLeft', v_pool,
+    'total', (select count(*) from castle.season_board(s.id)),
+    'top', (select coalesce(jsonb_agg(jsonb_build_object('rank', b.r, 'name', castle.mask_name(b.name), 'grade', b.grade, 'score', b.score, 'ok', b.ok, 'me', b.sid = st.id) order by b.r), '[]')
+            from castle.season_board(s.id) b where b.r <= 20),
+    'gradeTop', (select coalesce(jsonb_agg(jsonb_build_object('rank', b.gr, 'name', castle.mask_name(b.name), 'grade', b.grade, 'score', b.score, 'ok', b.ok, 'me', b.sid = st.id) order by b.gr), '[]')
+            from castle.season_board(s.id) b where st.grade <> '' and b.grade = st.grade and b.gr <= 10));
+end $$;
+
+create or replace function castle.r_season_start(tok text) returns jsonb language plpgsql as $$
+declare st castle.students := castle.stu(tok); a castle.attempts := castle.settle(st.id); s castle.seasons := castle.season_cur(); p castle.problems;
+begin
+  if st.is_teacher or st.is_admin then perform castle.fail(403, '시즌 랭킹전은 학생만 참가할 수 있어요.'); end if;
+  if a.id is not null then
+    if a.season_id is not null then return jsonb_build_object('active', castle.active_view(a), 'serverNow', castle.ms(clock_timestamp())); end if;
+    perform castle.fail(400, '진행 중인 문제가 있어요.');
+  end if;
+  if s.id is null then perform castle.fail(400, '지금 진행 중인 시즌이 없어요.'); end if;
+  select * into p from castle.problems q where q.active and q.level >= s.min_level
+    and not exists (select 1 from castle.attempts x where x.sid = st.id and x.season_id = s.id and x.pid = q.id) order by random() limit 1;
+  if not found then perform castle.fail(400, '이번 시즌의 문제를 모두 풀었어요! 새 문제가 생기면 다시 도전해 보세요.'); end if;
+  insert into castle.attempts (sid, pid, grade, state, season_id, start_at, deadline, mult)
+    values (st.id, p.id, p.grade, 'solving', s.id, now(), now() + make_interval(secs => castle.c('TIME_LIMIT_SEC')::double precision), 1) returning * into a;
+  return jsonb_build_object('active', castle.active_view(a), 'serverNow', castle.ms(clock_timestamp()));
+end $$;
+
+-- 담당 학생 현황
+create or replace function castle.roster_rows(p_teacher text) returns jsonb language sql stable as $$
+  select coalesce(jsonb_agg(jsonb_build_object('id', x.id, 'name', x.name, 'grade', x.grade, 'points', x.points, 'mustChange', x.must_change,
+    'today', castle.today_count(x.id),
+    'week', (select count(*) from castle.attempts a where a.sid = x.id and a.state = 'done' and a.season_id is null and a.end_at > now() - interval '7 days'),
+    'weekOk', (select count(*) from castle.attempts a where a.sid = x.id and a.state = 'done' and a.season_id is null and a.correct and a.end_at > now() - interval '7 days'),
+    'total', (select count(*) from castle.attempts a where a.sid = x.id and a.state = 'done' and a.season_id is null),
+    'last', (select castle.ms(max(a.end_at)) from castle.attempts a where a.sid = x.id and a.state = 'done')
+  ) order by x.grade, x.id), '[]')
+  from castle.roster r join castle.students x on x.id = r.student where r.teacher = p_teacher $$;
+
+create or replace function castle.r_roster(tok text) returns jsonb language plpgsql as $$
+declare st castle.students := castle.stu(tok);
+begin
+  if not st.is_teacher then perform castle.fail(403, '권한이 없어요.'); end if;
+  return jsonb_build_object('teacher', st.id, 'name', st.name, 'students', castle.roster_rows(st.id), 'serverNow', castle.ms(clock_timestamp()));
+end $$;
+
+create or replace function castle.r_admin_rosters(tok text) returns jsonb language plpgsql as $$
+begin
+  perform castle.auth(tok, 'admin');
+  return jsonb_build_object('serverNow', castle.ms(clock_timestamp()),
+    'teachers', (select coalesce(jsonb_agg(jsonb_build_object('id', t.id, 'name', t.name, 'title', t.title, 'students', castle.roster_rows(t.id)) order by t.id), '[]')
+                 from castle.students t where t.is_teacher),
+    'unassigned', (select coalesce(jsonb_agg(jsonb_build_object('id', x.id, 'name', x.name, 'grade', x.grade) order by x.grade, x.id), '[]')
+                   from castle.students x where not x.is_teacher and not x.is_admin and not exists (select 1 from castle.roster r where r.student = x.id)));
+end $$;
+
+-- 선생님 반에 학생 넣기/빼기: {teacher, add: [아이디...], remove: [아이디...]}
+create or replace function castle.r_admin_roster_edit(tok text, b jsonb) returns jsonb language plpgsql as $$
+declare v_t text := b->>'teacher'; v_id text; n_add int := 0; n_rm int := 0; miss text := '';
+begin
+  perform castle.auth(tok, 'admin');
+  if not exists (select 1 from castle.students where id = v_t and is_teacher) then perform castle.fail(400, '선생님 계정이 아니에요.'); end if;
+  for v_id in select jsonb_array_elements_text(coalesce(b->'add', '[]')) loop
+    if exists (select 1 from castle.students where id = v_id) then
+      insert into castle.roster (teacher, student) values (v_t, v_id) on conflict do nothing; n_add := n_add + 1;
+    else miss := miss || v_id || ' '; end if;
+  end loop;
+  for v_id in select jsonb_array_elements_text(coalesce(b->'remove', '[]')) loop
+    delete from castle.roster where teacher = v_t and student = v_id; n_rm := n_rm + 1;
+  end loop;
+  return jsonb_build_object('added', n_add, 'removed', n_rm, 'missing', miss);
+end $$;
+
+-- 학년·호칭·선생님/관리자 표시: {id, grade?, title?, isTeacher?, isAdmin?}
+create or replace function castle.r_admin_studentmeta(tok text, b jsonb) returns jsonb language plpgsql as $$
+begin
+  perform castle.auth(tok, 'admin');
+  update castle.students set
+    grade = case when b ? 'grade' then left(coalesce(b->>'grade', ''), 4) else grade end,
+    title = case when b ? 'title' then left(coalesce(b->>'title', ''), 10) else title end,
+    is_teacher = case when b ? 'isTeacher' then (b->>'isTeacher')::boolean else is_teacher end,
+    is_admin = case when b ? 'isAdmin' then (b->>'isAdmin')::boolean else is_admin end
+  where id = b->>'id';
+  return jsonb_build_object('ok', true);
+end $$;
+
+-- ----- 시즌 관리 (관리자) -----
+create or replace function castle.season_top(p_id int, p_n int) returns jsonb language sql stable as $$
+  select coalesce(jsonb_agg(jsonb_build_object('rank', b.r, 'id', b.sid, 'name', b.name, 'grade', b.grade, 'score', b.score, 'ok', b.ok) order by b.r), '[]')
+  from castle.season_board(p_id) b where b.r <= p_n $$;
+
+create or replace function castle.r_admin_seasons(tok text) returns jsonb language plpgsql as $$
+begin
+  perform castle.auth(tok, 'admin');
+  return jsonb_build_object('serverNow', castle.ms(clock_timestamp()),
+    'pool', (select count(*) from castle.problems where active and level >= 4),
+    'pools', (select jsonb_agg((select count(*) from castle.problems where active and level >= n) order by n) from generate_series(1, 5) n),
+    'seasons', (select coalesce(jsonb_agg(jsonb_build_object('id', s.id, 'name', s.name, 'startsAt', castle.ms(s.starts_at), 'endsAt', castle.ms(s.ends_at),
+      'minLevel', s.min_level, 'prize', s.prize, 'pool', (select count(*) from castle.problems where active and level >= s.min_level),
+      'players', (select count(*) from castle.season_board(s.id)), 'top', castle.season_top(s.id, 10)) order by s.id desc), '[]') from castle.seasons s));
+end $$;
+
+create or replace function castle.r_admin_season_save(tok text, b jsonb) returns jsonb language plpgsql as $$
+declare v_id int := nullif(b->>'id', '')::int; v_start timestamptz; v_end timestamptz;
+begin
+  perform castle.auth(tok, 'admin');
+  begin v_start := (b->>'startsAt')::timestamptz; v_end := (b->>'endsAt')::timestamptz;
+  exception when others then perform castle.fail(400, '시작·종료 시각이 올바르지 않아요.'); end;
+  if v_start is null or v_end is null or v_end <= v_start then perform castle.fail(400, '종료 시각은 시작 시각보다 뒤여야 해요.'); end if;
+  if length(btrim(coalesce(b->>'name', ''))) = 0 then perform castle.fail(400, '시즌 이름을 입력해 주세요.'); end if;
+  if v_id is null then
+    insert into castle.seasons (name, starts_at, ends_at, min_level, prize)
+      values (left(btrim(b->>'name'), 40), v_start, v_end, least(greatest(coalesce((b->>'minLevel')::int, 4), 1), 5), left(coalesce(b->>'prize', ''), 300)) returning id into v_id;
+  else
+    update castle.seasons set name = left(btrim(b->>'name'), 40), starts_at = v_start, ends_at = v_end,
+      min_level = least(greatest(coalesce((b->>'minLevel')::int, min_level), 1), 5), prize = left(coalesce(b->>'prize', ''), 300) where id = v_id;
+  end if;
+  return jsonb_build_object('id', v_id);
+end $$;
+
+create or replace function castle.r_admin_season_delete(tok text, b jsonb) returns jsonb language plpgsql as $$
+begin
+  perform castle.auth(tok, 'admin');
+  delete from castle.attempts where season_id = (b->>'id')::int;
+  delete from castle.seasons where id = (b->>'id')::int;
+  return jsonb_build_object('ok', true);
+end $$;
+
 create or replace function castle.dispatch(p_path text, tok text, b jsonb) returns jsonb language plpgsql as $$
 begin
   case p_path
@@ -683,6 +883,15 @@ begin
     when 'admin/deletestudent' then return castle.r_admin_deletestudent(tok, b);
     when 'admin/adminpw' then return castle.r_admin_adminpw(tok, b);
     when 'switch' then return castle.r_switch(tok, b);
+    when 'season/info' then return castle.r_season_info(tok);
+    when 'season/start' then return castle.r_season_start(tok);
+    when 'roster' then return castle.r_roster(tok);
+    when 'admin/rosters' then return castle.r_admin_rosters(tok);
+    when 'admin/roster_edit' then return castle.r_admin_roster_edit(tok, b);
+    when 'admin/studentmeta' then return castle.r_admin_studentmeta(tok, b);
+    when 'admin/seasons' then return castle.r_admin_seasons(tok);
+    when 'admin/season_save' then return castle.r_admin_season_save(tok, b);
+    when 'admin/season_delete' then return castle.r_admin_season_delete(tok, b);
     when 'admin/cfg' then return castle.r_admin_cfg(tok);
     when 'admin/setcfg' then return castle.r_admin_setcfg(tok, b);
     when 'admin/problems' then return castle.r_admin_problems(tok);
