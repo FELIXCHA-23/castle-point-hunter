@@ -161,7 +161,7 @@ async function api(path, body) {
   return x.j;
 }
 
-// ---------- 로그인 없이 구경하기 (체험 모드: 문제는 실제 문제, 포인트·기록은 이 화면 안에서만 쓰고 나가면 사라짐) ----------
+// ---------- 로그인 없이 탐험하기 (체험 모드: 문제는 실제 문제, 포인트·기록은 이 화면 안에서만 쓰고 나가면 사라짐) ----------
 let guest = false;
 const G = { tok: null, cur: null, seen: [], sseen: [], score: 0, ok: 0, n: 0, points: 500, today: 0 };
 const gfill = (p) => (p < 50 ? 110 : p);  // 풀이 포인트보다 모자라면 110P로 맞춤 (실제와 같은 규칙)
@@ -275,7 +275,7 @@ function renderLogin(msg, signup) {
   <div class="card">${signup ? '' : '<div class="pbox" style="margin:0 0 4px">아이디는 학교+이름으로 이미 등록되어 있습니다.<br><span style="font-weight:600">(예시: 신현고차캐슬, 해원중김캐슬)</span></div>'}<label style="margin-top:10px">아이디${signup ? ' (한글·영문·숫자 2~20자)' : ''}</label><input id="id" autocomplete="username" autocapitalize="none" autocorrect="off">
   <label>비밀번호${signup ? ' (4자 이상)' : ''}</label><input id="pw" type="password" autocomplete="${signup ? 'new-password' : 'current-password'}">
   <div class="err" id="err">${esc(msg || '')}</div>
-  <button class="primary btn-big" id="go" style="margin-top:6px">${signup ? '가입하고 시작하기' : '로그인'}</button>${signup ? '' : '<button class="btn-big" id="gst" style="margin-top:8px">로그인 없이 구경하기</button>'}</div>
+  <button class="primary btn-big" id="go" style="margin-top:6px">${signup ? '가입하고 시작하기' : '로그인'}</button>${signup ? '' : '<button class="btn-big" id="gst" style="margin-top:8px">로그인 없이 탐험하기</button>'}</div>
   ${signup ? '' : '<p class="sub" style="text-align:center;margin:14px 8px 8px">비밀번호를 잊은 경우<br><b>차성빈 원장</b>에게 초기화를 요청하십시오.</p><div class="row" style="flex-wrap:nowrap"><a class="btnlink" id="sms" href="' + smsHref('') + '">문자 보내기</a><a class="btnlink" href="' + KAKAO_URL + '" target="_blank" rel="noopener">카카오톡 오픈채팅</a></div>'}`, true);
   const go = async () => {
     try {
@@ -342,7 +342,7 @@ function head() {
   const m = me.mult;
   const fire = m.value > 1 ? `<div class="banner">🔥 포인트 2배 적용 중${m.morning ? ' · 주말·공휴일 아침 타임' : ''}${m.daily ? ` · 오늘 ${me.cfg.DAILY_BONUS_COUNT}문제 맞힘` : ''}</div>` : '';
   return `<div class="top"><img class="logo" src="logo.png" alt="캐슬수학"><span style="display:flex;gap:4px;align-items:center"><button id="tomode" class="back">모드 선택</button>${me.isAdmin ? '<button id="toadm" class="back">관리자 화면</button>' : ''}<button id="out" class="back" style="margin-right:-4px">${IC.out}${guest ? '나가기' : '로그아웃'}</button></span></div>
-  <div class="hello"><h1>${esc(me.name)}${esc(me.title || '님')}</h1></div>
+  <div class="hello"><h1>${guest ? '안녕하세요! ' : ''}${esc(me.name)}${esc(me.title || '님')}</h1></div>
   <div class="card pcard"><div><div class="sub">총 포인트</div><div class="pts">${fmt(me.points)}<span style="font-size:16px;font-weight:700;color:var(--sub);margin-left:3px">P</span></div></div></div>
   <div class="tiles"><button class="tile" id="nt">${IC.note}오답노트</button><button class="tile" id="hist">${IC.list}내 기록</button></div>${fire}`;
 }
@@ -503,7 +503,7 @@ const ago = (ms, now) => { if (!ms) return '기록 없음'; const m = Math.floor
 function renderModes() {
   setMode(null);
   app(`<div class="top"><img class="logo" src="logo.png" alt="캐슬수학"><button id="out" class="back" style="margin-right:-4px">${IC.out}${guest ? '나가기' : '로그아웃'}</button></div>
-  <div class="hello"><h1>${esc(me.name)}${esc(me.title || '님')}</h1><div class="sub">모드를 선택하십시오.</div></div>
+  <div class="hello"><h1>${guest ? '안녕하세요! ' : ''}${esc(me.name)}${esc(me.title || '님')}</h1><div class="sub">모드를 선택하십시오.</div></div>
   <div class="modes">
     <button class="mode hunt" id="m-normal"><b>포인트 사냥</b><span>문제를 풀어 포인트를 모읍니다.</span></button>
     <button class="mode season" id="m-season"><b>시즌 랭킹전</b><span>포인트 대신 순위 경쟁🏅<br>난이도 중상 이상😈<br>시즌 종료 시 소정의 상품🎁</span></button>
