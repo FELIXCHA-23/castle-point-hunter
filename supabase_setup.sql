@@ -575,7 +575,7 @@ end $$;
 create or replace function castle.r_admin_adminpw(tok text, b jsonb) returns jsonb language plpgsql as $$
 declare v_id text := castle.auth(tok, 'admin');
 begin
-  if length(coalesce(b->>'pw', '')) < 6 then perform castle.fail(400, '관리자 비밀번호는 6자 이상이어야 해요.'); end if;
+  if length(coalesce(b->>'pw', '')) < 4 then perform castle.fail(400, '비밀번호는 4자 이상이어야 해요.'); end if;
   if v_id = 'admin' then
     perform castle.init_admin(b->>'pw');
   else  -- 관리자 권한이 있는 선생님 계정은 자기 비밀번호만 바꿔요

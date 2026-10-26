@@ -628,7 +628,7 @@ async function renderAdmin(tab) {
         try { await api('admin/setcfg', v); alert('저장했어요.'); } catch (e) { showErr(e.message); }
       };
     } else {
-      app(`${tabs(tab)}<div class="card"><h2>관리자 비밀번호 변경</h2><input id="np" type="password" placeholder="새 비밀번호 (6자 이상)"><div class="err" id="err"></div><button class="primary" id="sv">변경</button></div>`);
+      app(`${tabs(tab)}<div class="card"><h2>관리자 비밀번호 변경</h2><input id="np" type="password" placeholder="새 비밀번호 (4자 이상)"><div class="err" id="err"></div><button class="primary" id="sv">변경</button></div>`);
       bindTabs();
       $('#sv').onclick = async () => { try { await api('admin/adminpw', { pw: $('#np').value }); alert('변경했어요.'); $('#np').value = ''; } catch (e) { showErr(e.message); } };
     }
