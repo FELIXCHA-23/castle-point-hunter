@@ -110,6 +110,18 @@ code{background:var(--bg);padding:1px 6px;border-radius:6px;font-size:.92em}
 .nav button{flex:1;border:none;background:none;border-radius:0;padding:9px 0 11px;font-size:11.5px;font-weight:600;color:var(--sub);display:flex;flex-direction:column;align-items:center;gap:3px;box-shadow:none}
 .nav button svg{width:23px;height:23px;stroke:currentColor}
 .nav button.on{color:var(--main)}
+.mrow{display:flex;justify-content:space-between;align-items:center;gap:10px;width:100%;padding:15px 2px;border:none;border-top:1px solid var(--line);background:none;border-radius:0;font-size:15.5px;font-weight:700;color:var(--ink);text-align:left;box-shadow:none}
+.menu .mrow:first-child{border-top:none}
+.mrow .sub{font-size:12.5px;font-weight:500;margin:0}
+.mrow i{font-style:normal;color:var(--sub);font-weight:400}
+.dchart{display:flex;gap:6px;align-items:flex-end;height:120px;margin:12px 0 4px}
+.dcol{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:flex-end;height:100%;gap:4px;font-size:11.5px;color:var(--sub)}
+.dcol em{font-style:normal;font-weight:700;color:var(--ink);font-size:12px;font-variant-numeric:tabular-nums}
+.dtot{width:100%;background:var(--bg);border-radius:4px 4px 0 0;display:flex;align-items:flex-end;min-height:3px}
+.dtot i{display:block;width:100%;background:var(--main);border-radius:4px 4px 0 0}
+.gbar{display:flex;align-items:center;gap:10px;margin:8px 0;font-size:13.5px}
+.gbar .t{flex:1;height:9px;background:var(--bg);border-radius:5px;overflow:hidden}.gbar .t i{display:block;height:100%;background:var(--main)}
+.gbar span{font-variant-numeric:tabular-nums;color:var(--sub);white-space:nowrap}
 .back{display:flex;align-items:center;gap:6px;border:none;background:none;padding:6px 4px;font-size:14px;color:var(--sub);font-weight:600}
 .back svg{width:20px;height:20px;stroke:currentColor}
 .chip{display:inline-block;padding:3px 9px;border-radius:999px;background:var(--bg);color:var(--sub);font-size:12px;font-weight:600}
@@ -163,7 +175,7 @@ async function api(path, body) {
 
 // ---------- 로그인 없이 탐험하기 (체험 모드: 문제는 실제 문제, 포인트·기록은 이 화면 안에서만 쓰고 나가면 사라짐) ----------
 let guest = false;
-const G = { tok: null, cur: null, seen: [], sseen: [], score: 0, ok: 0, n: 0, points: 500, today: 0 };
+const G = { tok: null, cur: null, seen: [], sseen: [], score: 0, ok: 0, n: 0, points: 500, today: 0, hist: [] };
 const gfill = (p) => (p < 50 ? 110 : p);  // 풀이 포인트보다 모자라면 110P로 맞춤 (실제와 같은 규칙)
 const guestMe = () => ({ id: 'guest', name: '탐험가', title: '님', grade: '', points: G.points, mustChange: false, isAdmin: false, isTeacher: false,
   grades: ['중1', '중2', '중3', '고1', '고2', '고3'], cfg: { START_POINTS: 500, PREVIEW_COST: 10, PREVIEW_SEC: 10, ACCEPT_COST: 50, TIME_LIMIT_SEC: 300, REWARD: 100, DAILY_BONUS_COUNT: 15, MORNING_FROM: 7, MORNING_TO: 9 },
@@ -196,10 +208,18 @@ async function guestApi(path, b) {
       if (!a) throw new Error('풀고 있는 문제가 없습니다.');
       const c = await api('guest/check', { id: a.p.id, answer: (b && b.answer) || '' }), ok = c.correct && String((b && b.answer) || '').trim() !== '';
       const score = ok ? Math.max(c.level, 1) * 10 : 0;
+      G.hist.push({ grade: a.p.grade, ok });
       if (a.season) { G.n++; if (ok) { G.ok++; G.score += score; } }
       const mult = a.mult || 1, reward = ok && !a.season ? 100 * mult : 0;
       if (reward) { G.points += reward; G.today++; }
       return { pid: a.p.id, correct: ok, timeout: false, reward, mult, points: G.points, answer: c.answer, explanation: c.explanation, extra: c.extra, explImage: c.explImage, season: !!a.season, score, guest: true };
+    }
+    case 'notices': { const x = await rawCall('notices', {}, G.tok); if (!x.ok) throw new Error(x.j.message || '오류가 났습니다.'); return x.j; }
+    case 'stats': {
+      const bg = {}; G.hist.forEach((x) => { const e = bg[x.grade] || (bg[x.grade] = { grade: x.grade, n: 0, ok: 0 }); e.n++; if (x.ok) e.ok++; });
+      const days = [], t = new Date(); for (let i = 6; i >= 0; i--) { const d = new Date(t.getTime() - i * 864e5); days.push({ d: (d.getMonth() + 1) + '/' + d.getDate(), n: 0, ok: 0 }); }
+      days[6].n = G.hist.length; days[6].ok = G.hist.filter((x) => x.ok).length;
+      return { total: G.hist.length, ok: days[6].ok, days, byGrade: Object.values(bg).sort((a, b) => a.grade < b.grade ? -1 : 1), weak: [] };
     }
     case 'notes': case 'history': return [];
     case 'note/add': throw new Error('체험모드에서는 저장되지 않습니다.');
@@ -216,8 +236,8 @@ function startGuest() {
       const x = await rawCall('guest/start', {}, null);
       if (!x.ok) throw new Error(x.j.message || '체험을 시작할 수 없습니다.');
       ov.remove(); guest = true; token = null; role = 'student';
-      Object.assign(G, { tok: x.j.token, cur: null, seen: [], sseen: [], score: 0, ok: 0, n: 0, points: 500, today: 0 });
-      me = await api('me'); skew = 0; renderModes();
+      Object.assign(G, { tok: x.j.token, cur: null, seen: [], sseen: [], score: 0, ok: 0, n: 0, points: 500, today: 0, hist: [] });
+      me = await api('me'); skew = 0; renderHome();
     } catch (e) { ov.remove(); alert(e.message); }
   };
 }
@@ -254,6 +274,8 @@ const IC = {
   note: '<svg viewBox="0 0 24 24" fill="none" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M6 3.5h9l3.5 3.5v13.5H6z"/><path d="M14.5 3.5V7.5h4"/><path d="M9 12.5h6M9 16h4"/></svg>',
   list: '<svg viewBox="0 0 24 24" fill="none" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="5" y="4" width="14" height="17" rx="2.5"/><path d="M9 4V2.8h6V4"/><path d="M8.5 10h7M8.5 13.5h7M8.5 17h4"/></svg>',
   rank: '<svg viewBox="0 0 24 24" fill="none" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M8 4h8v5a4 4 0 0 1-8 0z"/><path d="M8 6H5v1.5A3 3 0 0 0 8 10.5M16 6h3v1.5a3 3 0 0 1-3 3"/><path d="M12 13v4M8.5 20h7"/></svg>',
+  season: '<svg viewBox="0 0 24 24" fill="none" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M4 17.5 3 8l5 4 4-7 4 7 5-4-1 9.5z"/><path d="M5.5 20.5h13"/></svg>',
+  more: '<svg viewBox="0 0 24 24" fill="none" stroke-width="3.4" stroke-linecap="round"><path d="M5.5 12h.01M12 12h.01M18.5 12h.01"/></svg>',
   back: '<svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 5l-7 7 7 7"/></svg>',
   out: '<svg viewBox="0 0 24 24" fill="none" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M10 4.5H5.5v15H10"/><path d="M14 8l4 4-4 4M18 12H9.5"/></svg>'
 };
@@ -261,12 +283,12 @@ const trophy = (c) => `<svg viewBox="0 0 24 24" width="22" height="22" aria-hidd
 const MEDAL = ['#f5b82e', '#9aa6b8', '#cd7f4a'];
 const rankRows = (top) => top.map((x) => `<div class="rk-row${x.me ? ' me' : ''}"><div class="rk-no">${x.rank <= 3 ? trophy(MEDAL[x.rank - 1]) : x.rank}</div><div class="rk-nm">${esc(x.name)}${x.grade ? `<span class="gchip">${esc(x.grade)}</span>` : ''}${x.me ? ' <span class="chip">나</span>' : ''}</div><div class="rk-pt">${fmt(x.points)} P</div></div>`).join('');
 function navBar(cur) {
-  const it = [['home', '홈', IC.home, () => loadMe()], ['nt', '오답노트', IC.note, renderNotes], ['hist', '기록', IC.list, renderHistory], ['rk', '순위', IC.rank, () => renderHome('', true)]];
+  const it = [['home', '홈', IC.home], ['season', '시즌', IC.season], ['nt', '오답노트', IC.note], ['rk', '순위', IC.rank], ['more', '더보기', IC.more]];
   return `<div class="nav"><div>${it.map(([k, n, ic]) => `<button data-n="${k}" class="${k === cur ? 'on' : ''}">${ic}${n}</button>`).join('')}</div></div>`;
 }
 function bindNav() {
-  const f = { home: () => loadMe(), nt: renderNotes, hist: renderHistory, rk: () => renderHome('', true) };
-  document.querySelectorAll('.nav button').forEach((b) => b.onclick = () => f[b.dataset.n]());
+  const f = { home: () => loadMe(), season: () => renderSeason(), nt: renderNotes, rk: () => renderRank(), more: renderMore };
+  document.querySelectorAll('.nav button').forEach((b) => b.onclick = () => Promise.resolve(f[b.dataset.n]()).catch(() => {}));
 }
 
 // ---------- 로그인 ----------
@@ -332,22 +354,19 @@ async function start() {
 async function loadMe(notice) {
   me = await api('me'); skew = me.serverNow - Date.now();
   if (me.mustChange) return renderSetPw();
-  if (me.active) { if (me.active.season) setMode('season'); return me.active.state === 'preview' ? renderPreview(me.active) : renderSolve(me.active); }
-  const m = getMode();
-  if (!m) return renderModes();
-  if (m === 'season') return renderSeason(notice);
+  if (me.active) return me.active.state === 'preview' ? renderPreview(me.active) : renderSolve(me.active);
   renderHome(notice);
 }
 function head() {
   const m = me.mult;
   const fire = m.value > 1 ? `<div class="banner">🔥 포인트 2배 적용 중${m.morning ? ' · 주말·공휴일 아침 타임' : ''}${m.daily ? ` · 오늘 ${me.cfg.DAILY_BONUS_COUNT}문제 맞힘` : ''}</div>` : '';
-  return `<div class="top"><img class="logo" src="logo.png" alt="캐슬수학"><span style="display:flex;gap:4px;align-items:center"><button id="tomode" class="back">모드 선택</button>${me.isAdmin ? '<button id="toadm" class="back">관리자 화면</button>' : ''}<button id="out" class="back" style="margin-right:-4px">${IC.out}${guest ? '나가기' : '로그아웃'}</button></span></div>
+  return `<div class="top"><img class="logo" src="logo.png" alt="캐슬수학"><span style="display:flex;gap:4px;align-items:center">${me.isAdmin ? '<button id="toadm" class="back">관리자 화면</button>' : ''}<button id="out" class="back" style="margin-right:-4px">${IC.out}${guest ? '나가기' : '로그아웃'}</button></span></div>
   <div class="hello"><h1>안녕하세요! ${esc(me.name)}${esc(me.title || '님')}</h1></div>
   <div class="card pcard"><div><div class="sub">총 포인트</div><div class="pts">${fmt(me.points)}<span style="font-size:16px;font-weight:700;color:var(--sub);margin-left:3px">P</span></div></div></div>
-  <div class="tiles"><button class="tile" id="nt">${IC.note}오답노트</button><button class="tile" id="hist">${IC.list}내 기록</button></div>${fire}`;
+  ${fire}`;
 }
-function bindHead() { $('#out').onclick = logout; if ($('#tomode')) $('#tomode').onclick = renderModes; if ($('#toadm')) $('#toadm').onclick = () => switchTo('admin'); $('#hist').onclick = renderHistory; $('#nt').onclick = renderNotes; bindNav(); }
-function renderHome(notice, toRank) {
+function bindHead() { $('#out').onclick = logout; if ($('#toadm')) $('#toadm').onclick = () => switchTo('admin'); bindNav(); }
+function renderHome(notice) {
   if (!me.grades.includes(pickedGrade)) pickedGrade = me.grades.includes(me.grade) ? me.grade : null;
   const c = me.cfg, cnt = Math.min(me.todayCount, c.DAILY_BONUS_COUNT), left = Math.max(0, c.DAILY_BONUS_COUNT - me.todayCount);
   app(`${head()}
@@ -359,22 +378,8 @@ function renderHome(notice, toRank) {
   <p class="sub" style="margin:12px 0 0">미리보기 ${c.PREVIEW_SEC}초 (-${c.PREVIEW_COST}P) · 풀기 -${c.ACCEPT_COST}P · 제한시간 ${c.TIME_LIMIT_SEC / 60}분 · 정답 +${c.REWARD}P</p>
   <div class="err" id="err">${esc(notice || '')}</div></div>
   <button class="primary btn-big" id="pv" ${pickedGrade ? '' : 'disabled'}>${pickedGrade ? '학습 시작하기 · ' + pickedGrade : '학년을 먼저 골라 주십시오'}</button>
-  <div class="card" id="rk" style="margin-top:14px"><h2>헌터 순위</h2><div class="sub">불러오는 중…</div></div>
-  ${navBar(toRank ? 'rk' : 'home')}`);
+  ${navBar('home')}`);
   bindHead();
-  api('rank').then((r) => {
-    const el = $('#rk'); if (!el) return;
-    const draw = (k) => {
-      const grade = k === 'grade', list = grade ? r.gradeTop : r.top;
-      const sum = grade ? (r.myGradeRank ? `내 학년 순위 ${r.myGradeRank}위 / ${r.gradeTotal}명` : '1,000P 이상부터 순위에 오릅니다') : (r.myRank ? `내 순위 ${r.myRank}위 / ${r.total}명` : '1,000P 이상부터 순위에 오릅니다');
-      el.innerHTML = `<h2 style="display:flex;align-items:center;gap:8px">${trophy('#f5b82e')}헌터 순위</h2>
-      <div class="seg"><button data-k="all" class="${grade ? '' : 'on'}">전체</button><button data-k="grade" class="${grade ? 'on' : ''}">내 학년${r.grade ? ' · ' + esc(r.grade) : ''}</button></div>
-      <div class="sub" style="font-weight:600;margin-bottom:6px">${sum}</div>${list.length ? rankRows(list) : '<p class="sub">아직 순위에 오른 학생이 없습니다.</p>'}`;
-      el.querySelectorAll('.seg button').forEach((b) => b.onclick = () => draw(b.dataset.k));
-    };
-    draw(window.__rk || 'all');
-    if (toRank) el.scrollIntoView({ block: 'center' });
-  }).catch(() => {});
   document.querySelectorAll('.grades button').forEach((b) => b.onclick = () => { const y = window.scrollY; pickedGrade = b.dataset.g; renderHome(); window.scrollTo(0, y); requestAnimationFrame(() => window.scrollTo(0, y)); });
   $('#pv').onclick = async () => {
     try { const r = await api('preview', { grade: pickedGrade }); skew = r.serverNow - Date.now(); me.points = r.points; renderPreview(r.active); }
@@ -458,14 +463,87 @@ function renderResult(r) {
   $('#nx').onclick = () => nextPreview(pickedGrade);
   $('#hm').onclick = () => loadMe();
 }
+
+// ---------- 순위 탭 (포인트 전체 · 내 학년 · 시즌) ----------
+let rkKind = 'all';
+async function renderRank() {
+  let r, s = null;
+  try { r = await api('rank'); s = await api('season/info').catch(() => null); } catch (e) { return renderHome(e.message); }
+  app(`<div class="top"><h1 style="font-size:22px;display:flex;align-items:center;gap:8px">${trophy('#f5b82e')}순위</h1></div>
+  <div class="card"><div class="seg"><button data-k="all">포인트 전체</button><button data-k="grade">내 학년${r.grade ? ' · ' + esc(r.grade) : ''}</button><button data-k="season">시즌</button></div><div id="rkb"></div></div>${navBar('rk')}`);
+  bindNav();
+  const draw = (k) => {
+    rkKind = k;
+    document.querySelectorAll('.seg button').forEach((b) => b.classList.toggle('on', b.dataset.k === k));
+    let sum, rows;
+    if (k === 'season') {
+      if (!s || !s.season) { $('#rkb').innerHTML = '<p class="sub">현재 진행중인 시즌이 없습니다.</p>'; return; }
+      sum = s.me.rank ? `내 순위 ${s.me.rank}위 / ${s.total}명 · ${fmt(s.me.score)}점` : '아직 점수가 없습니다';
+      rows = s.top.length ? seasonRows(s.top) : '';
+    } else {
+      const grade = k === 'grade', list = grade ? r.gradeTop : r.top;
+      sum = grade ? (r.myGradeRank ? `내 학년 순위 ${r.myGradeRank}위 / ${r.gradeTotal}명` : '1,000P 이상부터 순위에 오릅니다') : (r.myRank ? `내 순위 ${r.myRank}위 / ${r.total}명` : '1,000P 이상부터 순위에 오릅니다');
+      rows = list.length ? rankRows(list) : '';
+    }
+    $('#rkb').innerHTML = `<div class="sub" style="font-weight:600;margin-bottom:6px">${sum}</div>${rows || '<p class="sub">아직 순위에 오른 학생이 없습니다.</p>'}`;
+  };
+  document.querySelectorAll('.seg button').forEach((b) => b.onclick = () => draw(b.dataset.k));
+  draw(rkKind);
+}
+
+// ---------- 더보기 ----------
+function renderMore() {
+  const rows = [['hist', '내 기록', '최근 푼 문제 30개'], ['stats', '내 통계', '정답률과 약한 단원'], ['notice', '공지사항', '학원 소식과 이벤트'], ['guide', '이용 안내', '포인트와 시즌 규칙']];
+  if (me.isTeacher) rows.push(['roster', '담당 학생 현황', '내 반 학생의 학습 현황']);
+  if (me.isAdmin) rows.push(['admin', '관리자 화면', '학생, 문제, 시즌 관리']);
+  rows.push(['out', guest ? '나가기' : '로그아웃', '']);
+  app(`<div class="top"><h1 style="font-size:22px">더보기</h1></div>
+  <div class="card menu">${rows.map(([k, n, d]) => `<button class="mrow" data-m="${k}"><span>${n}${d ? `<br><span class="sub">${d}</span>` : ''}</span><i>›</i></button>`).join('')}</div>${navBar('more')}`);
+  bindNav();
+  const f = { hist: renderHistory, stats: renderStats, notice: renderNotices, guide: renderGuide, roster: renderRoster, admin: () => switchTo('admin'), out: logout };
+  document.querySelectorAll('.mrow').forEach((b) => b.onclick = () => f[b.dataset.m]());
+}
+const subTop = (t, extra) => `<div class="top"><button class="back" id="bk">${IC.back}더보기</button>${extra || ''}</div><h1 style="font-size:22px;margin:4px 0 12px">${t}</h1>`;
+async function renderStats() {
+  const s = await api('stats'), pct = (a, n) => n ? Math.round(100 * a / n) : 0, mx = Math.max(1, ...s.days.map((x) => x.n));
+  app(`${subTop('내 통계')}
+  <div class="card"><div class="stat3"><div><b>${fmt(s.total)}</b><span>푼 문제</span></div><div><b>${fmt(s.ok)}</b><span>맞힌 문제</span></div><div><b>${pct(s.ok, s.total)}%</b><span>정답률</span></div></div>${guest ? '<p class="sub">체험모드에서는 이번 체험 중의 기록만 집계됩니다.</p>' : ''}</div>
+  <div class="card"><h2>최근 7일</h2><div class="dchart">${s.days.map((x) => `<div class="dcol"><em>${x.n || ''}</em><div class="dtot" style="height:${Math.round(x.n / mx * 80)}%"><i style="height:${x.n ? Math.round(x.ok / x.n * 100) : 0}%"></i></div><span>${esc(x.d)}</span></div>`).join('')}</div><p class="sub" style="margin:6px 0 0">막대 전체는 푼 문제, 색이 진한 부분은 맞힌 문제입니다.</p></div>
+  <div class="card"><h2>학년별 정답률</h2>${s.byGrade.length ? s.byGrade.map((g) => `<div class="gbar"><b style="width:34px">${esc(g.grade)}</b><div class="t"><i style="width:${pct(g.ok, g.n)}%"></i></div><span>${pct(g.ok, g.n)}% (${g.ok}/${g.n})</span></div>`).join('') : '<p class="sub">아직 푼 문제가 없습니다.</p>'}</div>
+  ${guest ? '' : `<div class="card"><h2>약한 단원</h2>${s.weak.length ? s.weak.map((w) => `<div class="gbar"><b style="flex:1">${esc(w.unit)}</b><span>${pct(w.ok, w.n)}% (${w.ok}/${w.n})</span></div>`).join('') + '<p class="sub" style="margin:6px 0 0">3문제 이상 푼 대단원 중 정답률이 낮은 순서입니다.</p>' : '<p class="sub">3문제 이상 푼 단원이 생기면 표시됩니다.</p>'}</div>`}${navBar('more')}`);
+  bindNav(); $('#bk').onclick = renderMore;
+}
+async function renderNotices() {
+  const list = await api('notices');
+  app(`${subTop('공지사항')}
+  ${list.map((n) => `<div class="card"><div class="sub">${n.pinned ? '<span class="chip">고정</span> ' : ''}${new Date(n.t).toLocaleDateString('ko-KR')}</div><h2 style="margin:6px 0">${esc(n.title)}</h2><div style="white-space:pre-wrap;line-height:1.65">${esc(n.body)}</div></div>`).join('') || '<div class="card sub">등록된 공지가 없습니다.</div>'}${navBar('more')}`);
+  bindNav(); $('#bk').onclick = renderMore;
+}
+function renderGuide() {
+  const c = me.cfg;
+  app(`${subTop('이용 안내')}
+  <div class="card"><h2>포인트 사냥</h2><ul class="rules">
+  <li>홈에서 학년을 고르고 학습을 시작합니다. 본인 학년 이상의 문제만 풀 수 있습니다.</li>
+  <li>미리보기 ${c.PREVIEW_SEC}초(-${c.PREVIEW_COST}P) 뒤에 풀기를 고르면 ${c.ACCEPT_COST}P가 차감됩니다. 제한시간은 ${c.TIME_LIMIT_SEC / 60}분입니다.</li>
+  <li>정답이면 +${c.REWARD}P를 받습니다. 하루에 ${c.DAILY_BONUS_COUNT}문제를 맞히면 이후 포인트가 2배입니다.</li>
+  <li>주말·공휴일 오전 ${c.MORNING_FROM}시~${c.MORNING_TO}시에는 포인트가 2배입니다.</li>
+  <li>포인트가 풀이에 필요한 만큼 모자라면 110P로 채워집니다.</li>
+  <li>1,000P 이상이 되면 순위에 오릅니다.</li></ul></div>
+  <div class="card"><h2>시즌 랭킹전</h2><ul class="rules">
+  <li>학년 구분 없이 모두 함께 순위를 겨룹니다.</li>
+  <li>포인트는 쓰지도, 받지도 않습니다. 맞히면 난이도×10점이며 틀려도 감점은 없습니다.</li>
+  <li>시즌이 끝나면 상위 학생에게 상품 이벤트가 있습니다.</li></ul></div>
+  <div class="card"><h2>오답노트</h2><ul class="rules"><li>결과 화면이나 내 기록에서 “오답노트에 담기”를 누르면 모아 두고, 분류 이름과 메모를 적을 수 있습니다.</li></ul></div>${navBar('more')}`);
+  bindNav(); $('#bk').onclick = renderMore;
+}
 async function renderHistory() {
   const h = await api('history');
-  app(`<div class="top"><h1 style="font-size:22px">내 기록 <span class="sub">최근 30개</span></h1></div>
+  app(`${subTop('내 기록 <span class="sub">최근 30개</span>')}
   ${h.map((x) => `<div class="card"><div class="sub">${esc(x.grade)} · ${new Date(x.t).toLocaleString('ko-KR')} · <b class="${x.correct ? 'ok' : 'bad'}">${x.correct ? '정답 +' + x.reward : x.timeout ? '시간초과' : '오답'}</b></div>
   ${probHtml(x)}
   <p>내 답: ${esc(x.myAnswer || '-')} / 정답: <b>${esc(fa(x.answer))}</b></p>
-  ${x.explImage ? `<div class="wm"><img class="eimg" src="${esc(x.explImage)}" alt=""></div>` : ''}${x.explanation ? `<div class="expl">${esc(dm(x.explanation))}</div>` : ''}${x.extra ? `<div class="expl">${esc(dm(x.extra))}</div>` : ''}${x.pid ? `<button class="nbh" data-p="${esc(x.pid)}">오답노트에 담기</button>` : ''}</div>`).join('') || '<div class="card sub">아직 푼 문제가 없습니다.</div>'}${navBar('hist')}`);
-  bindNav();
+  ${x.explImage ? `<div class="wm"><img class="eimg" src="${esc(x.explImage)}" alt=""></div>` : ''}${x.explanation ? `<div class="expl">${esc(dm(x.explanation))}</div>` : ''}${x.extra ? `<div class="expl">${esc(dm(x.extra))}</div>` : ''}${x.pid ? `<button class="nbh" data-p="${esc(x.pid)}">오답노트에 담기</button>` : ''}</div>`).join('') || '<div class="card sub">아직 푼 문제가 없습니다.</div>'}${navBar('more')}`);
+  bindNav(); $('#bk').onclick = renderMore;
   document.querySelectorAll('.nbh').forEach((b) => b.onclick = async () => { try { await api('note/add', { pid: b.dataset.p }); b.textContent = '담았습니다'; b.disabled = true; } catch (e) { alert(e.message); } });
 }
 // 오답노트: 학생마다 따로, 메모와 분류 이름을 직접 정리한다
@@ -496,38 +574,19 @@ async function renderNotes() {
 
 // ---------- 모드 선택 · 시즌 랭킹전 · 선생님 화면 ----------
 const LV = ['', '하', '중하', '중', '상', '최상'];
-const getMode = () => { try { return sessionStorage.getItem('mode'); } catch (_) { return null; } };
-const setMode = (m) => { try { m ? sessionStorage.setItem('mode', m) : sessionStorage.removeItem('mode'); } catch (_) {} };
 const fmtDay = (ms) => new Date(ms).toLocaleDateString('ko-KR', { month: 'numeric', day: 'numeric' });
 const ago = (ms, now) => { if (!ms) return '기록 없음'; const m = Math.floor((now - ms) / 60000); if (m < 1) return '방금'; if (m < 60) return m + '분 전'; const hh = Math.floor(m / 60); if (hh < 24) return hh + '시간 전'; return Math.floor(hh / 24) + '일 전'; };
-
-function renderModes() {
-  setMode(null);
-  app(`<div class="top"><img class="logo" src="logo.png" alt="캐슬수학"><button id="out" class="back" style="margin-right:-4px">${IC.out}${guest ? '나가기' : '로그아웃'}</button></div>
-  <div class="hello"><h1>안녕하세요! ${esc(me.name)}${esc(me.title || '님')}</h1><div class="sub">모드를 선택하십시오.</div></div>
-  <div class="modes">
-    <button class="mode hunt" id="m-normal"><b>포인트 사냥</b><span>문제를 풀어 포인트를 모읍니다.</span></button>
-    <button class="mode season" id="m-season"><b>시즌 랭킹전</b><span>포인트 대신 순위 경쟁🏅<br>난이도 중상 이상😈<br>시즌 종료 시 소정의 상품🎁</span></button>
-    ${me.isTeacher ? '<button class="mode roster" id="m-roster"><b>담당 학생 현황</b><span>내 반 학생의 학습 현황을 확인합니다.</span></button>' : ''}
-    ${me.isAdmin ? '<button class="mode adm" id="m-admin"><b>관리자 화면</b><span>학생, 문제, 시즌을 관리합니다.</span></button>' : ''}
-  </div>`, true);
-  $('#out').onclick = logout;
-  $('#m-normal').onclick = () => { setMode('normal'); renderHome(); };
-  $('#m-season').onclick = () => { setMode('season'); renderSeason(); };
-  if ($('#m-roster')) $('#m-roster').onclick = renderRoster;
-  if ($('#m-admin')) $('#m-admin').onclick = () => switchTo('admin');
-}
 
 const seasonRows = (top) => top.map((x) => `<div class="rk-row${x.me ? ' me' : ''}"><div class="rk-no">${x.rank <= 3 ? trophy(MEDAL[x.rank - 1]) : x.rank}</div><div class="rk-nm">${esc(x.name)}${x.grade ? `<span class="gchip">${esc(x.grade)}</span>` : ''}${x.me ? ' <span class="chip">나</span>' : ''}</div><div class="rk-pt">${fmt(x.score)}점</div></div>`).join('');
 
 async function renderSeason(notice) {
   let d;
-  try { d = await api('season/info'); } catch (e) { return renderModes(); }
+  try { d = await api('season/info'); } catch (e) { return renderHome(e.message); }
   const s = d.season;
-  const head2 = `<div class="top"><button class="back" id="bk">${IC.back}모드 선택</button><span class="chip">시즌 랭킹전</span></div>`;
+  const head2 = `<div class="top"><img class="logo" src="logo.png" alt="캐슬수학"><span class="chip">시즌 랭킹전</span></div>`;
   if (!s) {
-    app(`${head2}<div class="card"><h2>시즌 랭킹전</h2><p class="sub">현재 진행중인 시즌이 없습니다.</p></div>`, true);
-    $('#bk').onclick = renderModes; return;
+    app(`${head2}<div class="card"><h2>시즌 랭킹전</h2><p class="sub">현재 진행중인 시즌이 없습니다.</p></div>${navBar('season')}`);
+    bindNav(); return;
   }
   const active = s.status === 'active', upcoming = s.status === 'upcoming';
   const left = Math.max(0, s.endsAt - d.serverNow), days = Math.floor(left / 86400000), hrs = Math.floor(left / 3600000) % 24;
@@ -544,9 +603,8 @@ async function renderSeason(notice) {
     <div class="err" id="err">${esc(notice || '')}</div>
     ${active && d.canPlay ? (d.poolLeft > 0 ? `<button class="primary btn-big" id="go">도전하기 (남은 문제 ${d.poolLeft}개)</button>` : '<p class="sub" style="margin-top:12px">이번 시즌의 문제를 모두 풀었습니다.</p>') : (!d.canPlay ? '<p class="sub" style="margin-top:12px">선생님·관리자는 순위만 볼 수 있습니다.</p>' : '')}
   </div>
-  <div class="card"><h2 style="display:flex;align-items:center;gap:8px">${trophy('#f5b82e')}시즌 순위 <span class="sub" style="font-weight:600">${d.total}명 참가</span></h2><div id="sl"></div></div>`, true);
-  draw();
-  $('#bk').onclick = renderModes;
+  <div class="card"><h2 style="display:flex;align-items:center;gap:8px">${trophy('#f5b82e')}시즌 순위 <span class="sub" style="font-weight:600">${d.total}명 참가</span></h2><div id="sl"></div></div>${navBar('season')}`);
+  draw(); bindNav();
   if ($('#go')) $('#go').onclick = startSeason;
 }
 async function startSeason() {
@@ -577,15 +635,15 @@ function rosterTable(list, now, edit) {
 }
 async function renderRoster() {
   let d;
-  try { d = await api('roster'); } catch (e) { alert(e.message); return renderModes(); }
-  app(`<div class="top"><button class="back" id="bk">${IC.back}모드 선택</button><span class="chip">담당 학생 현황</span></div>
+  try { d = await api('roster'); } catch (e) { alert(e.message); return renderMore(); }
+  app(`<div class="top"><button class="back" id="bk">${IC.back}더보기</button><span class="chip">담당 학생 현황</span></div>
   <div class="card"><h2>${esc(d.name)}${esc(me.title || '선생님')} 반</h2>${rosterTable(d.students, d.serverNow, false)}</div>`, true);
-  $('#bk').onclick = renderModes;
+  $('#bk').onclick = renderMore;
 }
 
 // ---------- 관리자 ----------
 function tabs(cur) {
-  return `<div class="top"><h1>${esc(localStorage.getItem('who') || '관리자')}</h1><span style="display:flex;gap:6px">${localStorage.getItem('staff') ? '<button id="tostu">학생 화면</button>' : ''}<button id="out">로그아웃</button></span></div><div class="tabs">${[['students', '학생·포인트'], ['problems', '문제'], ['units', '출제 단원'], ['teams', '선생님별 현황'], ['season', '시즌'], ['sus', '풀이 분석'], ['log', '포인트 기록'], ['rules', '규칙 값'], ['settings', '비밀번호']].map(([k, n]) => `<button data-t="${k}" class="${k === cur ? 'on' : ''}">${n}</button>`).join('')}</div>`;
+  return `<div class="top"><h1>${esc(localStorage.getItem('who') || '관리자')}</h1><span style="display:flex;gap:6px">${localStorage.getItem('staff') ? '<button id="tostu">학생 화면</button>' : ''}<button id="out">로그아웃</button></span></div><div class="tabs">${[['students', '학생·포인트'], ['problems', '문제'], ['units', '출제 단원'], ['teams', '선생님별 현황'], ['season', '시즌'], ['sus', '풀이 분석'], ['log', '포인트 기록'], ['notice', '공지'], ['rules', '규칙 값'], ['settings', '비밀번호']].map(([k, n]) => `<button data-t="${k}" class="${k === cur ? 'on' : ''}">${n}</button>`).join('')}</div>`;
 }
 function bindTabs() { $('#out').onclick = logout; if ($('#tostu')) $('#tostu').onclick = () => switchTo('student'); document.querySelectorAll('.tabs button').forEach((b) => b.onclick = () => renderAdmin(b.dataset.t)); }
 async function renderAdmin(tab) {
@@ -733,6 +791,16 @@ async function renderAdmin(tab) {
         v.TIME_LIMIT_SEC = Number(v.TIME_LIMIT_MIN) * 60; delete v.TIME_LIMIT_MIN;
         try { await api('admin/setcfg', v); alert('저장했습니다.'); } catch (e) { showErr(e.message); }
       };
+    } else if (tab === 'notice') {
+      const list = await api('notices');
+      app(`${tabs(tab)}<div class="card"><h2>공지 작성</h2><p class="sub">학생 화면의 더보기 > 공지사항에 보입니다. 체험모드에도 보입니다.</p>
+      <input id="nt1" maxlength="60" placeholder="제목"><textarea id="nb1" maxlength="2000" placeholder="내용" style="margin-top:8px"></textarea>
+      <label style="display:flex;gap:8px;align-items:center"><input type="checkbox" id="np1" style="width:auto"> 맨 위에 고정</label>
+      <div class="err" id="err"></div><button class="primary" id="sv">등록</button></div>
+      ${list.map((n) => `<div class="card"><div class="sub">${n.pinned ? '<span class="chip">고정</span> ' : ''}${new Date(n.t).toLocaleDateString('ko-KR')}</div><h2 style="margin:6px 0">${esc(n.title)}</h2><div style="white-space:pre-wrap">${esc(n.body)}</div><button class="danger ndl" data-i="${n.id}" style="margin-top:10px">삭제</button></div>`).join('')}`);
+      bindTabs();
+      $('#sv').onclick = async () => { try { await api('admin/notice/save', { title: $('#nt1').value, body: $('#nb1').value, pinned: $('#np1').checked }); renderAdmin('notice'); } catch (e) { showErr(e.message); } };
+      document.querySelectorAll('.ndl').forEach((b) => b.onclick = async () => { if (confirm('이 공지를 삭제하시겠습니까?')) { await api('admin/notice/del', { id: Number(b.dataset.i) }); renderAdmin('notice'); } });
     } else {
       app(`${tabs(tab)}<div class="card"><h2>관리자 비밀번호 변경</h2><input id="np" type="password" placeholder="새 비밀번호 (4자 이상)"><div class="err" id="err"></div><button class="primary" id="sv">변경</button></div>`);
       bindTabs();

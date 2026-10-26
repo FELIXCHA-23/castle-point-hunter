@@ -445,6 +445,60 @@ begin
                 where a.sid = st.id and a.state = 'done' and a.season_id is null order by a.id desc limit 30) q);
 end $$;
 
+
+-- ----- 공지사항 · 내 통계 -----
+create table if not exists castle.notices (
+  id serial primary key, title text not null, body text not null default '', pinned boolean not null default false,
+  created_at timestamptz not null default now());
+alter table castle.notices enable row level security;
+
+create or replace function castle.r_notices(tok text) returns jsonb language plpgsql as $$
+begin
+  perform castle.auth(tok, null);
+  return (select coalesce(jsonb_agg(jsonb_build_object('id', n.id, 'title', n.title, 'body', n.body, 'pinned', n.pinned, 't', castle.ms(n.created_at))
+            order by n.pinned desc, n.id desc), '[]')
+          from (select * from castle.notices order by pinned desc, id desc limit 30) n);
+end $$;
+
+create or replace function castle.r_admin_notice_save(tok text, b jsonb) returns jsonb language plpgsql as $$
+declare v_t text := btrim(coalesce(b->>'title', '')); v_b text := btrim(coalesce(b->>'body', ''));
+begin
+  perform castle.auth(tok, 'admin');
+  if v_t = '' then perform castle.fail(400, '제목을 입력해 주십시오.'); end if;
+  if length(v_t) > 60 or length(v_b) > 2000 then perform castle.fail(400, '제목은 60자, 내용은 2000자까지 쓸 수 있습니다.'); end if;
+  insert into castle.notices (title, body, pinned) values (v_t, v_b, coalesce((b->>'pinned')::boolean, false));
+  return jsonb_build_object('ok', true);
+end $$;
+
+create or replace function castle.r_admin_notice_del(tok text, b jsonb) returns jsonb language plpgsql as $$
+begin
+  perform castle.auth(tok, 'admin');
+  delete from castle.notices where id = (b->>'id')::int;
+  return jsonb_build_object('ok', true);
+end $$;
+
+-- 내 통계: 전체 정답률, 최근 7일, 학년별, 약한 단원(3문제 이상 푼 대단원 중 정답률이 낮은 순)
+create or replace function castle.r_stats(tok text) returns jsonb language plpgsql as $$
+declare st castle.students := castle.stu(tok); v_today date := (now() at time zone 'Asia/Seoul')::date;
+begin
+  return jsonb_build_object(
+    'total', (select count(*) from castle.attempts where sid = st.id and state = 'done'),
+    'ok', (select count(*) from castle.attempts where sid = st.id and state = 'done' and correct),
+    'days', (select jsonb_agg(jsonb_build_object('d', to_char(d.day, 'FMMM/FMDD'), 'n', coalesce(x.n, 0), 'ok', coalesce(x.ok, 0)) order by d.day)
+             from (select v_today - 6 + i as day from generate_series(0, 6) i) d
+             left join (select (end_at at time zone 'Asia/Seoul')::date as day, count(*) as n, count(*) filter (where correct) as ok
+                        from castle.attempts where sid = st.id and state = 'done' and end_at >= now() - interval '9 days' group by 1) x on x.day = d.day),
+    'byGrade', (select coalesce(jsonb_agg(jsonb_build_object('grade', g.grade, 'n', g.n, 'ok', g.ok) order by g.grade), '[]')
+                from (select grade, count(*) as n, count(*) filter (where correct) as ok from castle.attempts
+                      where sid = st.id and state = 'done' group by grade) g),
+    'weak', (select coalesce(jsonb_agg(jsonb_build_object('unit', w.u, 'n', w.n, 'ok', w.ok) order by w.rate, w.n desc), '[]')
+             from (select p.unit_large as u, count(*) as n, count(*) filter (where a.correct) as ok,
+                          (count(*) filter (where a.correct))::float / count(*) as rate
+                   from castle.attempts a join castle.problems p on p.id = a.pid
+                   where a.sid = st.id and a.state = 'done' and p.unit_large <> '' group by p.unit_large
+                   having count(*) >= 3 order by 4, 2 desc limit 3) w));
+end $$;
+
 -- ----- 오답노트 -----
 create or replace function castle.r_notes(tok text) returns jsonb language plpgsql as $$
 declare st castle.students := castle.stu(tok);
@@ -962,6 +1016,10 @@ begin
     when 'note/update' then return castle.r_note_update(tok, b);
     when 'note/del' then return castle.r_note_del(tok, b);
     when 'history' then return castle.r_history(tok);
+    when 'stats' then return castle.r_stats(tok);
+    when 'notices' then return castle.r_notices(tok);
+    when 'admin/notice/save' then return castle.r_admin_notice_save(tok, b);
+    when 'admin/notice/del' then return castle.r_admin_notice_del(tok, b);
     when 'admin/students' then return castle.r_admin_students(tok);
     when 'admin/addstudents' then return castle.r_admin_addstudents(tok, b);
     when 'admin/points' then return castle.r_admin_points(tok, b);
