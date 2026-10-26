@@ -198,7 +198,7 @@ function bindNav() {
 // ---------- 로그인 ----------
 function renderLogin(msg, signup) {
   app(`<div style="text-align:center;margin:9vh 0 26px"><img class="logo logo-big" src="logo.png" alt="캐슬수학" style="margin:0 auto 18px"><h1>캐슬 포인트 헌터</h1><p class="sub" style="margin-top:6px">${signup ? '아이디와 비밀번호만 정하면 바로 시작합니다' : '수학문제를 풀고 포인트를 모아보자!<br>주말, 공휴일 오전 7시~9시에는 2배 이벤트!! 🔥'}</p></div>
-  <div class="card"><label style="margin-top:0">아이디${signup ? ' (한글·영문·숫자 2~20자)' : ''}</label><input id="id" autocomplete="username" autocapitalize="none" autocorrect="off">
+  <div class="card">${signup ? '' : '<div class="pbox" style="margin:0 0 4px">아이디는 학교+이름으로 이미 등록되어 있습니다.<br><span style="font-weight:600">(예시: 신현고차캐슬, 해원중김캐슬)</span></div>'}<label style="margin-top:10px">아이디${signup ? ' (한글·영문·숫자 2~20자)' : ''}</label><input id="id" autocomplete="username" autocapitalize="none" autocorrect="off">
   <label>비밀번호${signup ? ' (4자 이상)' : ''}</label><input id="pw" type="password" autocomplete="${signup ? 'new-password' : 'current-password'}">
   <div class="err" id="err">${esc(msg || '')}</div>
   <button class="primary btn-big" id="go" style="margin-top:6px">${signup ? '가입하고 시작하기' : '로그인'}</button></div>
