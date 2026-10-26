@@ -40,6 +40,7 @@ create table if not exists castle.seasons (
   min_level int not null default 4, prize text not null default '', created_at timestamptz not null default now());
 create table if not exists castle.reset_requests (
   id serial primary key, student text not null, created_at timestamptz not null default now(), done boolean not null default false);
+alter table castle.students add column if not exists last_seen timestamptz;   -- 마지막으로 앱을 연 시각 (관리자 화면에서 정렬용)
 alter table castle.reset_requests enable row level security;
 alter table castle.roster enable row level security;
 alter table castle.seasons enable row level security;
@@ -193,7 +194,8 @@ begin
   ok := not p_timeout and p.id is not null and castle.same(p_answer, p.answer);
   if a.season_id is not null then  -- 시즌 랭킹전: 포인트 대신 점수(난이도×10)만 올라요
     update castle.attempts set state = 'done', answer = left(coalesce(p_answer, ''), 60), correct = ok,
-           timeout = p_timeout, end_at = now(), reward = 0, score = case when ok then greatest(p.level, 1) * 10 else 0 end where id = a.id;
+           timeout = p_timeout, end_at = now(), reward = 0, score = case when ok then greatest(p.level, 1) * 10
+                         when not p_timeout and btrim(coalesce(p_answer, '')) <> '' then -greatest(p.level, 1) * 5 else 0 end where id = a.id;  -- 오답을 제출하면 난이도×5점 감점, 시간 초과는 감점 없음
     return;
   end if;
   rw := case when ok then castle.c('REWARD') * a.mult else 0 end;
@@ -297,6 +299,7 @@ begin
   delete from castle.tries where key = v_key;
   delete from castle.sessions where exp < now();
   v_tok := encode(extensions.gen_random_bytes(24), 'hex');
+  if not v_adm then update castle.students set last_seen = now() where id = v_id; end if;
   -- 관리자 권한이 있는 선생님 계정은 비밀번호를 바꾼 뒤부터 관리자 화면으로 들어가요 (처음 0000일 때는 학생으로 들어가 비밀번호부터 바꿔요)
   insert into castle.sessions values (v_tok, case when v_adm then 'admin' else v_id end,
     case when v_adm or (v_staff and not v_must) then 'admin' else 'student' end, now() + interval '7 days');
@@ -358,6 +361,7 @@ end $$;
 create or replace function castle.r_me(tok text) returns jsonb language plpgsql as $$
 declare st castle.students := castle.stu(tok); a castle.attempts := castle.settle(st.id); v_pts int;
 begin
+  update castle.students set last_seen = now() where id = st.id and (last_seen is null or last_seen < now() - interval '2 minutes');
   select points into v_pts from castle.students where id = st.id;
   return jsonb_build_object('id', st.id, 'name', st.name, 'points', v_pts, 'mustChange', st.must_change, 'isAdmin', st.is_admin, 'isTeacher', st.is_teacher, 'title', st.title, 'grade', st.grade,
     'grades', to_jsonb(castle.allowed_grades(st)), 'cfg', castle.cfg_all(), 'mult', castle.next_mult(st.id),
@@ -545,7 +549,7 @@ create or replace function castle.r_admin_students(tok text) returns jsonb langu
 begin
   perform castle.auth(tok, 'admin');
   return (select coalesce(jsonb_agg(jsonb_build_object('id', id, 'name', name, 'points', points, 'mustChange', must_change, 'isAdmin', is_admin, 'isTeacher', is_teacher, 'title', title, 'grade', grade,
-            'today', castle.today_count(id), 'solved', coalesce(array_length(done, 1), 0)) order by id), '[]') from castle.students);
+            'today', castle.today_count(id), 'solved', coalesce(array_length(done, 1), 0), 'lastSeen', castle.ms(last_seen)) order by id), '[]') from castle.students);
 end $$;
 
 create or replace function castle.r_admin_addstudents(tok text, b jsonb) returns jsonb language plpgsql as $$
@@ -805,7 +809,7 @@ create or replace function castle.season_board(p_id int)
 returns table (sid text, name text, grade text, score int, ok int, n int, last_at timestamptz, r bigint, gr bigint)
 language sql stable as $$
   with sc as (
-    select a.sid, sum(a.score)::int as score, (count(*) filter (where a.correct))::int as ok, count(*)::int as n, max(a.end_at) as last_at
+    select a.sid, greatest(sum(a.score), 0)::int as score, (count(*) filter (where a.correct))::int as ok, count(*)::int as n, max(a.end_at) as last_at
     from castle.attempts a join castle.students x on x.id = a.sid
     where a.season_id = p_id and a.state = 'done' and not x.is_teacher and not x.is_admin group by a.sid)
   select sc.sid, x.name, x.grade, sc.score, sc.ok, sc.n, sc.last_at,

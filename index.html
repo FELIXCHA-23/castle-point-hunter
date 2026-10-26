@@ -111,7 +111,9 @@ code{background:var(--bg);padding:1px 6px;border-radius:6px;font-size:.92em}
 .nav button svg{width:23px;height:23px;stroke:currentColor}
 .nav button.on{color:var(--main)}
 .mrow{display:flex;justify-content:space-between;align-items:center;gap:10px;width:100%;padding:15px 2px;border:none;border-top:1px solid var(--line);background:none;border-radius:0;font-size:15.5px;font-weight:700;color:var(--ink);text-align:left;box-shadow:none}
-.menu .mrow:first-child{border-top:none}
+.mpop-bg{position:fixed;inset:0;z-index:30}
+.mpop{position:fixed;right:max(12px,env(safe-area-inset-right,0px));bottom:calc(66px + env(safe-area-inset-bottom,0px));width:min(300px,calc(100vw - 24px));background:var(--card);border:1px solid var(--line);border-radius:12px;padding:4px 14px;max-height:70vh;overflow:auto}
+.mpop .mrow:first-child{border-top:none}
 .mrow .sub{font-size:12.5px;font-weight:500;margin:0}
 .mrow i{font-style:normal;color:var(--sub);font-weight:400}
 .dchart{display:flex;gap:6px;align-items:flex-end;height:120px;margin:12px 0 4px}
@@ -207,9 +209,9 @@ async function guestApi(path, b) {
       const a = G.cur; G.cur = null;
       if (!a) throw new Error('풀고 있는 문제가 없습니다.');
       const c = await api('guest/check', { id: a.p.id, answer: (b && b.answer) || '' }), ok = c.correct && String((b && b.answer) || '').trim() !== '';
-      const score = ok ? Math.max(c.level, 1) * 10 : 0;
+      const lv = Math.max(c.level, 1), score = ok ? lv * 10 : String((b && b.answer) || '').trim() !== '' ? -lv * 5 : 0;
       G.hist.push({ grade: a.p.grade, ok });
-      if (a.season) { G.n++; if (ok) { G.ok++; G.score += score; } }
+      if (a.season) { G.n++; if (ok) G.ok++; G.score = Math.max(0, G.score + score); }
       const mult = a.mult || 1, reward = ok && !a.season ? 100 * mult : 0;
       if (reward) { G.points += reward; G.today++; }
       return { pid: a.p.id, correct: ok, timeout: false, reward, mult, points: G.points, answer: c.answer, explanation: c.explanation, extra: c.extra, explImage: c.explImage, season: !!a.season, score, guest: true };
@@ -248,7 +250,7 @@ function logout() {
 async function switchTo(to) { try { const r = await api('switch', { to }); token = r.token; role = r.role; localStorage.setItem('tk', token); localStorage.setItem('role', role); start(); } catch (e) { alert(e.message); } }
 function math(el) { if (window.renderMathInElement) try { renderMathInElement(el, { delimiters: [{ left: '$$', right: '$$', display: true }, { left: '$', right: '$', display: false }], throwOnError: false }); } catch (e) {} }
 window.addEventListener('load', () => math(document.body));
-const app = (html, nonav) => { clearInterval(tick); $('#app').className = nonav ? 'nonav' : ''; $('#app').innerHTML = (guest ? '<div class="guestbar"><span>체험모드이므로 포인트는 사라집니다.</span><button id="gout">나가기</button></div>' : '') + html; if (guest && $('#gout')) $('#gout').onclick = exitGuest; math($('#app')); window.scrollTo(0, 0); };
+const app = (html, nonav) => { clearInterval(tick); closeMore(); $('#app').className = nonav ? 'nonav' : ''; $('#app').innerHTML = (guest ? '<div class="guestbar"><span>체험모드이므로 포인트는 사라집니다.</span><button id="gout">나가기</button></div>' : '') + html; if (guest && $('#gout')) $('#gout').onclick = exitGuest; math($('#app')); window.scrollTo(0, 0); };
 
 // ---- 문제 화면 보호 (복사·저장·인쇄를 어렵게 해요) ----
 const guard = (e) => { if (e.target.closest && e.target.closest('.prob,.eimg,.wm')) e.preventDefault(); };
@@ -491,19 +493,22 @@ async function renderRank() {
   draw(rkKind);
 }
 
-// ---------- 더보기 ----------
+// ---------- 더보기: 탭 위로 목록이 뜨고, 고르면 각 화면으로 이동 ----------
+function closeMore() { const o = $('#mpop'); if (o) o.remove(); }
 function renderMore() {
+  if ($('#mpop')) return closeMore();
   const rows = [['hist', '내 기록', '최근 푼 문제 30개'], ['stats', '내 통계', '정답률과 약한 단원'], ['notice', '공지사항', '학원 소식과 이벤트'], ['guide', '이용 안내', '포인트와 시즌 규칙']];
   if (me.isTeacher) rows.push(['roster', '담당 학생 현황', '내 반 학생의 학습 현황']);
   if (me.isAdmin) rows.push(['admin', '관리자 화면', '학생, 문제, 시즌 관리']);
   rows.push(['out', guest ? '나가기' : '로그아웃', '']);
-  app(`<div class="top"><h1 style="font-size:22px">더보기</h1></div>
-  <div class="card menu">${rows.map(([k, n, d]) => `<button class="mrow" data-m="${k}"><span>${n}${d ? `<br><span class="sub">${d}</span>` : ''}</span><i>›</i></button>`).join('')}</div>${navBar('more')}`);
-  bindNav();
+  const o = document.createElement('div'); o.id = 'mpop'; o.className = 'mpop-bg';
+  o.innerHTML = `<div class="mpop">${rows.map(([k, n, d]) => `<button class="mrow" data-m="${k}"><span>${n}${d ? `<br><span class="sub">${d}</span>` : ''}</span><i>›</i></button>`).join('')}</div>`;
+  document.body.appendChild(o);
+  o.onclick = (e) => { if (e.target === o) closeMore(); };
   const f = { hist: renderHistory, stats: renderStats, notice: renderNotices, guide: renderGuide, roster: renderRoster, admin: () => switchTo('admin'), out: logout };
-  document.querySelectorAll('.mrow').forEach((b) => b.onclick = () => f[b.dataset.m]());
+  o.querySelectorAll('.mrow').forEach((b) => b.onclick = () => { closeMore(); f[b.dataset.m](); });
 }
-const subTop = (t, extra) => `<div class="top"><button class="back" id="bk">${IC.back}더보기</button>${extra || ''}</div><h1 style="font-size:22px;margin:4px 0 12px">${t}</h1>`;
+const subTop = (t, extra) => `<div class="top"><button class="back" id="bk">${IC.back}홈</button>${extra || ''}</div><h1 style="font-size:22px;margin:4px 0 12px">${t}</h1>`;
 async function renderStats() {
   const s = await api('stats'), pct = (a, n) => n ? Math.round(100 * a / n) : 0, mx = Math.max(1, ...s.days.map((x) => x.n));
   app(`${subTop('내 통계')}
@@ -511,13 +516,13 @@ async function renderStats() {
   <div class="card"><h2>최근 7일</h2><div class="dchart">${s.days.map((x) => `<div class="dcol"><em>${x.n || ''}</em><div class="dtot" style="height:${Math.round(x.n / mx * 80)}%"><i style="height:${x.n ? Math.round(x.ok / x.n * 100) : 0}%"></i></div><span>${esc(x.d)}</span></div>`).join('')}</div><p class="sub" style="margin:6px 0 0">막대 전체는 푼 문제, 색이 진한 부분은 맞힌 문제입니다.</p></div>
   <div class="card"><h2>학년별 정답률</h2>${s.byGrade.length ? s.byGrade.map((g) => `<div class="gbar"><b style="width:34px">${esc(g.grade)}</b><div class="t"><i style="width:${pct(g.ok, g.n)}%"></i></div><span>${pct(g.ok, g.n)}% (${g.ok}/${g.n})</span></div>`).join('') : '<p class="sub">아직 푼 문제가 없습니다.</p>'}</div>
   ${guest ? '' : `<div class="card"><h2>약한 단원</h2>${s.weak.length ? s.weak.map((w) => `<div class="gbar"><b style="flex:1">${esc(w.unit)}</b><span>${pct(w.ok, w.n)}% (${w.ok}/${w.n})</span></div>`).join('') + '<p class="sub" style="margin:6px 0 0">3문제 이상 푼 대단원 중 정답률이 낮은 순서입니다.</p>' : '<p class="sub">3문제 이상 푼 단원이 생기면 표시됩니다.</p>'}</div>`}${navBar('more')}`);
-  bindNav(); $('#bk').onclick = renderMore;
+  bindNav(); $('#bk').onclick = () => loadMe();
 }
 async function renderNotices() {
   const list = await api('notices');
   app(`${subTop('공지사항')}
   ${list.map((n) => `<div class="card"><div class="sub">${n.pinned ? '<span class="chip">고정</span> ' : ''}<span style="white-space:nowrap">${ymd(n.t)}</span></div><h2 style="margin:6px 0">${esc(n.title)}</h2><div style="white-space:pre-wrap;line-height:1.65">${esc(n.body)}</div></div>`).join('') || '<div class="card sub">등록된 공지가 없습니다.</div>'}${navBar('more')}`);
-  bindNav(); $('#bk').onclick = renderMore;
+  bindNav(); $('#bk').onclick = () => loadMe();
 }
 function renderGuide() {
   const c = me.cfg;
@@ -531,10 +536,13 @@ function renderGuide() {
   <li>1,000P 이상이 되면 순위에 오릅니다.</li><li>10000P 이상 적립 시 장학카드에 장학금으로 전환할 수 있습니다.</li></ul></div>
   <div class="card"><h2>시즌 랭킹전</h2><ul class="rules">
   <li>순위는 학년 구분 없이 모두 함께 겨룹니다. 문제는 본인 학년의 문제만 나옵니다.</li>
-  <li>포인트는 쓰지도, 받지도 않습니다. 맞히면 난이도×10점이며 틀려도 감점은 없습니다.</li>
+  <li>랭킹전은 포인트의 적립 및 사용과 무관하며, 오직 점수제로만 운영됩니다.</li>
+  <li>점수는 문항의 난이도별로 다르고, 오답을 제출하면 감점이 됩니다.</li>
+  <li>맞히면 난이도×10점, 오답을 제출하면 난이도×5점이 감점됩니다. 시간 초과는 감점이 없습니다.</li>
+  <li>랭킹전은 포인트 대신 순위만 있습니다.</li>
   <li>시즌이 끝나면 상위 학생에게 상품 이벤트가 있습니다.</li></ul></div>
   <div class="card"><h2>오답노트</h2><ul class="rules"><li>결과 화면이나 내 기록에서 “오답노트에 담기”를 누르면 모아 두고, 분류 이름과 메모를 적을 수 있습니다.</li></ul></div>${navBar('more')}`);
-  bindNav(); $('#bk').onclick = renderMore;
+  bindNav(); $('#bk').onclick = () => loadMe();
 }
 async function renderHistory() {
   const h = await api('history');
@@ -543,7 +551,7 @@ async function renderHistory() {
   ${probHtml(x)}
   <p>내 답: ${esc(x.myAnswer || '-')} / 정답: <b>${esc(fa(x.answer))}</b></p>
   ${x.explImage ? `<div class="wm"><img class="eimg" src="${esc(x.explImage)}" alt=""></div>` : ''}${x.explanation ? `<div class="expl">${esc(dm(x.explanation))}</div>` : ''}${x.extra ? `<div class="expl">${esc(dm(x.extra))}</div>` : ''}${x.pid ? `<button class="nbh" data-p="${esc(x.pid)}">오답노트에 담기</button>` : ''}</div>`).join('') || '<div class="card sub">아직 푼 문제가 없습니다.</div>'}${navBar('more')}`);
-  bindNav(); $('#bk').onclick = renderMore;
+  bindNav(); $('#bk').onclick = () => loadMe();
   document.querySelectorAll('.nbh').forEach((b) => b.onclick = async () => { try { await api('note/add', { pid: b.dataset.p }); b.textContent = '담았습니다'; b.disabled = true; } catch (e) { alert(e.message); } });
 }
 // 오답노트: 학생마다 따로, 메모와 분류 이름을 직접 정리한다
@@ -600,7 +608,7 @@ async function renderSeason(notice) {
     <div class="sub">${fmtDay(s.startsAt)} ~ ${fmtDay(s.endsAt)} · ${state}</div>
     ${s.prize ? `<div class="pbox">시즌 종료 후 상품 이벤트<br><span style="font-weight:600">${esc(s.prize)}</span></div>` : '<div class="pbox">시즌이 끝나면 상위 학생에게 상품 이벤트가 있습니다.</div>'}
     <div class="stat3"><div><b>${fmt(d.me.score)}</b><span>내 점수</span></div><div><b>${d.me.rank ? d.me.rank + '위' : '-'}</b><span>전체 순위</span></div><div><b>${d.total}명</b><span>참가 인원</span></div></div>
-    <ul class="rules"><li>순위는 <b>학년 구분 없이 모두 함께</b> 겨룹니다.</li><li>문제는 <b>본인 학년의 문제</b>만 나옵니다.</li><li>포인트는 쓰지도, 받지도 않습니다. 순위로만 겨룹니다.</li><li>포인트 사냥보다 어려운 문제(난이도 <b>${LV[s.minLevel]}</b> 이상)만 나옵니다.</li><li>맞히면 <b>난이도×10점</b>, 틀려도 감점은 없습니다.</li><li>한 번 푼 문제는 이번 시즌에 다시 나오지 않습니다.</li><li>문제당 제한시간 ${Math.round(s.timeLimitSec / 60)}분입니다.</li></ul>
+    <ul class="rules"><li>순위는 <b>학년 구분 없이 모두 함께</b> 겨룹니다.</li><li>문제는 <b>본인 학년의 문제</b>만 나옵니다.</li><li>랭킹전은 포인트의 적립 및 사용과 무관하며, 오직 점수제로만 운영됩니다.</li><li>랭킹전은 포인트 대신 순위만 있습니다.</li><li>포인트 사냥보다 어려운 문제(난이도 <b>${LV[s.minLevel]}</b> 이상)만 나옵니다.</li><li>점수는 문항의 난이도별로 다르고, 오답을 제출하면 감점이 됩니다. 맞히면 <b>난이도×10점</b>, 오답을 제출하면 <b>난이도×5점</b>이 감점됩니다. 시간 초과는 감점이 없습니다.</li><li>한 번 푼 문제는 이번 시즌에 다시 나오지 않습니다.</li><li>문제당 제한시간 ${Math.round(s.timeLimitSec / 60)}분입니다.</li></ul>
     <div class="err" id="err">${esc(notice || '')}</div>
     ${active && d.canPlay ? (d.poolLeft > 0 ? `<button class="primary btn-big" id="go">도전하기 (남은 문제 ${d.poolLeft}개)</button>` : '<p class="sub" style="margin-top:12px">이번 시즌의 문제를 모두 풀었습니다.</p>') : (!d.canPlay ? '<p class="sub" style="margin-top:12px">선생님·관리자는 순위만 볼 수 있습니다.</p>' : '')}
   </div>
@@ -614,7 +622,7 @@ async function startSeason() {
 }
 function renderSeasonResult(r) {
   app(`<div class="card"><div class="res ${r.correct ? 'ok' : 'bad'}">${r.correct ? '정답입니다' : r.timeout ? '시간 초과' : '오답입니다'}</div>
-  <p class="fire">${r.correct ? `+${r.score}점` : '점수를 얻지 못했습니다.'}</p>
+  <p class="fire">${r.correct ? `+${r.score}점` : r.score < 0 ? `${r.score}점 (오답 감점)` : '점수를 얻지 못했습니다.'}</p>
   <p>정답: <b>${esc(fa(r.answer))}</b></p></div>
   <div class="card"><h2>해설</h2>${r.explImage ? `<div class="wm"><img class="eimg" src="${esc(r.explImage)}" alt=""></div>` : ''}${r.explanation || !r.explImage ? `<div class="expl">${esc(dm(r.explanation)) || '(해설이 아직 없습니다)'}</div>` : ''}
   ${r.extra ? `<div class="expl">${esc(dm(r.extra))}</div>` : ''}</div>
@@ -636,10 +644,10 @@ function rosterTable(list, now, edit) {
 }
 async function renderRoster() {
   let d;
-  try { d = await api('roster'); } catch (e) { alert(e.message); return renderMore(); }
-  app(`<div class="top"><button class="back" id="bk">${IC.back}더보기</button><span class="chip">담당 학생 현황</span></div>
+  try { d = await api('roster'); } catch (e) { alert(e.message); return loadMe(); }
+  app(`<div class="top"><button class="back" id="bk">${IC.back}홈</button><span class="chip">담당 학생 현황</span></div>
   <div class="card"><h2>${esc(d.name)}${esc(me.title || '선생님')} 반</h2>${rosterTable(d.students, d.serverNow, false)}</div>`, true);
-  $('#bk').onclick = renderMore;
+  $('#bk').onclick = () => loadMe();
 }
 
 // ---------- 관리자 ----------
@@ -647,6 +655,10 @@ function tabs(cur) {
   return `<div class="top"><h1>${esc(localStorage.getItem('who') || '관리자')}</h1><span style="display:flex;gap:6px">${localStorage.getItem('staff') ? '<button id="tostu">학생 화면</button>' : ''}<button id="out">로그아웃</button></span></div><div class="tabs">${[['students', '학생·포인트'], ['problems', '문제'], ['units', '출제 단원'], ['teams', '선생님별 현황'], ['season', '시즌'], ['sus', '풀이 분석'], ['log', '포인트 기록'], ['notice', '공지'], ['rules', '규칙 값'], ['settings', '비밀번호']].map(([k, n]) => `<button data-t="${k}" class="${k === cur ? 'on' : ''}">${n}</button>`).join('')}</div>`;
 }
 function bindTabs() { $('#out').onclick = logout; if ($('#tostu')) $('#tostu').onclick = () => switchTo('student'); document.querySelectorAll('.tabs button').forEach((b) => b.onclick = () => renderAdmin(b.dataset.t)); }
+let stuSort = 'name';
+const byName = (a, b) => a.id.localeCompare(b.id, 'ko');
+const SORTS = { name: byName, pts: (a, b) => b.points - a.points || byName(a, b), ptsa: (a, b) => a.points - b.points || byName(a, b),
+  seen: (a, b) => (b.lastSeen || 0) - (a.lastSeen || 0) || byName(a, b), seena: (a, b) => (a.lastSeen || 0) - (b.lastSeen || 0) || byName(a, b) };
 async function renderAdmin(tab) {
   try {
     if (tab === 'students') {
@@ -657,10 +669,12 @@ async function renderAdmin(tab) {
       <textarea id="nw" placeholder="해원고이시현&#10;신현고황서윤"></textarea><div class="err" id="err"></div><button class="primary" id="add">등록</button></div>
       <div class="card"><h2>포인트 지급 / 차감</h2><div class="row"><input id="amt" type="number" placeholder="포인트 (차감은 -)"><input id="why" placeholder="사유 (예: 일일테스트 우수)"><button class="primary" id="give">선택한 학생에게 적용</button></div><div class="err" id="err2"></div></div>
       <div class="card"><div class="row"><h2 style="flex:1">학생 ${list.length}명</h2><input id="q" placeholder="이름 검색"></div>
-      <table><tr><th><input type="checkbox" id="all" style="width:auto"></th><th>아이디</th><th>포인트</th><th>오늘</th><th></th></tr>
-      ${list.sort((a, b) => a.id.localeCompare(b.id, 'ko')).map((s) => `<tr data-id="${esc(s.id)}"><td><input type="checkbox" class="ck" value="${esc(s.id)}" style="width:auto"></td><td>${esc(s.id)}${s.isAdmin ? ' <span class="chip">관리자</span>' : ''}${s.mustChange ? ' <span class="sub">(초기비번)</span>' : ''}</td><td>${fmt(s.points)}</td><td>${s.today}</td><td><button class="rs" data-id="${esc(s.id)}">비번초기화</button> <button class="danger dl" data-id="${esc(s.id)}">삭제</button></td></tr>`).join('')}</table></div>`);
+      <select id="srt" style="margin:8px 0">${[['name', '이름순'], ['pts', '포인트 많은 순'], ['ptsa', '포인트 적은 순'], ['seen', '최근 접속 순'], ['seena', '접속 오래된 순 (미접속 먼저)']].map(([k, n]) => `<option value="${k}" ${k === stuSort ? 'selected' : ''}>${n}</option>`).join('')}</select>
+      <table><tr><th><input type="checkbox" id="all" style="width:auto"></th><th>아이디</th><th>포인트</th><th>오늘</th><th>최근 접속</th><th></th></tr>
+      ${list.sort(SORTS[stuSort]).map((s) => `<tr data-id="${esc(s.id)}"><td><input type="checkbox" class="ck" value="${esc(s.id)}" style="width:auto"></td><td>${esc(s.id)}${s.isAdmin ? ' <span class="chip">관리자</span>' : ''}${s.mustChange ? ' <span class="sub">(초기비번)</span>' : ''}</td><td>${fmt(s.points)}</td><td>${s.today}</td><td class="sub">${s.lastSeen ? ago(s.lastSeen, Date.now()) : '접속 기록 없음'}</td><td><button class="rs" data-id="${esc(s.id)}">비번초기화</button> <button class="danger dl" data-id="${esc(s.id)}">삭제</button></td></tr>`).join('')}</table></div>`);
       bindTabs();
       $('#add').onclick = async () => { try { const r = await api('admin/addstudents', { text: $('#nw').value }); alert(`등록 ${r.added.length}명` + (r.skipped.length ? '\n건너뜀:\n' + r.skipped.join('\n') : '')); renderAdmin(tab); } catch (e) { showErr(e.message); } };
+      $('#srt').onchange = (e) => { stuSort = e.target.value; renderAdmin(tab); };
       $('#all').onchange = (e) => document.querySelectorAll('.ck').forEach((c) => { if (c.closest('tr').style.display !== 'none') c.checked = e.target.checked; });
       $('#q').oninput = (e) => document.querySelectorAll('tr[data-id]').forEach((r) => r.style.display = r.dataset.id.includes(e.target.value.trim()) ? '' : 'none');
       $('#give').onclick = async () => {
