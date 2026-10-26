@@ -84,6 +84,13 @@ code{background:var(--bg);padding:1px 6px;border-radius:6px;font-size:.92em}
 .rk-pt{font-variant-numeric:tabular-nums;font-weight:700}
 .rk-row+.rk-row{margin-top:4px}
 @media (min-width:700px){#app{max-width:600px}.card{padding:24px}}
+/* 문제 화면 보호: 복사·저장·인쇄를 어렵게 하고, 캡처에 학생 이름이 남도록 워터마크를 깔아요 */
+.prob,.eimg,.wm{-webkit-user-select:none;user-select:none;-webkit-touch-callout:none}
+.prob img,.eimg{pointer-events:none;-webkit-user-drag:none}
+.wm{position:relative}
+.wm::after{content:"";position:absolute;inset:0;pointer-events:none;background-image:var(--wm);background-size:190px 120px}
+body.cover .prob,body.cover .eimg{filter:blur(22px);transition:filter .05s}
+@media print{#app{display:none!important}body::before{content:"인쇄할 수 없어요";display:block;padding:40px;font-size:20px}}
 </style>
 </head>
 <body>
@@ -116,6 +123,29 @@ function logout() { if (token) api('logout').catch(() => {}); token = null; role
 function math(el) { if (window.renderMathInElement) try { renderMathInElement(el, { delimiters: [{ left: '$$', right: '$$', display: true }, { left: '$', right: '$', display: false }], throwOnError: false }); } catch (e) {} }
 window.addEventListener('load', () => math(document.body));
 const app = (html, nonav) => { clearInterval(tick); $('#app').className = nonav ? 'nonav' : ''; $('#app').innerHTML = html; math($('#app')); window.scrollTo(0, 0); };
+
+// ---- 문제 화면 보호 (캡처를 완전히 막을 수는 없어서, 방해와 추적용 워터마크를 함께 써요) ----
+const wmSet = () => {
+  if (!me) return;
+  const t = String(me.name || me.id).replace(/[<>&"']/g, '');
+  const svg = `<svg xmlns="http://www.w3.org/2000/svg" width="190" height="120"><text x="95" y="60" text-anchor="middle" transform="rotate(-24 95 60)" font-size="15" font-family="sans-serif" font-weight="700" fill="rgba(20,30,60,0.10)">${t}</text></svg>`;
+  document.documentElement.style.setProperty('--wm', `url("data:image/svg+xml;utf8,${encodeURIComponent(svg)}")`);
+};
+const guard = (e) => { if (e.target.closest && e.target.closest('.prob,.eimg,.wm')) e.preventDefault(); };
+document.addEventListener('contextmenu', guard);
+document.addEventListener('dragstart', guard);
+document.addEventListener('copy', (e) => { if (role !== 'admin' && e.target.closest && e.target.closest('.prob,.eimg,.wm,.expl')) e.preventDefault(); });
+document.addEventListener('keydown', (e) => {
+  if (role === 'admin') return;
+  if (e.key === 'PrintScreen' || (e.ctrlKey && ['p', 's', 'u'].includes(e.key.toLowerCase())) || (e.metaKey && e.shiftKey && ['3', '4', '5'].includes(e.key))) {
+    e.preventDefault(); document.body.classList.add('cover'); try { navigator.clipboard.writeText(' '); } catch (_) {}
+    setTimeout(() => document.body.classList.remove('cover'), 1500);
+  }
+});
+const cover = (on) => { if (role !== 'admin') document.body.classList.toggle('cover', on); };
+document.addEventListener('visibilitychange', () => cover(document.hidden));
+window.addEventListener('blur', () => cover(true));
+window.addEventListener('focus', () => cover(false));
 function showErr(m) { const e = $('#err'); if (e) e.textContent = m; }
 
 
@@ -174,7 +204,7 @@ async function start() {
   try { await loadMe(); } catch (e) { return renderLogin(e.message); }
 }
 async function loadMe(notice) {
-  me = await api('me'); skew = me.serverNow - Date.now();
+  me = await api('me'); skew = me.serverNow - Date.now(); wmSet();
   if (me.mustChange) return renderSetPw();
   if (me.active) return me.active.state === 'preview' ? renderPreview(me.active) : renderSolve(me.active);
   renderHome(notice);
@@ -221,7 +251,7 @@ async function nextPreview(g) {
 }
 // 줄바꿈이 필요한 수식(경우 나누기 등)은 가운데 정렬된 별도 줄로 보여 준다
 const dm = (s) => String(s ?? '').replace(/\$([^$]*\\begin\{cases\}[^$]*)\$/g, (m, f) => '$$' + f + '$$');
-const probHtml = (p) => `<div class="prob">${esc(dm(p.text))}${p.image ? `<img src="${esc(p.image)}" alt="">` : ''}</div>`;
+const probHtml = (p) => `<div class="prob wm">${esc(dm(p.text))}${p.image ? `<img src="${esc(p.image)}" alt="">` : ''}</div>`;
 function renderPreview(a) {
   app(`<div class="top"><button class="back" id="hm">${IC.back}${esc(a.problem.grade)} 미리보기</button><div class="timer" id="t"></div></div>
   <div class="bar"><div id="b"></div></div>
@@ -279,7 +309,7 @@ function renderResult(r) {
   app(`<div class="card"><div class="res ${r.correct ? 'ok' : 'bad'}">${r.correct ? '정답이에요' : r.timeout ? '시간 초과' : '오답이에요'}</div>
   ${r.correct ? `<p class="fire">+${fmt(r.reward)}P ${r.mult > 1 ? '🔥 (2배 적용)' : ''}</p>` : ''}
   <p>정답: <b>${esc(fa(r.answer))}</b></p><p class="pts">${fmt(r.points)} P</p></div>
-  <div class="card"><h2>해설</h2>${r.explImage ? `<img class="eimg" src="${esc(r.explImage)}" alt="">` : ''}${r.explanation || !r.explImage ? `<div class="expl">${esc(dm(r.explanation)) || '(해설이 아직 없어요)'}</div>` : ''}
+  <div class="card"><h2>해설</h2>${r.explImage ? `<div class="wm"><img class="eimg" src="${esc(r.explImage)}" alt=""></div>` : ''}${r.explanation || !r.explImage ? `<div class="expl">${esc(dm(r.explanation)) || '(해설이 아직 없어요)'}</div>` : ''}
   ${r.extra ? `<div class="expl">${esc(dm(r.extra))}</div>` : ''}</div>
   <button class="btn-big soft" id="nb">오답노트에 담기</button>
   <button class="primary btn-big" id="nx">다음 문제 도전 (-${me.cfg.PREVIEW_COST}P)</button>
@@ -293,9 +323,9 @@ async function renderHistory() {
   const h = await api('history');
   app(`<div class="top"><h1 style="font-size:22px">내 기록 <span class="sub">최근 30개</span></h1></div>
   ${h.map((x) => `<div class="card"><div class="sub">${esc(x.grade)} · ${new Date(x.t).toLocaleString('ko-KR')} · <b class="${x.correct ? 'ok' : 'bad'}">${x.correct ? '정답 +' + x.reward : x.timeout ? '시간초과' : '오답'}</b></div>
-  <div class="prob">${esc(dm(x.text))}${x.image ? `<img src="${esc(x.image)}" alt="">` : ''}</div>
+  <div class="prob wm">${esc(dm(x.text))}${x.image ? `<img src="${esc(x.image)}" alt="">` : ''}</div>
   <p>내 답: ${esc(x.myAnswer || '-')} / 정답: <b>${esc(fa(x.answer))}</b></p>
-  ${x.explImage ? `<img class="eimg" src="${esc(x.explImage)}" alt="">` : ''}${x.explanation ? `<div class="expl">${esc(dm(x.explanation))}</div>` : ''}${x.extra ? `<div class="expl">${esc(dm(x.extra))}</div>` : ''}${x.pid ? `<button class="nbh" data-p="${esc(x.pid)}">오답노트에 담기</button>` : ''}</div>`).join('') || '<div class="card sub">아직 푼 문제가 없어요.</div>'}${navBar('hist')}`);
+  ${x.explImage ? `<div class="wm"><img class="eimg" src="${esc(x.explImage)}" alt=""></div>` : ''}${x.explanation ? `<div class="expl">${esc(dm(x.explanation))}</div>` : ''}${x.extra ? `<div class="expl">${esc(dm(x.extra))}</div>` : ''}${x.pid ? `<button class="nbh" data-p="${esc(x.pid)}">오답노트에 담기</button>` : ''}</div>`).join('') || '<div class="card sub">아직 푼 문제가 없어요.</div>'}${navBar('hist')}`);
   bindNav();
   document.querySelectorAll('.nbh').forEach((b) => b.onclick = async () => { try { await api('note/add', { pid: b.dataset.p }); b.textContent = '담았어요'; b.disabled = true; } catch (e) { alert(e.message); } });
 }
@@ -308,8 +338,8 @@ async function renderNotes() {
   app(`<div class="top"><h1 style="font-size:22px">내 오답노트 <span class="sub">${list.length}개</span></h1></div>
   ${list.length ? `<div class="row" style="margin-bottom:10px"><button data-t="" class="${noteTag === '' ? 'primary' : ''}" style="flex:0 0 auto">전체</button>${tags.map((t) => `<button data-t="${esc(t)}" class="${noteTag === t ? 'primary' : ''}" style="flex:0 0 auto">${esc(t)}</button>`).join('')}<button data-t="__none" class="${noteTag === '__none' ? 'primary' : ''}" style="flex:0 0 auto">분류 없음</button></div>` : ''}
   ${shown.map((n) => `<div class="card" data-p="${esc(n.pid)}"><div class="sub">${esc(n.grade)} · ${new Date(n.t).toLocaleDateString('ko-KR')}에 담음</div>
-  <div class="prob">${esc(dm(n.text))}${n.image ? `<img src="${esc(n.image)}" alt="">` : ''}</div>
-  <button class="sh">정답·해설 보기</button><div class="shw" style="display:none"><p>정답: <b>${esc(fa(n.answer))}</b></p>${n.explImage ? `<img class="eimg" src="${esc(n.explImage)}" alt="">` : ''}${n.explanation || !n.explImage ? `<div class="expl">${esc(dm(n.explanation)) || '(해설이 아직 없어요)'}</div>` : ''}${n.extra ? `<div class="expl">${esc(dm(n.extra))}</div>` : ''}</div>
+  <div class="prob wm">${esc(dm(n.text))}${n.image ? `<img src="${esc(n.image)}" alt="">` : ''}</div>
+  <button class="sh">정답·해설 보기</button><div class="shw" style="display:none"><p>정답: <b>${esc(fa(n.answer))}</b></p>${n.explImage ? `<div class="wm"><img class="eimg" src="${esc(n.explImage)}" alt=""></div>` : ''}${n.explanation || !n.explImage ? `<div class="expl">${esc(dm(n.explanation)) || '(해설이 아직 없어요)'}</div>` : ''}${n.extra ? `<div class="expl">${esc(dm(n.extra))}</div>` : ''}</div>
   <label>분류 이름 (예: 집합, 실수, 다시 풀기)</label><input class="ntg" maxlength="20" value="${esc(n.tag)}" list="tgl">
   <label>내 메모</label><textarea class="nmm" maxlength="1000" placeholder="왜 틀렸는지, 기억할 점을 적어 두세요">${esc(n.memo)}</textarea>
   <div class="row"><button class="primary nsv">저장</button><button class="danger ndl">오답노트에서 빼기</button></div></div>`).join('') || `<div class="card sub">${list.length ? '이 분류에는 문제가 없어요.' : '아직 담은 문제가 없어요. 결과 화면이나 내 기록에서 “오답노트에 담기”를 눌러 보세요.'}</div>`}
