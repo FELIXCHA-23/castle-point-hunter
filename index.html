@@ -112,7 +112,8 @@ code{background:var(--bg);padding:1px 6px;border-radius:6px;font-size:.92em}
 .nav button.on{color:var(--main)}
 .mrow{display:flex;justify-content:space-between;align-items:center;gap:10px;width:100%;padding:15px 2px;border:none;border-top:1px solid var(--line);background:none;border-radius:0;font-size:15.5px;font-weight:700;color:var(--ink);text-align:left;box-shadow:none}
 .mpop-bg{position:fixed;inset:0;z-index:30}
-.mpop{position:fixed;right:max(12px,env(safe-area-inset-right,0px));bottom:calc(66px + env(safe-area-inset-bottom,0px));width:min(300px,calc(100vw - 24px));background:var(--card);border:1px solid var(--line);border-radius:12px;padding:4px 14px;max-height:70vh;overflow:auto}
+.mpop{position:fixed;right:max(12px,env(safe-area-inset-right,0px));bottom:calc(66px + env(safe-area-inset-bottom,0px));width:max-content;min-width:132px;max-width:calc(100vw - 24px);background:var(--card);border:1px solid var(--line);border-radius:10px;padding:2px 14px;max-height:70vh;overflow:auto}
+.mpop .mrow{padding:11px 0;font-size:14px;font-weight:600}
 .mpop .mrow:first-child{border-top:none}
 .mrow .sub{font-size:12.5px;font-weight:500;margin:0}
 .mrow i{font-style:normal;color:var(--sub);font-weight:400}
@@ -502,7 +503,7 @@ function renderMore() {
   if (me.isAdmin) rows.push(['admin', '관리자 화면', '학생, 문제, 시즌 관리']);
   rows.push(['out', guest ? '나가기' : '로그아웃', '']);
   const o = document.createElement('div'); o.id = 'mpop'; o.className = 'mpop-bg';
-  o.innerHTML = `<div class="mpop">${rows.map(([k, n, d]) => `<button class="mrow" data-m="${k}"><span>${n}${d ? `<br><span class="sub">${d}</span>` : ''}</span><i>›</i></button>`).join('')}</div>`;
+  o.innerHTML = `<div class="mpop">${rows.map(([k, n]) => `<button class="mrow" data-m="${k}">${n}</button>`).join('')}</div>`;
   document.body.appendChild(o);
   o.onclick = (e) => { if (e.target === o) closeMore(); };
   const f = { hist: renderHistory, stats: renderStats, notice: renderNotices, guide: renderGuide, roster: renderRoster, admin: () => switchTo('admin'), out: logout };
@@ -554,27 +555,31 @@ async function renderHistory() {
   bindNav(); $('#bk').onclick = () => loadMe();
   document.querySelectorAll('.nbh').forEach((b) => b.onclick = async () => { try { await api('note/add', { pid: b.dataset.p }); b.textContent = '담았습니다'; b.disabled = true; } catch (e) { alert(e.message); } });
 }
-// 오답노트: 학생마다 따로, 메모와 분류 이름을 직접 정리한다
-let noteTag = '';
+// 오답노트: 학생마다 따로 메모를 적고, 단원별·시기별로 찾는다
+let noteUnit = '', notePeriod = '';
+const ym = (ms) => { const d = new Date(ms); return d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0'); };
 async function renderNotes() {
-  const list = await api('notes'), tags = [...new Set(list.map((n) => n.tag).filter(Boolean))];
-  if (noteTag && !tags.includes(noteTag) && noteTag !== '__none') noteTag = '';
-  const shown = list.filter((n) => !noteTag || (noteTag === '__none' ? !n.tag : n.tag === noteTag));
-  app(`<div class="top"><h1 style="font-size:22px">내 오답노트 <span class="sub">${list.length}개</span></h1></div>
-  ${list.length ? `<div class="row" style="margin-bottom:10px"><button data-t="" class="${noteTag === '' ? 'primary' : ''}" style="flex:0 0 auto">전체</button>${tags.map((t) => `<button data-t="${esc(t)}" class="${noteTag === t ? 'primary' : ''}" style="flex:0 0 auto">${esc(t)}</button>`).join('')}<button data-t="__none" class="${noteTag === '__none' ? 'primary' : ''}" style="flex:0 0 auto">분류 없음</button></div>` : ''}
-  ${shown.map((n) => `<div class="card" data-p="${esc(n.pid)}"><div class="sub">${esc(n.grade)} · ${new Date(n.t).toLocaleDateString('ko-KR')}에 담음</div>
+  const list = await api('notes'), units = [...new Set(list.map((n) => n.unit).filter(Boolean))].sort((a, b) => a.localeCompare(b, 'ko')), months = [...new Set(list.map((n) => ym(n.t)))];
+  if (noteUnit && !units.includes(noteUnit)) noteUnit = '';
+  if (notePeriod && !['7', '30'].includes(notePeriod) && !months.includes(notePeriod)) notePeriod = '';
+  const now = Date.now(), inPeriod = (n) => !notePeriod || (notePeriod === '7' ? now - n.t <= 7 * 864e5 : notePeriod === '30' ? now - n.t <= 30 * 864e5 : ym(n.t) === notePeriod);
+  const shown = list.filter((n) => (!noteUnit || n.unit === noteUnit) && inPeriod(n));
+  const opt = (v, t, cur) => `<option value="${esc(v)}" ${v === cur ? 'selected' : ''}>${esc(t)}</option>`;
+  app(`<div class="top"><h1 style="font-size:22px">내 오답노트 <span class="sub">${shown.length === list.length ? list.length + '개' : shown.length + ' / ' + list.length + '개'}</span></h1></div>
+  ${list.length ? `<div class="row" style="margin-bottom:10px;flex-wrap:nowrap"><select id="fper">${opt('', '전체 기간', notePeriod)}${opt('7', '최근 7일', notePeriod)}${opt('30', '최근 30일', notePeriod)}${months.map((m) => opt(m, m.replace('-', '년 ') + '월', notePeriod)).join('')}</select>${units.length ? `<select id="funit">${opt('', '전체 단원', noteUnit)}${units.map((u) => opt(u, u, noteUnit)).join('')}</select>` : ''}</div>` : ''}
+  ${shown.map((n) => `<div class="card" data-p="${esc(n.pid)}"><div class="sub">${esc(n.grade)}${n.unit ? ' · ' + esc(n.unit) : ''} · ${ymd(n.t)}에 담음</div>
   ${probHtml(n)}
   <button class="sh">정답·해설 보기</button><div class="shw" style="display:none"><p>정답: <b>${esc(fa(n.answer))}</b></p>${n.explImage ? `<div class="wm"><img class="eimg" src="${esc(n.explImage)}" alt=""></div>` : ''}${n.explanation || !n.explImage ? `<div class="expl">${esc(dm(n.explanation)) || '(해설이 아직 없습니다)'}</div>` : ''}${n.extra ? `<div class="expl">${esc(dm(n.extra))}</div>` : ''}</div>
-  <label>분류 이름 (예: 집합, 실수, 다시 풀기)</label><input class="ntg" maxlength="20" value="${esc(n.tag)}" list="tgl">
   <label>내 메모</label><textarea class="nmm" maxlength="1000" placeholder="왜 틀렸는지, 기억할 점을 적어 두십시오">${esc(n.memo)}</textarea>
-  <div class="row"><button class="primary nsv">저장</button><button class="danger ndl">오답노트에서 빼기</button></div></div>`).join('') || `<div class="card sub">${list.length ? '이 분류에는 문제가 없습니다.' : '아직 담은 문제가 없습니다. 결과 화면이나 내 기록에서 “오답노트에 담기”를 눌러 보십시오.'}</div>`}
-  <datalist id="tgl">${tags.map((t) => `<option value="${esc(t)}">`).join('')}</datalist>${navBar('nt')}`);
+  <div class="row"><button class="primary nsv">저장</button><button class="danger ndl">오답노트에서 빼기</button></div></div>`).join('') || `<div class="card sub">${list.length ? '조건에 맞는 문제가 없습니다.' : '아직 담은 문제가 없습니다. 결과 화면이나 내 기록에서 “오답노트에 담기”를 눌러 보십시오.'}</div>`}
+  ${navBar('nt')}`);
   bindNav();
-  document.querySelectorAll('[data-t]').forEach((b) => b.onclick = () => { noteTag = b.dataset.t; renderNotes(); });
+  if ($('#fper')) $('#fper').onchange = (e) => { notePeriod = e.target.value; renderNotes(); };
+  if ($('#funit')) $('#funit').onchange = (e) => { noteUnit = e.target.value; renderNotes(); };
   document.querySelectorAll('.card[data-p]').forEach((c) => {
     const pid = c.dataset.p;
     c.querySelector('.sh').onclick = () => { const w = c.querySelector('.shw'); w.style.display = w.style.display === 'none' ? '' : 'none'; math(w); };
-    c.querySelector('.nsv').onclick = async () => { try { await api('note/update', { pid, memo: c.querySelector('.nmm').value, tag: c.querySelector('.ntg').value }); renderNotes(); } catch (e) { alert(e.message); } };
+    c.querySelector('.nsv').onclick = async () => { try { await api('note/update', { pid, memo: c.querySelector('.nmm').value }); renderNotes(); } catch (e) { alert(e.message); } };
     c.querySelector('.ndl').onclick = async () => { if (confirm('오답노트에서 빼시겠습니까?')) { await api('note/del', { pid }); renderNotes(); } };
   });
 }

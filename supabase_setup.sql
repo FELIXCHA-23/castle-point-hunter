@@ -511,7 +511,7 @@ end $$;
 create or replace function castle.r_notes(tok text) returns jsonb language plpgsql as $$
 declare st castle.students := castle.stu(tok);
 begin
-  return (select coalesce(jsonb_agg(jsonb_build_object('pid', n.pid, 'memo', n.memo, 'tag', n.tag, 't', castle.ms(n.created_at),
+  return (select coalesce(jsonb_agg(jsonb_build_object('pid', n.pid, 'memo', n.memo, 'unit', coalesce(p.unit_large, ''), 't', castle.ms(n.created_at),
             'grade', coalesce(p.grade, ''), 'text', coalesce(p.text, '(삭제된 문제)'), 'image', coalesce(p.image, ''),
             'answer', coalesce(p.answer, ''), 'explanation', coalesce(p.explanation, ''), 'extra', coalesce(p.extra, ''), 'explImage', coalesce(p.expl_image, ''))
             order by n.created_at desc), '[]')
@@ -532,7 +532,7 @@ end $$;
 create or replace function castle.r_note_update(tok text, b jsonb) returns jsonb language plpgsql as $$
 declare st castle.students := castle.stu(tok);
 begin
-  update castle.notes set memo = left(coalesce(b->>'memo', ''), 1000), tag = left(btrim(coalesce(b->>'tag', '')), 20)
+  update castle.notes set memo = left(coalesce(b->>'memo', ''), 1000)
    where sid = st.id and pid = b->>'pid';
   return jsonb_build_object('ok', true);
 end $$;
