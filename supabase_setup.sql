@@ -437,9 +437,9 @@ begin
   foreach ln in array regexp_split_to_array(normalize(coalesce(b->>'text', ''), NFC), '\r?\n') loop
     ln := btrim(ln);
     if ln = '' then continue; end if;
-    m := regexp_match(ln, '^([가-힣A-Za-z·]+)[,[:space:]]*([0-9]{4})$');
+    m := regexp_match(ln, '^([가-힣A-Za-z·]+[0-9]?)[,[:space:]]*([0-9]{4})?$');
     if m is null then skipped := skipped || to_jsonb(ln || ' (형식 오류)'); continue; end if;
-    v_id := m[1] || m[2];
+    v_id := m[1] || coalesce(m[2], '');  -- 숫자 없이 이름만 쓰면 아이디가 이름 그대로
     if lower(v_id) = 'admin' or exists (select 1 from castle.students where id = v_id) then
       skipped := skipped || to_jsonb(v_id || ' (이미 있음)'); continue;
     end if;

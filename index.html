@@ -334,7 +334,7 @@ async function renderAdmin(tab) {
     if (tab === 'students') {
       const list = await api('admin/students');
       app(`${tabs(tab)}
-      <div class="card"><h2>학생 등록</h2><p class="sub">한 줄에 한 명: 이름 + 전화번호 뒷 4자리 (예: 김도윤 2364). 처음 비밀번호는 0000, 기본 5,000P가 지급됩니다.</p>
+      <div class="card"><h2>학생 등록</h2><p class="sub">한 줄에 한 명: 이름만 쓰면 아이디가 이름 그대로 됩니다 (동명이인은 김도윤2처럼 숫자를 붙이세요). 이름 뒤에 4자리 숫자를 같이 쓰면 이름+숫자가 아이디가 됩니다 (예: 김도윤 2364). 처음 비밀번호는 0000, 기본 5,000P가 지급됩니다.</p>
       <textarea id="nw" placeholder="김도윤 2364&#10;이서연 1180"></textarea><div class="err" id="err"></div><button class="primary" id="add">등록</button></div>
       <div class="card"><h2>포인트 지급 / 차감</h2><div class="row"><input id="amt" type="number" placeholder="포인트 (차감은 -)"><input id="why" placeholder="사유 (예: 일일테스트 우수)"><button class="primary" id="give">선택한 학생에게 적용</button></div><div class="err" id="err2"></div></div>
       <div class="card"><div class="row"><h2 style="flex:1">학생 ${list.length}명</h2><input id="q" placeholder="이름 검색"></div>
