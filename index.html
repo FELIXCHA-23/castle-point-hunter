@@ -525,10 +525,11 @@ function renderPreview(a) {
 }
 function renderSolve(a) {
   const isSet = a.problem.kind === 'set';
-  app(`<div class="top"><button class="back" id="hm">${IC.back}${a.season ? '시즌 랭킹전' : esc(a.problem.grade)} · ${isSet ? '보기의 기호를 입력' : '숫자만 입력'}</button><div class="timer" id="t"></div></div>
+  app(`<div class="top"><div class="timer" id="t"></div></div>
   <div class="card">${probHtml(a.problem)}</div>
   <div class="card">${isSet ? `<label>정답 (해당하는 보기의 기호를 모두 쓰십시오. 예: ㄱ, ㄷ)</label><div class="row" style="flex-wrap:nowrap"><input id="ans" autocomplete="off" enterkeyhint="done" placeholder="예: ㄱ, ㄷ"></div>` : `<label>정답 (숫자만, 예: 12 / -3 / 0.5)</label><div class="row" style="flex-wrap:nowrap"><input id="ans" inputmode="decimal" autocomplete="off" enterkeyhint="done"><button id="neg" style="flex:0 0 92px;font-size:15px" title="마이너스 부호 넣기/빼기">− (부호)</button></div>`}
-  <div class="err" id="err"></div><button class="primary btn-big" id="sub">답안 제출</button></div>`, true);
+  <div class="err" id="err"></div><button class="primary btn-big" id="sub">답안 제출</button></div>
+  <button class="btn-big" id="hm" style="background:none;border-color:var(--line);color:var(--sub)">포기하고 나가기</button>`, true);
   let done = false;
   const submit = async () => {
     if (done) return; done = true; clearInterval(tick);
@@ -542,7 +543,7 @@ function renderSolve(a) {
   upd(); tick = setInterval(upd, 500);
   $('#sub').onclick = () => { if ($('#ans').value.trim()) submit(); else showErr('정답을 입력해 주십시오.'); };
   $('#hm').onclick = async () => {
-    if (!confirm('지금 나가면 이 문제는 포기(오답) 처리됩니다. 나가시겠습니까?')) return;
+    if (!confirm('포기하고 나가시겠습니까? 이 문제는 오답으로 처리됩니다.')) return;
     done = true; clearInterval(tick);
     try { await api('submit', { answer: '' }); } catch (e) {}
     loadMe();
