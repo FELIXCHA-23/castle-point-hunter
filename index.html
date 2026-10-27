@@ -987,7 +987,12 @@ function renderHome(notice) {
   bindHead();
   $('#hist').onclick = () => renderHistory();
   $('#ptgo').onclick = () => renderHistory();
-  document.querySelectorAll('.grades button').forEach((b) => b.onclick = () => { const y = window.scrollY; pickedGrade = b.dataset.g; renderHome(); window.scrollTo(0, y); requestAnimationFrame(() => window.scrollTo(0, y)); });
+  // 학년을 눌러도 화면을 다시 그리지 않고 그 자리에서 표시만 바꾼다 (스크롤 위치가 움직이지 않도록)
+  document.querySelectorAll('.grades button').forEach((b) => b.onclick = () => {
+    pickedGrade = b.dataset.g;
+    document.querySelectorAll('.grades button').forEach((x) => x.classList.toggle('on', x === b));
+    const pv = $('#pv'); pv.disabled = false; pv.innerHTML = `<span>▶</span> 학습 시작하기 · ${pickedGrade} <span>→</span>`;
+  });
   $('#pv').onclick = async () => {
     try { const r = await api('preview', { grade: pickedGrade }); skew = r.serverNow - Date.now(); me.points = r.points; renderPreview(r.active); }
     catch (e) { showErr(e.message); }
