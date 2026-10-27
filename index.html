@@ -657,7 +657,7 @@ async function renderTeam(notice) {
     mine = `<div class="card"><h2 style="margin-bottom:4px">${esc(tm.name)}</h2>
     <div class="sub" style="margin-bottom:8px">${tm.members.filter((m) => m.state === 'joined').length >= 2 ? (s ? `팀 점수 <b>${fmt(tm.score)}점</b> · 팀 순위 ${tm.rank}위` : '시즌이 등록되면 팀 순위가 시작됩니다.') : '팀원이 2명 이상 모이면 팀 순위에 오릅니다.'}</div>
     ${tm.members.map((m) => `<div class="rk-row${m.me ? ' me' : ''}"><div class="rk-nm">${esc(m.name)}${m.grade ? `<span class="gchip">${esc(m.grade)}</span>` : ''}${m.leader ? ' <span class="chip">팀장</span>' : ''}${m.state === 'invited' ? ' <span class="sub">수락 대기</span>' : ''}</div>${m.state === 'invited' ? (tm.leader ? `<button class="tcancel" data-id="${esc(m.id)}" style="padding:4px 10px">취소</button>` : '') : `<div class="rk-pt">${fmt(m.score)}점</div>`}</div>`).join('')}
-    ${tm.leader && tm.members.length < 4 && !locked ? '<p class="sub" style="margin:10px 0 0">아래 친구 목록에서 팀원을 초대하십시오.</p>' : ''}
+    ${tm.leader && tm.members.length < 4 && !locked ? '<label style="margin-top:12px">팀원 초대 (상대의 아이디)</label><div class="row" style="flex-wrap:nowrap"><input id="tinvid" placeholder="예: 해원고홍길동" autocomplete="off" autocapitalize="none"><button class="primary" id="tinvgo" style="flex:0 0 auto;width:auto;padding:0 18px">초대</button></div><p class="sub" style="margin:6px 0 0">친구 목록에서 "팀 초대"를 눌러도 됩니다.</p>' : ''}
     ${locked ? '<p class="sub" style="margin:10px 0 0">시즌이 진행 중이라 팀원을 바꿀 수 없습니다.</p>' : `<button id="tleave" style="margin-top:12px">${tm.leader ? '팀 해체' : '팀 탈퇴'}</button>`}</div>`;
   } else if (t.canPlay) {
     mine = `<div class="card"><h2 style="margin-bottom:4px">내 팀</h2>
@@ -680,6 +680,7 @@ async function renderTeam(notice) {
   const go = async (path, body) => { try { await api(path, body || {}); renderTeam(); } catch (e) { renderTeam(e.message); } };
   if ($('#tmake')) $('#tmake').onclick = () => go('team/create', { name: $('#tname').value });
   if ($('#tleave')) $('#tleave').onclick = () => { if (confirm(tm.leader ? '팀을 해체하시겠습니까? 모든 팀원이 팀에서 나가게 됩니다.' : '팀에서 탈퇴하시겠습니까?')) go('team/leave'); };
+  if ($('#tinvgo')) $('#tinvgo').onclick = () => go('team/invite', { id: $('#tinvid').value });
   if ($('#fadd')) $('#fadd').onclick = () => go('friend/add', { id: $('#fid').value });
   const on = (sel, fn) => document.querySelectorAll(sel).forEach((b) => b.onclick = () => fn(b));
   on('.tacc', (b) => go('team/respond', { teamId: Number(b.dataset.t), accept: true }));

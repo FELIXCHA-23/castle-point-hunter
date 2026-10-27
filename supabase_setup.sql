@@ -1183,7 +1183,8 @@ begin
   if castle.team_locked() then perform castle.fail(400, '시즌이 진행 중인 동안에는 팀원을 바꿀 수 없습니다.'); end if;
   select t.* into v_t from castle.teams t where t.leader = st.id;
   if v_t.id is null then perform castle.fail(403, '팀장만 초대할 수 있습니다.'); end if;
-  if not castle.is_friend(st.id, v_to) then perform castle.fail(400, '친구로 등록된 학생만 초대할 수 있습니다.'); end if;
+  if not exists (select 1 from castle.students x where x.id = v_to and not x.is_teacher and not x.is_admin) then perform castle.fail(404, '해당 아이디의 학생을 찾을 수 없습니다.'); end if;
+  if v_to = st.id then perform castle.fail(400, '본인은 이미 팀에 속해 있습니다.'); end if;
   if exists (select 1 from castle.team_members where sid = v_to and state = 'joined') then perform castle.fail(400, '이미 다른 팀에 속한 학생입니다.'); end if;
   if exists (select 1 from castle.team_members where team_id = v_t.id and sid = v_to) then perform castle.fail(400, '이미 초대한 학생입니다.'); end if;
   if (select count(*) from castle.team_members where team_id = v_t.id) >= 4 then perform castle.fail(400, '팀은 최대 4명까지입니다. 초대 대기 인원도 정원에 포함됩니다.'); end if;
