@@ -2,8 +2,15 @@
 <html lang="ko">
 <head>
 <meta charset="utf-8">
-<meta name="color-scheme" content="light">
-<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="color-scheme" content="dark">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="icon" type="image/png" sizes="32x32" href="icons/favicon-32.png">
+<link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black">
+<meta name="apple-mobile-web-app-title" content="캐슬헌터스">
 <meta name="theme-color" content="#0B0C0F">
 <title>캐슬 포인트 헌터스</title>
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/variable/pretendardvariable-dynamic-subset.min.css">
@@ -1207,6 +1214,7 @@ function renderLogin(msg, signup) {
   <label>비밀번호${signup ? ' (4자 이상)' : ''}</label><input id="pw" type="password" autocomplete="${signup ? 'new-password' : 'current-password'}">
   <div class="err" id="err">${esc(msg || '')}</div>
   <button class="primary btn-big" id="go" style="margin-top:6px">${signup ? '가입하고 시작하기' : '로그인'}</button>${signup ? '' : '<button class="btn-big" id="gst" style="margin-top:8px">로그인 없이 탐험해 보기</button>'}</div>
+  ${signup ? '' : installHint()}
   ${signup ? '' : '<p class="sub" style="text-align:center;margin:14px 8px 8px">비밀번호를 잊은 경우<br><b>차성빈 원장</b>에게 초기화를 요청하십시오.</p><div class="row" style="flex-wrap:nowrap;justify-content:center"><a class="btnlink ico" id="sms" aria-label="문자 보내기" title="문자 보내기" href="' + smsHref('') + '">' + IC.sms + '</a><a class="btnlink ico kk" aria-label="카카오톡 오픈채팅" title="카카오톡 오픈채팅" href="' + KAKAO_URL + '" target="_blank" rel="noopener">' + IC.kakao + '</a></div>'}`, true);
   const go = async () => {
     try {
@@ -1219,6 +1227,14 @@ function renderLogin(msg, signup) {
   if ($('#rq')) $('#rq').onclick = () => renderResetRequest($('#id').value);
   if ($('#gst')) $('#gst').onclick = startGuest;
   if ($('#sms')) $('#sms').onclick = () => { $('#sms').href = smsHref($('#id').value.trim()); };
+}
+// 앱처럼 쓰는 방법 안내 (이미 홈 화면에서 연 경우에는 보이지 않는다)
+function installHint() {
+  const standalone = window.navigator.standalone || (window.matchMedia && matchMedia('(display-mode: standalone)').matches);
+  if (standalone) return '';
+  const ua = navigator.userAgent || '';
+  const how = /iPhone|iPad|iPod/.test(ua) ? '아래 공유 버튼 → <b>홈 화면에 추가</b>' : /Android/.test(ua) ? '브라우저 메뉴(⋮) → <b>홈 화면에 추가</b>' : '';
+  return how ? `<p class="sub" style="text-align:center;margin:14px 8px 0;font-size:12.5px">앱처럼 쓰려면 ${how}</p>` : '';
 }
 const SMS_NO = '01026462308';
 const KAKAO_URL = 'https://open.kakao.com/o/suDCQiUi';
@@ -1276,7 +1292,7 @@ function head() {
 }
 function bindHead() { $('#my').onclick = () => renderMy(); bindNav(); }
 const HICO = {
-    coin: '<svg class="coin" viewBox="0 0 48 48"><path d="M24 36v4.6a9.6 3.9 0 0 0 19.2 0v-4.6z" fill="#CBA35A" stroke="#8F7440" stroke-width=".8" stroke-linejoin="round"/><ellipse cx="33.6" cy="36" rx="9.6" ry="3.9" fill="#F4E0AE" stroke="#A88A4E" stroke-width="1"/><ellipse cx="33.6" cy="36" rx="7" ry="2.7" fill="none" stroke="#FFF3CF" stroke-width=".6" opacity=".7"/><path d="M24 31.4v4.6a9.6 3.9 0 0 0 19.2 0v-4.6z" fill="#CBA35A" stroke="#8F7440" stroke-width=".8" stroke-linejoin="round"/><ellipse cx="33.6" cy="31.4" rx="9.6" ry="3.9" fill="#F4E0AE" stroke="#A88A4E" stroke-width="1"/><ellipse cx="33.6" cy="31.4" rx="7" ry="2.7" fill="none" stroke="#FFF3CF" stroke-width=".6" opacity=".7"/><path d="M24 26.8v4.6a9.6 3.9 0 0 0 19.2 0v-4.6z" fill="#CBA35A" stroke="#8F7440" stroke-width=".8" stroke-linejoin="round"/><ellipse cx="33.6" cy="26.8" rx="9.6" ry="3.9" fill="#F4E0AE" stroke="#A88A4E" stroke-width="1"/><ellipse cx="33.6" cy="26.8" rx="7" ry="2.7" fill="none" stroke="#FFF3CF" stroke-width=".6" opacity=".7"/><path d="M24 22.2v4.6a9.6 3.9 0 0 0 19.2 0v-4.6z" fill="#CBA35A" stroke="#8F7440" stroke-width=".8" stroke-linejoin="round"/><ellipse cx="33.6" cy="22.2" rx="9.6" ry="3.9" fill="#F4E0AE" stroke="#A88A4E" stroke-width="1"/><ellipse cx="33.6" cy="22.2" rx="7" ry="2.7" fill="none" stroke="#FFF3CF" stroke-width=".6" opacity=".7"/><path d="M5 41v4.6a9.6 3.9 0 0 0 19.2 0v-4.6z" fill="#CBA35A" stroke="#8F7440" stroke-width=".8" stroke-linejoin="round"/><ellipse cx="14.6" cy="41" rx="9.6" ry="3.9" fill="#F4E0AE" stroke="#A88A4E" stroke-width="1"/><ellipse cx="14.6" cy="41" rx="7" ry="2.7" fill="none" stroke="#FFF3CF" stroke-width=".6" opacity=".7"/><path d="M5 36.4v4.6a9.6 3.9 0 0 0 19.2 0v-4.6z" fill="#CBA35A" stroke="#8F7440" stroke-width=".8" stroke-linejoin="round"/><ellipse cx="14.6" cy="36.4" rx="9.6" ry="3.9" fill="#F4E0AE" stroke="#A88A4E" stroke-width="1"/><ellipse cx="14.6" cy="36.4" rx="7" ry="2.7" fill="none" stroke="#FFF3CF" stroke-width=".6" opacity=".7"/><path d="M5 31.8v4.6a9.6 3.9 0 0 0 19.2 0v-4.6z" fill="#CBA35A" stroke="#8F7440" stroke-width=".8" stroke-linejoin="round"/><ellipse cx="14.6" cy="31.8" rx="9.6" ry="3.9" fill="#F4E0AE" stroke="#A88A4E" stroke-width="1"/><ellipse cx="14.6" cy="31.8" rx="7" ry="2.7" fill="none" stroke="#FFF3CF" stroke-width=".6" opacity=".7"/><path d="M5 27.2v4.6a9.6 3.9 0 0 0 19.2 0v-4.6z" fill="#CBA35A" stroke="#8F7440" stroke-width=".8" stroke-linejoin="round"/><ellipse cx="14.6" cy="27.2" rx="9.6" ry="3.9" fill="#F4E0AE" stroke="#A88A4E" stroke-width="1"/><ellipse cx="14.6" cy="27.2" rx="7" ry="2.7" fill="none" stroke="#FFF3CF" stroke-width=".6" opacity=".7"/><path d="M5 22.6v4.6a9.6 3.9 0 0 0 19.2 0v-4.6z" fill="#CBA35A" stroke="#8F7440" stroke-width=".8" stroke-linejoin="round"/><ellipse cx="14.6" cy="22.6" rx="9.6" ry="3.9" fill="#F4E0AE" stroke="#A88A4E" stroke-width="1"/><ellipse cx="14.6" cy="22.6" rx="7" ry="2.7" fill="none" stroke="#FFF3CF" stroke-width=".6" opacity=".7"/></svg>',
+    coin: '<svg class="coin" viewBox="0 12 48 40"><path d="M24 36v4.6a9.6 3.9 0 0 0 19.2 0v-4.6z" fill="#CBA35A" stroke="#8F7440" stroke-width=".8" stroke-linejoin="round"/><ellipse cx="33.6" cy="36" rx="9.6" ry="3.9" fill="#F4E0AE" stroke="#A88A4E" stroke-width="1"/><ellipse cx="33.6" cy="36" rx="7" ry="2.7" fill="none" stroke="#FFF3CF" stroke-width=".6" opacity=".7"/><path d="M24 31.4v4.6a9.6 3.9 0 0 0 19.2 0v-4.6z" fill="#CBA35A" stroke="#8F7440" stroke-width=".8" stroke-linejoin="round"/><ellipse cx="33.6" cy="31.4" rx="9.6" ry="3.9" fill="#F4E0AE" stroke="#A88A4E" stroke-width="1"/><ellipse cx="33.6" cy="31.4" rx="7" ry="2.7" fill="none" stroke="#FFF3CF" stroke-width=".6" opacity=".7"/><path d="M24 26.8v4.6a9.6 3.9 0 0 0 19.2 0v-4.6z" fill="#CBA35A" stroke="#8F7440" stroke-width=".8" stroke-linejoin="round"/><ellipse cx="33.6" cy="26.8" rx="9.6" ry="3.9" fill="#F4E0AE" stroke="#A88A4E" stroke-width="1"/><ellipse cx="33.6" cy="26.8" rx="7" ry="2.7" fill="none" stroke="#FFF3CF" stroke-width=".6" opacity=".7"/><path d="M24 22.2v4.6a9.6 3.9 0 0 0 19.2 0v-4.6z" fill="#CBA35A" stroke="#8F7440" stroke-width=".8" stroke-linejoin="round"/><ellipse cx="33.6" cy="22.2" rx="9.6" ry="3.9" fill="#F4E0AE" stroke="#A88A4E" stroke-width="1"/><ellipse cx="33.6" cy="22.2" rx="7" ry="2.7" fill="none" stroke="#FFF3CF" stroke-width=".6" opacity=".7"/><path d="M5 41v4.6a9.6 3.9 0 0 0 19.2 0v-4.6z" fill="#CBA35A" stroke="#8F7440" stroke-width=".8" stroke-linejoin="round"/><ellipse cx="14.6" cy="41" rx="9.6" ry="3.9" fill="#F4E0AE" stroke="#A88A4E" stroke-width="1"/><ellipse cx="14.6" cy="41" rx="7" ry="2.7" fill="none" stroke="#FFF3CF" stroke-width=".6" opacity=".7"/><path d="M5 36.4v4.6a9.6 3.9 0 0 0 19.2 0v-4.6z" fill="#CBA35A" stroke="#8F7440" stroke-width=".8" stroke-linejoin="round"/><ellipse cx="14.6" cy="36.4" rx="9.6" ry="3.9" fill="#F4E0AE" stroke="#A88A4E" stroke-width="1"/><ellipse cx="14.6" cy="36.4" rx="7" ry="2.7" fill="none" stroke="#FFF3CF" stroke-width=".6" opacity=".7"/><path d="M5 31.8v4.6a9.6 3.9 0 0 0 19.2 0v-4.6z" fill="#CBA35A" stroke="#8F7440" stroke-width=".8" stroke-linejoin="round"/><ellipse cx="14.6" cy="31.8" rx="9.6" ry="3.9" fill="#F4E0AE" stroke="#A88A4E" stroke-width="1"/><ellipse cx="14.6" cy="31.8" rx="7" ry="2.7" fill="none" stroke="#FFF3CF" stroke-width=".6" opacity=".7"/><path d="M5 27.2v4.6a9.6 3.9 0 0 0 19.2 0v-4.6z" fill="#CBA35A" stroke="#8F7440" stroke-width=".8" stroke-linejoin="round"/><ellipse cx="14.6" cy="27.2" rx="9.6" ry="3.9" fill="#F4E0AE" stroke="#A88A4E" stroke-width="1"/><ellipse cx="14.6" cy="27.2" rx="7" ry="2.7" fill="none" stroke="#FFF3CF" stroke-width=".6" opacity=".7"/><path d="M5 22.6v4.6a9.6 3.9 0 0 0 19.2 0v-4.6z" fill="#CBA35A" stroke="#8F7440" stroke-width=".8" stroke-linejoin="round"/><ellipse cx="14.6" cy="22.6" rx="9.6" ry="3.9" fill="#F4E0AE" stroke="#A88A4E" stroke-width="1"/><ellipse cx="14.6" cy="22.6" rx="7" ry="2.7" fill="none" stroke="#FFF3CF" stroke-width=".6" opacity=".7"/></svg>',
     target: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><circle cx="12" cy="12" r="8.5"/><circle cx="12" cy="12" r="4.5"/><circle cx="12" cy="12" r="1" fill="currentColor"/></svg>',
     cal: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="5.5" width="16" height="14.5" rx="2.5"/><path d="M4 10h16M8.5 3.5v4M15.5 3.5v4"/></svg>',
     crown: '<svg viewBox="0 0 24 24" fill="currentColor"><path d="M4 17.500 3 8l5 4 4-7 4 7 5-4-1 9.500z"/><rect x="5" y="19" width="14" height="2" rx="1"/></svg>'
