@@ -1102,7 +1102,19 @@ function logout() {
 async function switchTo(to) { try { const r = await api('switch', { to }); token = r.token; role = r.role; localStorage.setItem('tk', token); localStorage.setItem('role', role); start(); } catch (e) { alert(e.message); } }
 function math(el) { if (window.renderMathInElement) try { renderMathInElement(el, { delimiters: [{ left: '$$', right: '$$', display: true }, { left: '$', right: '$', display: false }], throwOnError: false }); } catch (e) {} }
 window.addEventListener('load', () => math(document.body));
-const app = (html, nonav) => { clearInterval(tick); closeMore(); $('#app').className = nonav ? 'nonav' : ''; $('#app').innerHTML = (guest ? '<div class="guestbar"><span>탐험모드이므로 포인트는 사라집니다.</span></div>' : '') + html; math($('#app')); window.scrollTo(0, 0); };
+// 모든 탭 화면의 맨 위: CI와 로그인한 이름(마이페이지)은 어느 탭에서나 같은 자리에 둔다
+function siteHeader() {
+  const a = $('#app');
+  if (!me || !a.querySelector('.nav')) return;
+  a.querySelectorAll('.top').forEach((t) => { if (t.querySelector('img.logo')) t.remove(); });
+  const h = document.createElement('div');
+  h.className = 'top sitehead';
+  h.innerHTML = `<img class="logo" src="logo_dark.png" alt="캐슬수학"><span style="display:flex;gap:4px;align-items:center">${myChip()}</span>`;
+  const gb = a.querySelector('.guestbar');
+  if (gb) gb.after(h); else a.prepend(h);
+  h.querySelector('#my').onclick = () => renderMy();
+}
+const app = (html, nonav) => { clearInterval(tick); closeMore(); $('#app').className = nonav ? 'nonav' : ''; $('#app').innerHTML = (guest ? '<div class="guestbar"><span>탐험모드이므로 포인트는 사라집니다.</span></div>' : '') + html; math($('#app')); siteHeader(); window.scrollTo(0, 0); };
 
 // ---- 문제 화면 보호 (복사·저장·인쇄를 어렵게 해요) ----
 const guard = (e) => { if (e.target.closest && e.target.closest('.prob,.eimg,.wm')) e.preventDefault(); };
@@ -1281,7 +1293,6 @@ function renderHunt(notice) {
     crown: '<svg viewBox="0 0 24 24" fill="currentColor"><path d="M4 17.500 3 8l5 4 4-7 4 7 5-4-1 9.500z"/><rect x="5" y="19" width="14" height="2" rx="1"/></svg>'
   };
   app(`<div class="top"><img class="logo" src="logo_dark.png" alt="캐슬수학"><span style="display:flex;gap:4px;align-items:center">${myChip()}</span></div>
-  <h1 style="font-size:22px;margin:4px 0 12px">사냥</h1>
   ${fire}
   <div class="card ptc"><div class="p1" id="ptgo">${ico.coin}<div><div class="lb">총 포인트</div><div class="big">${fmt(me.points)}<em>P</em></div></div><span class="ch">›</span></div>
     <div class="p2"><div>${ico.target}<div><div class="t">정답률</div><div class="v">${rate === null ? '-' : rate + '<u>%</u>'}</div></div></div>
