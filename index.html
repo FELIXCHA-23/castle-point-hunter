@@ -636,7 +636,7 @@ async function renderCatchu() {
   ${guest && list.length ? '<p class="sub" style="margin:0 0 8px">체험 모드 예시입니다. 로그인하면 내가 틀린 문항이 이곳에 모입니다.</p>' : ''}
   ${list.map((r) => {
     const wr = r.wrong || [], sw = r.stillWrong;
-    const retest = Array.isArray(sw) ? (sw.length ? `재시험 ${r.retestDate ? ymd(r.retestDate) : ''} · 아직 틀린 문항 <b>${nums(sw)}</b>` : `재시험 ${r.retestDate ? ymd(r.retestDate) : ''} · 모두 맞혔습니다`) : (wr.length ? '재시험 기록이 아직 없습니다' : '');
+    const retest = Array.isArray(sw) ? (sw.length ? `재시험 ${r.retestDate ? ymd(r.retestDate) : ''} · 아직 틀린 문항 <b>${nums(sw)}</b>` : `재시험 ${r.retestDate ? ymd(r.retestDate) : ''} · 모두 맞혔습니다`) : '';
     const mw = /(\d+)\s*월\s*(\d+)\s*주차/.exec(r.title || ''), nm = mw ? `[${mw[1]}월${mw[2]}주차] ` : '';
     const cnt = wr.length ? `${wr.length}문항` : '틀린 문항 없음';
     return `<div class="card ctest"><button class="chead" aria-expanded="false"><span class="ct"><b>${esc(nm + r.grade)}</b>${r.scope ? `<span class="sub"> (${esc(r.scope)})</span>` : ''}<span class="sub" style="display:block;margin-top:2px">${r.date ? ymd(r.date) + ' · ' : ''}${cnt}</span></span><span class="car">▾</span></button>
