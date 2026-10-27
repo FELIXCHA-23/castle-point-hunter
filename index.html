@@ -217,7 +217,7 @@ async function guestApi(path, b) {
       const c = await api('guest/check', { id: a.p.id, answer: (b && b.answer) || '' }), ok = c.correct && String((b && b.answer) || '').trim() !== '';
       const lv = Math.max(c.level, 1), score = ok ? lv * 10 : String((b && b.answer) || '').trim() !== '' ? -lv * 5 : 0;
       G.hist.push({ grade: a.p.grade, ok });
-      if (a.season) { G.n++; if (ok) G.ok++; G.score = Math.max(0, G.score + score); }
+      if (a.season) { G.n++; if (ok) G.ok++; G.score += score; }
       const mult = a.mult || 1, reward = ok && !a.season ? 100 * mult : 0;
       if (reward) { G.points += reward; G.today++; }
       return { pid: a.p.id, correct: ok, timeout: false, reward, mult, points: G.points, answer: c.answer, explanation: c.explanation, extra: c.extra, explImage: c.explImage, season: !!a.season, score, guest: true };

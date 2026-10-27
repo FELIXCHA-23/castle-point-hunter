@@ -874,7 +874,7 @@ create or replace function castle.season_board(p_id int)
 returns table (sid text, name text, grade text, score int, ok int, n int, last_at timestamptz, r bigint, gr bigint)
 language sql stable as $$
   with sc as (
-    select a.sid, greatest(sum(a.score), 0)::int as score, (count(*) filter (where a.correct))::int as ok, count(*)::int as n, max(a.end_at) as last_at
+    select a.sid, sum(a.score)::int as score, (count(*) filter (where a.correct))::int as ok, count(*)::int as n, max(a.end_at) as last_at
     from castle.attempts a join castle.students x on x.id = a.sid
     where a.season_id = p_id and a.state = 'done' and not x.is_teacher and not x.is_admin group by a.sid)
   select sc.sid, x.name, x.grade, sc.score, sc.ok, sc.n, sc.last_at,
