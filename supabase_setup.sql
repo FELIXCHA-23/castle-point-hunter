@@ -1326,6 +1326,14 @@ end $$;
 create or replace function public.ping() returns text language sql stable as $$ select 'ok' $$;
 grant execute on function public.ping() to anon, authenticated;
 
+-- 포인트 적립·사용 내역 (최근 100건)
+create or replace function castle.r_points_log(tok text) returns jsonb language plpgsql as $$
+declare st castle.students := castle.stu(tok);
+begin
+  return (select coalesce(jsonb_agg(jsonb_build_object('t', castle.ms(q.t), 'delta', q.delta, 'reason', q.reason, 'balance', q.balance) order by q.id desc), '[]')
+          from (select * from castle.log where sid = st.id order by id desc limit 100) q);
+end $$;
+
 create or replace function castle.dispatch(p_path text, tok text, b jsonb) returns jsonb language plpgsql as $$
 begin
   case p_path
@@ -1352,6 +1360,7 @@ begin
     when 'note/update' then return castle.r_note_update(tok, b);
     when 'note/del' then return castle.r_note_del(tok, b);
     when 'history' then return castle.r_history(tok);
+    when 'points/log' then return castle.r_points_log(tok);
     when 'stats' then return castle.r_stats(tok);
     when 'catchu' then return castle.r_catchu(tok);
     when 'catchu/item' then return castle.r_catchu_item(tok, b);

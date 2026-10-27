@@ -771,7 +771,9 @@ async function api(path, body) {
 
 // ---------- 로그인 없이 탐험하기 (탐험 모드: 문제는 실제 문제, 포인트·기록은 이 화면 안에서만 쓰고 나가면 사라짐) ----------
 let guest = false;
-const G = { tok: null, cur: null, seen: [], sseen: [], score: 0, ok: 0, n: 0, points: 500, today: 0, hist: [], fr: [], team: null };
+const G = { tok: null, cur: null, seen: [], sseen: [], score: 0, ok: 0, n: 0, points: 500, today: 0, hist: [], fr: [], team: null, log: [{ t: Date.now(), delta: 500, reason: '기본 포인트', balance: 500 }] };
+// 탐험 모드의 포인트 내역 (이 화면 안에서만 기록)
+const glog = (d, why, set) => { const bal = set ? G.points : G.points + d; G.log.push({ t: Date.now(), delta: set || d, reason: why, balance: bal }); return bal; };
 const gfill = (p) => (p < 50 ? 110 : p);  // 풀이 포인트보다 모자라면 110P로 맞춤 (실제와 같은 규칙)
 const guestMe = () => ({ id: 'guest', name: '탐험가', title: '님', grade: '', points: G.points, mustChange: false, isAdmin: false, isTeacher: false,
   grades: ['중1', '중2', '중3', '고1', '고2', '고3'], cfg: { START_POINTS: 500, PREVIEW_COST: 10, PREVIEW_SEC: 10, ACCEPT_COST: 50, TIME_LIMIT_SEC: 300, REWARD: 100, DAILY_BONUS_COUNT: 15, MORNING_FROM: 7, MORNING_TO: 9 },
@@ -789,12 +791,12 @@ async function guestApi(path, b) {
     case 'preview': {
       if (G.points < 10) throw new Error('포인트가 부족합니다.');
       const p = await api('guest/problem', { grade: b.grade, exclude: G.seen }); G.seen.push(p.id);
-      G.points = gfill(G.points - 10);
+      G.points = gfill(glog(-10, '문제 미리보기'));
       G.cur = { p, state: 'preview', previewEndsAt: now + 10000 }; return { points: G.points, active: gview(G.cur), serverNow: now };
     }
     case 'accept':
       if (G.points < 50) throw new Error('풀이 포인트(50P)가 부족합니다.');
-      G.points = gfill(G.points - 50);
+      G.points = gfill(glog(-50, '문제 풀기 선택'));
       G.cur.state = 'solving'; G.cur.deadline = now + 300000; G.cur.mult = G.today >= 15 ? 2 : 1; return { points: G.points, active: gview(G.cur), mult: G.cur.mult, serverNow: now };
     case 'skip': G.cur = null; return { points: G.points };
     case 'season/start': { const p = await api('guest/problem', { minLevel: 3, exclude: G.sseen }); G.sseen.push(p.id);
@@ -807,7 +809,7 @@ async function guestApi(path, b) {
       G.hist.push({ grade: a.p.grade, ok });
       if (a.season) { G.n++; if (ok) G.ok++; G.score += score; }
       const mult = a.mult || 1, reward = ok && !a.season ? 100 * mult : 0;
-      if (reward) { G.points += reward; G.today++; }
+      if (reward) { G.points += reward; G.today++; glog(0, '정답 보상 (+' + reward + ')', reward); }
       return { pid: a.p.id, correct: ok, timeout: false, reward, mult, points: G.points, answer: c.answer, explanation: c.explanation, extra: c.extra, explImage: c.explImage, season: !!a.season, score, guest: true };
     }
     case 'notices': { const x = await rawCall('notices', {}, G.tok); if (!x.ok) throw new Error(x.j.message || '오류가 났습니다.'); return x.j; }
@@ -817,6 +819,7 @@ async function guestApi(path, b) {
       days[6].n = G.hist.length; days[6].ok = G.hist.filter((x) => x.ok).length;
       return { total: G.hist.length, ok: days[6].ok, days, byGrade: Object.values(bg).sort((a, b) => a.grade < b.grade ? -1 : 1), weak: [] };
     }
+    case 'points/log': return G.log.slice().reverse();
     case 'notes': case 'history': return [];
     case 'catchu': return api('guest/catchu');
     case 'catchu/item': return api('guest/catchu_item', b);
@@ -997,7 +1000,7 @@ async function renderHome() {
   <h2 class="hsec">공지사항</h2>${noticeCards(list)}
   ${navBar('home')}`);
   $('#my').onclick = () => renderMy(); bindNav();
-  $('#ptgo').onclick = () => renderHistory('home');
+  $('#ptgo').onclick = () => renderPoints('home');
 }
 // 마이페이지: 내 기록·통계 등 개인 메뉴와 로그아웃
 function renderMy() {
@@ -1045,7 +1048,7 @@ function renderHunt(notice) {
   ${navBar('hunt')}`);
   bindHead();
   $('#hist').onclick = () => renderHistory('hunt');
-  $('#ptgo').onclick = () => renderHistory('hunt');
+  $('#ptgo').onclick = () => renderPoints('hunt');
   // 학년을 눌러도 화면을 다시 그리지 않고 그 자리에서 표시만 바꾼다 (스크롤 위치가 움직이지 않도록)
   document.querySelectorAll('.grades button').forEach((b) => b.onclick = () => {
     pickedGrade = b.dataset.g;
@@ -1207,6 +1210,18 @@ function renderGuide() {
   app(`${subTop('이용 안내')}
   ${guideCards()}${navBar('home')}`);
   bindNav(); $('#bk').onclick = () => loadMe();
+}
+// 포인트 적립·사용 내역
+async function renderPoints(from) {
+  const back = from === 'hunt' ? ['사냥', () => loadMe('', 'hunt')] : ['홈', () => loadMe()];
+  let list;
+  try { list = await api('points/log'); } catch (e) { return renderHunt(e.message); }
+  const fmtT = (t) => { const d = new Date(t); return `${d.getMonth() + 1}/${d.getDate()} ${String(d.getHours()).padStart(2, '0')}:${String(d.getMinutes()).padStart(2, '0')}`; };
+  app(`${subTop('포인트 내역', '', back[0])}
+  <div class="card ptc"><div class="p1"><div><div class="lb">총 포인트</div><div class="big">${fmt(me.points)}<em>P</em></div></div></div></div>
+  <div class="card"><h2 style="margin-bottom:4px">적립·사용 내역 <span class="sub" style="font-weight:600">최근 ${list.length}건</span></h2>
+  ${list.map((x) => `<div class="rk-row"><div class="rk-nm" style="flex:1;min-width:0"><div>${esc(x.reason)}</div><div class="sub">${fmtT(x.t)} · 잔액 ${fmt(x.balance)}P</div></div><div class="rk-pt" style="color:${x.delta >= 0 ? 'var(--main)' : 'var(--sub)'}">${x.delta >= 0 ? '+' : '−'}${fmt(Math.abs(x.delta))}P</div></div>`).join('') || '<p class="sub">아직 내역이 없습니다.</p>'}</div>${navBar('home')}`);
+  bindNav(); $('#bk').onclick = back[1];
 }
 async function renderHistory(from) {
   const back = from === 'home' ? ['홈', () => loadMe()] : from === 'hunt' ? ['사냥', () => loadMe('', 'hunt')] : ['마이페이지', () => renderMy()];
