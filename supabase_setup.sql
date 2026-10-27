@@ -1324,6 +1324,10 @@ begin
   return jsonb_build_object('prob', r.prob, 'expl', r.expl);
 end $$;
 
+-- 서버 깨우기(keep-alive)용: 하루 한 번 이 함수를 불러 무료 서버가 멈추지 않게 합니다 (아무 데이터도 주지 않음)
+create or replace function public.ping() returns text language sql stable as $$ select 'ok' $$;
+grant execute on function public.ping() to anon, authenticated;
+
 create or replace function castle.dispatch(p_path text, tok text, b jsonb) returns jsonb language plpgsql as $$
 begin
   case p_path
