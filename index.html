@@ -533,7 +533,8 @@ async function renderRank() {
 function closeMore() { const o = $('#mpop'); if (o) o.remove(); }
 function renderMore() {
   if ($('#mpop')) return closeMore();
-  const rows = [['hist', '내 기록', '최근 푼 문제 30개'], ['stats', '내 통계', '정답률과 약한 단원'], ['notice', '공지사항', '학원 소식과 이벤트'], ['guide', '이용 안내', '포인트와 시즌 규칙']];
+  const rows = [['hist', '내 기록', '최근 푼 문제 30개'], ['stats', '내 통계', '정답률과 약한 단원'], ['friends', '내 친구', '친구 신청과 목록'], ['notice', '공지사항', '학원 소식과 이벤트'], ['guide', '이용 안내', '포인트와 시즌 규칙']];
+  if (me.isTeacher || me.isAdmin) rows.splice(rows.findIndex((r) => r[0] === 'friends'), 1);
   if (me.isTeacher) rows.push(['roster', '담당 학생 현황', '내 반 학생의 학습 현황']);
   if (me.isAdmin) rows.push(['admin', '관리자 화면', '학생, 문제, 시즌 관리']);
   rows.push(['out', guest ? '나가기' : '로그아웃', '']);
@@ -541,7 +542,7 @@ function renderMore() {
   o.innerHTML = `<div class="mpop">${rows.map(([k, n]) => `<button class="mrow" data-m="${k}">${n}</button>`).join('')}</div>`;
   document.body.appendChild(o);
   o.onclick = (e) => { if (e.target === o) closeMore(); };
-  const f = { hist: renderHistory, stats: renderStats, notice: renderNotices, guide: renderGuide, roster: renderRoster, admin: () => switchTo('admin'), out: logout };
+  const f = { hist: renderHistory, stats: renderStats, friends: () => renderFriends(), notice: renderNotices, guide: renderGuide, roster: renderRoster, admin: () => switchTo('admin'), out: logout };
   o.querySelectorAll('.mrow').forEach((b) => b.onclick = () => { closeMore(); f[b.dataset.m](); });
 }
 const subTop = (t, extra) => `<div class="top"><button class="back" id="bk">${IC.back}홈</button>${extra || ''}</div><h1 style="font-size:22px;margin:4px 0 12px">${t}</h1>`;
@@ -692,12 +693,10 @@ async function renderTeam(notice) {
       <div class="row" style="flex-wrap:nowrap;margin-top:14px"><input id="tname" maxlength="12" placeholder="팀 이름 (2~12자)" autocomplete="off"><button class="tmk" id="tmake">만들기</button></div></div>
     ${t.invites.length ? `<div class="card"><h2 style="margin-bottom:6px">받은 초대</h2>${t.invites.map((i) => `<div class="pbox" style="margin:8px 0"><b>${esc(i.teamName)}</b> 팀에서 초대했습니다.<br><span class="sub">팀장 ${esc(i.from)} · 현재 ${i.size}명</span><div class="row" style="margin-top:8px"><button class="primary tacc" data-t="${i.teamId}" style="flex:1">수락</button><button class="tdec" data-t="${i.teamId}" style="flex:1">거절</button></div></div>`).join('')}</div>` : ''}`;
   }
-  const fr = f.friends, inc = f.incoming, out = f.outgoing;
-  const friendsCard = t.canPlay ? `<div class="card"><h2 style="margin-bottom:6px">친구 <span class="sub" style="font-weight:600">${fr.length}명</span></h2>
-    ${inc.length ? `<div class="pbox" style="margin:0 0 8px"><b>친구 신청</b>${inc.map((x) => `<div class="row" style="margin-top:8px;flex-wrap:nowrap">${avatar(x.name)}<span style="flex:1">${esc(x.name)}<span class="gchip">${esc(x.grade || '')}</span></span><button class="primary facc" data-id="${esc(x.id)}" style="padding:6px 12px">수락</button><button class="fdec" data-id="${esc(x.id)}" style="padding:6px 12px">거절</button></div>`).join('')}</div>` : ''}
-    ${fr.length ? fr.map((x) => `<div class="rk-row">${avatar(x.name)}<div class="rk-nm">${esc(x.name)}${x.grade ? `<span class="gchip">${esc(x.grade)}</span>` : ''}</div>${canInvite && !memberIds.includes(x.id) ? `<button class="tinv" data-id="${esc(x.id)}" style="padding:4px 12px">팀 초대</button>` : ''}<button class="frm" data-id="${esc(x.id)}" style="padding:4px 10px">삭제</button></div>`).join('') : '<p class="sub" style="margin:0 0 8px">아직 등록한 친구가 없습니다.</p>'}
-    ${out.length ? `<p class="sub" style="margin:10px 0 4px">보낸 신청 (상대가 수락하면 친구가 됩니다)</p>${out.map((x) => `<div class="row" style="flex-wrap:nowrap;margin-bottom:4px">${avatar(x.name, 'wait')}<span style="flex:1">${esc(x.name)}</span><button class="frm" data-id="${esc(x.id)}" style="padding:4px 10px">취소</button></div>`).join('')}` : ''}
-    <label style="margin-top:12px">친구 신청 (상대의 아이디)</label><div class="row" style="flex-wrap:nowrap"><input id="fid" placeholder="예: 해원고홍길동" autocomplete="off" autocapitalize="none"><button class="primary" id="fadd" style="flex:0 0 auto;width:auto;padding:0 18px">신청</button></div></div>` : '';
+  const fr = f.friends, inc = f.incoming;
+  const inviteList = canInvite ? fr.filter((x) => !memberIds.includes(x.id)) : [];
+  const friendsCard = t.canPlay ? `<div class="card"><div class="row" style="flex-wrap:nowrap;justify-content:space-between"><h2 style="margin:0">친구 <span class="sub" style="font-weight:600">${fr.length}명</span></h2><button id="gofr" style="padding:6px 14px">${inc.length ? `내 친구 · 신청 ${inc.length}건` : '내 친구'}</button></div>
+    ${inviteList.length ? `<p class="sub" style="margin:10px 0 4px">친구를 팀에 초대합니다.</p>${inviteList.map((x) => `<div class="rk-row">${avatar(x.name)}<div class="rk-nm">${esc(x.name)}${x.grade ? `<span class="gchip">${esc(x.grade)}</span>` : ''}</div><button class="tinv" data-id="${esc(x.id)}" style="padding:4px 12px">팀 초대</button></div>`).join('')}` : ''}</div>` : '';
   const state = !s ? '' : s.status === 'active' ? '진행 중' : s.status === 'upcoming' ? `${fmtDay(s.startsAt)}에 시작합니다. 시작 전에 미리 팀을 꾸릴 수 있습니다.` : '시즌이 끝났습니다';
   const board = `<div class="card"><h2 style="display:flex;align-items:center;gap:8px;margin-bottom:4px">${trophy('#f5b82e')}${s ? esc(s.name) + ' ' : ''}팀랭킹전 <span class="sub" style="font-weight:600">${t.total}팀</span></h2>
     ${state ? `<div class="sub" style="margin-bottom:6px">${state}</div>` : ''}
@@ -709,12 +708,31 @@ async function renderTeam(notice) {
   if ($('#tmake')) $('#tmake').onclick = () => go('team/create', { name: $('#tname').value });
   if ($('#tleave')) $('#tleave').onclick = () => { if (confirm(tm.leader ? '팀을 해체하시겠습니까? 모든 팀원이 팀에서 나가게 됩니다.' : '팀에서 탈퇴하시겠습니까?')) go('team/leave'); };
   if ($('#tinvgo')) $('#tinvgo').onclick = () => go('team/invite', { id: $('#tinvid').value });
-  if ($('#fadd')) $('#fadd').onclick = () => go('friend/add', { id: $('#fid').value });
+  if ($('#gofr')) $('#gofr').onclick = () => renderFriends();
   const on = (sel, fn) => document.querySelectorAll(sel).forEach((b) => b.onclick = () => fn(b));
   on('.tacc', (b) => go('team/respond', { teamId: Number(b.dataset.t), accept: true }));
   on('.tdec', (b) => go('team/respond', { teamId: Number(b.dataset.t), accept: false }));
   on('.tcancel', (b) => go('team/cancel', { id: b.dataset.id }));
   on('.tinv', (b) => go('team/invite', { id: b.dataset.id }));
+}
+
+// ---------- 내 친구 (더보기) ----------
+async function renderFriends(notice) {
+  if (guest) { app(`${subTop('내 친구')}<div class="card"><p class="sub">체험 모드에서는 친구 기능을 사용할 수 없습니다. 로그인하면 친구를 등록하고 팀에 초대할 수 있습니다.</p></div>${navBar('more')}`); bindNav(); $('#bk').onclick = () => loadMe(); return; }
+  let f;
+  try { f = await api('friend/list'); } catch (e) { return renderHome(e.message); }
+  const fr = f.friends, inc = f.incoming, out = f.outgoing;
+  app(`${subTop('내 친구')}<div class="err" id="ferr">${esc(notice || '')}</div>
+  ${inc.length ? `<div class="card"><h2 style="margin-bottom:6px">받은 친구 신청 <span class="sub" style="font-weight:600">${inc.length}건</span></h2>${inc.map((x) => `<div class="row" style="margin-top:8px;flex-wrap:nowrap">${avatar(x.name)}<span style="flex:1">${esc(x.name)}<span class="gchip">${esc(x.grade || '')}</span></span><button class="primary facc" data-id="${esc(x.id)}" style="padding:6px 14px">수락</button><button class="fdec" data-id="${esc(x.id)}" style="padding:6px 14px">거절</button></div>`).join('')}</div>` : ''}
+  <div class="card"><h2 style="margin-bottom:6px">내 친구 <span class="sub" style="font-weight:600">${fr.length}명</span></h2>
+    ${fr.length ? fr.map((x) => `<div class="rk-row">${avatar(x.name)}<div class="rk-nm">${esc(x.name)}${x.grade ? `<span class="gchip">${esc(x.grade)}</span>` : ''}</div><button class="frm" data-id="${esc(x.id)}" style="padding:4px 10px">삭제</button></div>`).join('') : '<p class="sub" style="margin:0">아직 등록한 친구가 없습니다.</p>'}
+    ${out.length ? `<p class="sub" style="margin:12px 0 4px">보낸 신청 (상대가 수락하면 친구가 됩니다)</p>${out.map((x) => `<div class="row" style="flex-wrap:nowrap;margin-bottom:4px">${avatar(x.name, 'wait')}<span style="flex:1">${esc(x.name)}</span><button class="frm" data-id="${esc(x.id)}" style="padding:4px 10px">취소</button></div>`).join('')}` : ''}</div>
+  <div class="card"><label style="margin-top:0">친구 신청 (상대의 아이디)</label><div class="row" style="flex-wrap:nowrap"><input id="fid" placeholder="예: 해원고홍길동" autocomplete="off" autocapitalize="none"><button class="primary" id="fadd" style="flex:0 0 auto;width:auto;padding:0 18px">신청</button></div>
+    <p class="sub" style="margin:8px 0 0">친구는 팀을 꾸릴 때 바로 초대할 수 있습니다. 팀 초대는 친구가 아니어도 아이디로 보낼 수 있습니다.</p></div>${navBar('more')}`);
+  bindNav(); $('#bk').onclick = () => loadMe();
+  const go = async (path, body) => { try { await api(path, body || {}); renderFriends(); } catch (e) { renderFriends(e.message); } };
+  if ($('#fadd')) $('#fadd').onclick = () => go('friend/add', { id: $('#fid').value });
+  const on = (sel, fn) => document.querySelectorAll(sel).forEach((b) => b.onclick = () => fn(b));
   on('.facc', (b) => go('friend/respond', { id: b.dataset.id, accept: true }));
   on('.fdec', (b) => go('friend/respond', { id: b.dataset.id, accept: false }));
   on('.frm', (b) => { if (confirm('목록에서 삭제하시겠습니까?')) go('friend/remove', { id: b.dataset.id }); });
