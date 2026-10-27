@@ -1613,7 +1613,7 @@ async function renderCatchu() {
   const list = await api('catchu');
   const nums = (a) => (a || []).map((n) => esc(n) + '번').join(', ');
   app(`  <div class="seg"><button data-v="mine">내가 담은 문제</button><button data-v="catchu" class="on">캐치유테스트</button></div>
-  ${guest && list.length ? '<p class="sub" style="margin:0 0 8px">탐험 모드 예시입니다. 로그인하면 내가 틀린 문항이 이곳에 모입니다.</p>' : ''}
+  <p class="sub" style="margin:0 0 8px">매주 클리닉시간에 보는 캐치유테스트 오답이 이곳에 모입니다.${guest && list.length ? ' (탐험 모드 예시입니다)' : ''}</p>
   ${list.map((r) => {
     const wr = r.wrong || [], sw = r.stillWrong;
     const retest = Array.isArray(sw) ? (sw.length ? `재시험 ${r.retestDate ? ymd(r.retestDate) : ''} · 아직 틀린 문항 <b>${nums(sw)}</b>` : `재시험 ${r.retestDate ? ymd(r.retestDate) : ''} · 모두 맞혔습니다`) : '';
@@ -1623,7 +1623,7 @@ async function renderCatchu() {
     <div class="cbody" style="display:none">${wr.length ? `<div class="cnl">${wr.map((n) => (r.have || []).includes(n) ? `<button class="cn" data-r="${esc(r.id)}" data-n="${n}">${n}번</button>` : `<b class="cn0">${n}번</b>`).join('')}</div>` : ''}
     <div class="citem" data-r="${esc(r.id)}"></div>
     ${retest ? `<p class="sub" style="margin:6px 0 0">${retest}</p>` : ''}</div></div>`;
-  }).join('') || `<div class="card sub">${guest ? '탐험모드에서는 캐치유테스트 기록이 없습니다.' : '아직 가져온 캐치유테스트 기록이 없습니다. 10월 4주차 테스트부터 이곳에 모입니다.'}</div>`}
+  }).join('') || `<div class="card sub">${guest ? '탐험모드에서는 캐치유테스트 기록이 없습니다.' : '아직 모인 캐치유테스트 오답이 없습니다.'}</div>`}
   ${navBar('nt')}`);
   bindNav();
   document.querySelectorAll('.seg [data-v=mine]').forEach((b) => b.onclick = renderNotes);
