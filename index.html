@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="color-scheme" content="light">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>캐슬 포인트 헌터</title>
+<title>캐슬 포인트 헌터스</title>
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/variable/pretendardvariable-dynamic-subset.min.css">
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/KaTeX/0.16.9/katex.min.css">
 <script defer src="https://cdnjs.cloudflare.com/ajax/libs/KaTeX/0.16.9/katex.min.js"></script>
@@ -747,6 +747,12 @@ body{
 .card.ptc .p2 .enc{font-size:13px;color:#66676e;font-weight:500;line-height:1.45;white-space:normal}
 .card.ptc .p2 .v u{font-size:13px}
 .card.ptc .p2{grid-template-columns:1fr 1fr 1.25fr}
+.gd summary{list-style:none;display:flex;align-items:center;justify-content:space-between;cursor:pointer}
+.gd summary::-webkit-details-marker{display:none}
+.gd summary h2{margin:0}
+.gd summary::after{content:"";width:9px;height:9px;border-right:2px solid var(--sub);border-bottom:2px solid var(--sub);transform:rotate(45deg);margin:-4px 4px 0 0;transition:transform .18s}
+.gd[open] summary::after{transform:rotate(-135deg);margin-top:4px}
+.gd[open] summary{margin-bottom:6px}
 </style>
 </head>
 <body>
@@ -922,7 +928,7 @@ function bindNav() {
 
 // ---------- 로그인 ----------
 function renderLogin(msg, signup) {
-  app(`<div style="text-align:center;margin:9vh 0 26px"><img class="logo logo-big" src="logo.png" alt="캐슬수학" style="margin:0 auto 18px"><h1>캐슬 포인트 헌터</h1><p class="sub" style="margin-top:6px">${signup ? '아이디와 비밀번호만 정하면 바로 시작합니다' : '수학문제를 풀고 포인트를 모아보자!<br>주말, 공휴일 오전 7시~9시에는 2배 이벤트!! 🔥'}</p></div>
+  app(`<div style="text-align:center;margin:9vh 0 26px"><img class="logo logo-big" src="logo.png" alt="캐슬수학" style="margin:0 auto 18px"><h1>캐슬 포인트 헌터스</h1><p class="sub" style="margin-top:6px">${signup ? '아이디와 비밀번호만 정하면 바로 시작합니다' : '수학문제를 풀고 포인트를 모아보자!<br>주말, 공휴일 오전 7시~9시에는 2배 이벤트!! 🔥'}</p></div>
   <div class="card">${signup ? '' : '<div class="pbox" style="margin:0 0 4px">아이디는 학교+이름으로 이미 등록되어 있습니다.<br><span style="font-weight:600">(예시: 신현고차캐슬, 해원중김캐슬)</span></div>'}<label style="margin-top:10px">아이디${signup ? ' (한글·영문·숫자 2~20자)' : ''}</label><input id="id" autocomplete="username" autocapitalize="none" autocorrect="off">
   <label>비밀번호${signup ? ' (4자 이상)' : ''}</label><input id="pw" type="password" autocomplete="${signup ? 'new-password' : 'current-password'}">
   <div class="err" id="err">${esc(msg || '')}</div>
@@ -942,7 +948,7 @@ function renderLogin(msg, signup) {
 }
 const SMS_NO = '01026462308';
 const KAKAO_URL = 'https://open.kakao.com/o/suDCQiUi';
-const smsHref = () => 'sms:' + SMS_NO + '?&body=' + encodeURIComponent('[캐슬 포인트 헌터] 비밀번호 초기화 요청\n아래에 학교와 이름을 적어주세요.\n학교: \n이름: ');
+const smsHref = () => 'sms:' + SMS_NO + '?&body=' + encodeURIComponent('[캐슬 포인트 헌터스] 비밀번호 초기화 요청\n아래에 학교와 이름을 적어주세요.\n학교: \n이름: ');
 function renderResetRequest(id0) {
   app(`<button class="back" id="bk" style="margin-top:14px">${IC.back}로그인 화면으로</button>
   <div class="card" style="margin-top:10px"><h1>비밀번호 초기화 요청</h1>
@@ -1006,13 +1012,13 @@ async function renderHome() {
   const list = await api('notices').catch(() => []);
   app(`<div class="top"><img class="logo" src="logo.png" alt="캐슬수학"><span style="display:flex;gap:4px;align-items:center">${myChip()}</span></div>
   <div class="hero"><div class="deco"><i></i><i></i><i></i></div>
-    <div class="hi">오늘도 수학과 함께,</div><h1>안녕하세요!<br>${esc(me.name)}${esc(me.title || '님')}</h1><div class="go">더 높은 곳을 향해, 오늘도 한 걸음 나아가세요.</div></div>
+    <div class="hi">오늘도 캐슬수학과 함께</div><h1>안녕하세요!<br>${esc(me.name)}${esc(me.title || '님')}</h1><div class="go">더 높은 곳을 향해, 오늘도 한 걸음 나아가세요.</div></div>
   ${fire}
   <div class="card ptc"><div class="p1" id="ptgo"><div><div class="lb">총 포인트</div><div class="big">${fmt(me.points)}<em>P</em></div></div><span class="ch">›</span></div>
     <div class="p2"><div><div><div class="t">오늘의 정답률</div><div class="v">${rate === null ? '-' : rate + '<u>%</u>'}</div></div></div>
       <div><div><div class="t">연속 학습일</div><div class="v">${st ? st + '<u>일</u>' : '-'}</div></div></div>
       <div><div class="enc">${st >= 2 ? '지금의 꾸준함이<br>더 큰 성과를 만듭니다.' : '오늘 한 문제부터<br>시작해 보십시오.'}</div></div></div></div>
-  <h2 class="hsec">이용 안내</h2>${guideCards()}
+  <h2 class="hsec">이용 안내</h2>${foldCards(guideCards())}
   <h2 class="hsec">공지사항</h2>${noticeCards(list)}
   ${navBar('home')}`);
   $('#my').onclick = () => renderMy(); bindNav();
@@ -1166,7 +1172,7 @@ async function renderRank() {
   let r, s = null;
   let tm = null;
   try { r = await api('rank'); s = await api('season/info').catch(() => null); if (!guest) tm = await api('team/info').catch(() => null); } catch (e) { return renderHunt(e.message); }
-  app(`<div class="top"><h1 style="font-size:22px;display:flex;align-items:center;gap:8px">${trophy('#f5b82e')}순위</h1></div>
+  app(`<div class="top"><h1 style="font-size:22px;display:flex;align-items:center;gap:8px">${trophy('#f5b82e')}헌터순위</h1></div>
   <div class="card"><div class="seg"><button data-k="all">포인트 전체</button><button data-k="grade">내 학년${r.grade ? ' · ' + esc(r.grade) : ''}</button><button data-k="season">개인랭킹전</button>${tm ? '<button data-k="team">팀랭킹전</button>' : ''}</div><div id="rkb"></div></div>${navBar('rk')}`);
   bindNav();
   const draw = (k) => {
@@ -1209,6 +1215,8 @@ async function renderNotices() {
   ${noticeCards(list)}${navBar('home')}`);
   bindNav(); $('#bk').onclick = () => loadMe();
 }
+// fold: 처음에는 제목만 보이고 눌러서 펼친다 (홈에서 사용)
+const foldCards = (html) => html.replace(/<div class="card"><h2>([^<]*)<\/h2>([\s\S]*?)<\/div>(?=\s*(?:<div class="card">|$))/g, (m, t, body) => `<details class="card gd"><summary><h2>${t}</h2></summary>${body}</details>`);
 const guideCards = () => {
   const c = me.cfg;
   return `  <div class="card"><h2>포인트 사냥</h2><ul class="rules">
