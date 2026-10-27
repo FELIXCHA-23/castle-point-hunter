@@ -1328,7 +1328,7 @@ async function renderHome() {
   ${ptcCard(true, 'cmp')}
   <div class="card hmenu"><button id="hg"><b>이용 안내</b><span>포인트·랭킹전·오답노트 규칙</span><i>›</i></button>
     <button id="hn"><b>공지사항</b><span>${top ? esc(top.title) : '등록된 공지가 없습니다'}</span>${list.length ? `<em class="cnt">${list.length}</em>` : ''}<i>›</i></button></div>
-  ${guest ? '<button id="gout" class="primary btn-big gout">탐험 나가기 · 로그인하러 가기</button>' : ''}
+  ${guest ? '<button id="gout" class="primary btn-big gout">탐험 종료하기</button>' : ''}
   ${navBar('home')}`);
   $('#my').onclick = () => renderMy(); bindNav();
   if ($('#gout')) $('#gout').onclick = logout;
