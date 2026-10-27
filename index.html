@@ -1184,7 +1184,7 @@ function renderGuide() {
   <li>맞히면 난이도×10점, 오답을 제출하면 난이도×5점이 감점됩니다. 시간 초과는 감점이 없습니다.</li>
   <li>랭킹전은 포인트 대신 순위만 있습니다.</li>
   <li>시즌이 끝나면 상위 학생에게 상품 이벤트가 있습니다.</li></ul></div>
-  <div class="card"><h2>오답노트</h2><ul class="rules"><li>결과 화면이나 내 기록에서 “오답노트에 담기”를 누르면 모아 두고, 분류 이름과 메모를 적을 수 있습니다.</li></ul></div>${navBar('home')}`);
+  <div class="card"><h2>오답노트</h2><ul class="rules"><li>결과 화면이나 내 기록에서 “오답노트에 담기”를 누르면 모아 두고, 분류 이름과 메모를 적을 수 있습니다.</li><li>학원에서 본 <b>캐치유테스트에서 틀린 문제</b>도 오답노트에 함께 들어 있습니다. 회차별로 접어서 보고, 문제와 해설을 확인할 수 있습니다.</li></ul></div>${navBar('home')}`);
   bindNav(); $('#bk').onclick = () => loadMe();
 }
 async function renderHistory() {
