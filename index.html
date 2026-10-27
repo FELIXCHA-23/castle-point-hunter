@@ -889,7 +889,7 @@ const trophy = (c) => `<svg viewBox="0 0 24 24" width="22" height="22" aria-hidd
 const MEDAL = ['#f5b82e', '#9aa6b8', '#cd7f4a'];
 const rankRows = (top) => top.map((x) => `<div class="rk-row${x.me ? ' me' : ''}"><div class="rk-no">${x.rank <= 3 ? trophy(MEDAL[x.rank - 1]) : x.rank}</div><div class="rk-nm">${esc(x.name)}${x.grade ? `<span class="gchip">${esc(x.grade)}</span>` : ''}${x.me ? ' <span class="chip">나</span>' : ''}</div><div class="rk-pt">${fmt(x.points)} P</div></div>`).join('');
 function navBar(cur) {
-  const it = [['home', '홈', IC.home], ['hunt', '사냥', IC.hunt], ['rk', '순위', IC.rank], ['season', '랭킹전', IC.season], ['fr', '친구', IC.friend], ['team', '팀', IC.team], ['nt', '오답노트', IC.note]];
+  const it = [['home', '홈', IC.home], ['hunt', '사냥', IC.hunt], ['rk', '헌터순위', IC.rank], ['season', '랭킹전', IC.season], ['fr', '친구', IC.friend], ['team', '팀', IC.team], ['nt', '오답노트', IC.note]];
   return `<div class="nav"><div>${it.map(([k, n, ic]) => `<button data-n="${k}" class="${k === cur ? 'on' : ''}">${ic}${n}</button>`).join('')}</div></div>`;
 }
 function bindNav() {
