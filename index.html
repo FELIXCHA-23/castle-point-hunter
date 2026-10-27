@@ -1064,7 +1064,7 @@ async function api(path, body) {
 
 // ---------- 로그인 없이 탐험하기 (탐험 모드: 문제는 실제 문제, 포인트·기록은 이 화면 안에서만 쓰고 나가면 사라짐) ----------
 let guest = false;
-const G = { tok: null, cur: null, seen: [], sseen: [], score: 0, ok: 0, n: 0, points: 500, today: 0, hist: [], fr: [], team: null, avatar: '', log: [{ t: Date.now(), delta: 500, reason: '기본 포인트', balance: 500 }] };
+const G = { tok: null, cur: null, seen: [], sseen: [], score: 0, ok: 0, n: 0, points: 500, today: 0, hist: [], fr: [], team: null, avatar: '🚀', log: [{ t: Date.now(), delta: 500, reason: '기본 포인트', balance: 500 }] };
 // 탐험 모드의 포인트 내역 (이 화면 안에서만 기록)
 const glog = (d, why, set) => { const bal = set ? G.points : G.points + d; G.log.push({ t: Date.now(), delta: set || d, reason: why, balance: bal }); return bal; };
 const gfill = (p) => (p < 50 ? 110 : p);  // 풀이 포인트보다 모자라면 110P로 맞춤 (실제와 같은 규칙)
