@@ -1256,12 +1256,12 @@ begin
 end $$;
 
 
--- ----- 로그인 없이 구경하기 (체험 모드): 포인트·기록은 저장하지 않고 문제만 보여 줌 -----
+-- ----- 로그인 없이 구경하기 (탐험 모드): 포인트·기록은 저장하지 않고 문제만 보여 줌 -----
 create or replace function castle.r_guest_start(b jsonb) returns jsonb language plpgsql as $$
 declare v_tok text;
 begin
   delete from castle.sessions where exp < now();
-  if (select count(*) from castle.sessions where role = 'guest') >= 5000 then perform castle.fail(429, '지금은 체험 접속이 많습니다. 잠시 후 다시 시도해 주십시오.'); end if;
+  if (select count(*) from castle.sessions where role = 'guest') >= 5000 then perform castle.fail(429, '지금은 탐험 접속이 많습니다. 잠시 후 다시 시도해 주십시오.'); end if;
   v_tok := encode(extensions.gen_random_bytes(24), 'hex');
   insert into castle.sessions values (v_tok, 'guest', 'guest', now() + interval '3 hours');
   return jsonb_build_object('token', v_tok);
@@ -1299,7 +1299,7 @@ begin
                             'extra', p.extra, 'explImage', p.expl_image, 'level', p.level);
 end $$;
 
--- 체험 모드 예시: 김송현 학생의 캐치유테스트 오답을 그대로 보여 준다 (이름은 내려주지 않음, 그 학생이 틀린 문항만 열림)
+-- 탐험 모드 예시: 김송현 학생의 캐치유테스트 오답을 그대로 보여 준다 (이름은 내려주지 않음, 그 학생이 틀린 문항만 열림)
 create or replace function castle.guest_sample_sid() returns text language sql stable as $$
   select s.id from castle.students s join castle.catchu_wrong w on w.sid = s.id where s.name = '김송현' order by w.round_id limit 1 $$;
 

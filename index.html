@@ -256,7 +256,7 @@ async function api(path, body) {
   return x.j;
 }
 
-// ---------- 로그인 없이 탐험하기 (체험 모드: 문제는 실제 문제, 포인트·기록은 이 화면 안에서만 쓰고 나가면 사라짐) ----------
+// ---------- 로그인 없이 탐험하기 (탐험 모드: 문제는 실제 문제, 포인트·기록은 이 화면 안에서만 쓰고 나가면 사라짐) ----------
 let guest = false;
 const G = { tok: null, cur: null, seen: [], sseen: [], score: 0, ok: 0, n: 0, points: 500, today: 0, hist: [] };
 const gfill = (p) => (p < 50 ? 110 : p);  // 풀이 포인트보다 모자라면 110P로 맞춤 (실제와 같은 규칙)
@@ -272,7 +272,7 @@ async function guestApi(path, b) {
     case 'rank': { const on = G.points >= 1000, row = [{ rank: 1, name: '탐*가', grade: '', points: G.points, me: true }]; return { grade: '', top: on ? row : [], myRank: on ? 1 : null, total: on ? 1 : 0, gradeTop: [], myGradeRank: null, gradeTotal: 0 }; }
     case 'season/info': { const pool = await api('guest/pool', { minLevel: 3 });
       return { serverNow: now, grade: '', canPlay: true, poolLeft: pool.n, total: 0, top: [], gradeTop: [], me: { score: G.score, rank: null, gradeRank: null, ok: G.ok, n: G.n },
-        season: { id: 0, name: '체험 시즌', status: 'active', startsAt: now - 864e5, endsAt: now + 7 * 864e5, prize: '', minLevel: 3, timeLimitSec: 300 } }; }
+        season: { id: 0, name: '탐험 시즌', status: 'active', startsAt: now - 864e5, endsAt: now + 7 * 864e5, prize: '', minLevel: 3, timeLimitSec: 300 } }; }
     case 'preview': {
       if (G.points < 10) throw new Error('포인트가 부족합니다.');
       const p = await api('guest/problem', { grade: b.grade, exclude: G.seen }); G.seen.push(p.id);
@@ -307,19 +307,19 @@ async function guestApi(path, b) {
     case 'notes': case 'history': return [];
     case 'catchu': return api('guest/catchu');
     case 'catchu/item': return api('guest/catchu_item', b);
-    case 'note/add': throw new Error('체험모드에서는 저장되지 않습니다.');
+    case 'note/add': throw new Error('탐험모드에서는 저장되지 않습니다.');
   }
-  throw new Error('체험모드에서는 사용할 수 없는 기능입니다.');
+  throw new Error('탐험모드에서는 사용할 수 없는 기능입니다.');
 }
 function startGuest() {
   const ov = document.createElement('div'); ov.className = 'ovl';
-  ov.innerHTML = '<div class="box"><h2>체험모드 안내</h2><p><b>체험모드이므로 포인트는 사라집니다.</b><br>체험 중에는 문제를 풀고 포인트를 쓰고 얻는 것까지 실제처럼 동작하지만, 나가면 포인트와 기록이 모두 사라집니다.</p><button class="primary btn-big" id="gok" style="margin:0">확인</button></div>';
+  ov.innerHTML = '<div class="box"><h2>탐험모드 안내</h2><p><b>탐험모드이므로 포인트는 사라집니다.</b><br>탐험 중에는 문제를 풀고 포인트를 쓰고 얻는 것까지 실제처럼 동작하지만, 나가면 포인트와 기록이 모두 사라집니다.</p><button class="primary btn-big" id="gok" style="margin:0">확인</button></div>';
   document.body.appendChild(ov);
   $('#gok').onclick = async () => {
     $('#gok').disabled = true;
     try {
       const x = await rawCall('guest/start', {}, null);
-      if (!x.ok) throw new Error(x.j.message || '체험을 시작할 수 없습니다.');
+      if (!x.ok) throw new Error(x.j.message || '탐험을 시작할 수 없습니다.');
       ov.remove(); guest = true; token = null; role = 'student';
       Object.assign(G, { tok: x.j.token, cur: null, seen: [], sseen: [], score: 0, ok: 0, n: 0, points: 500, today: 0, hist: [] });
       me = await api('me'); skew = 0; renderHome();
@@ -333,7 +333,7 @@ function logout() {
 async function switchTo(to) { try { const r = await api('switch', { to }); token = r.token; role = r.role; localStorage.setItem('tk', token); localStorage.setItem('role', role); start(); } catch (e) { alert(e.message); } }
 function math(el) { if (window.renderMathInElement) try { renderMathInElement(el, { delimiters: [{ left: '$$', right: '$$', display: true }, { left: '$', right: '$', display: false }], throwOnError: false }); } catch (e) {} }
 window.addEventListener('load', () => math(document.body));
-const app = (html, nonav) => { clearInterval(tick); closeMore(); $('#app').className = nonav ? 'nonav' : ''; $('#app').innerHTML = (guest ? '<div class="guestbar"><span>체험모드이므로 포인트는 사라집니다.</span></div>' : '') + html; math($('#app')); window.scrollTo(0, 0); };
+const app = (html, nonav) => { clearInterval(tick); closeMore(); $('#app').className = nonav ? 'nonav' : ''; $('#app').innerHTML = (guest ? '<div class="guestbar"><span>탐험모드이므로 포인트는 사라집니다.</span></div>' : '') + html; math($('#app')); window.scrollTo(0, 0); };
 
 // ---- 문제 화면 보호 (복사·저장·인쇄를 어렵게 해요) ----
 const guard = (e) => { if (e.target.closest && e.target.closest('.prob,.eimg,.wm')) e.preventDefault(); };
@@ -560,7 +560,7 @@ function renderResult(r) {
   me.points = r.points;
   if (r.season) return renderSeasonResult(r);
   app(`<div class="card"><div class="res ${r.correct ? 'ok' : 'bad'}">${r.correct ? '정답입니다' : r.timeout ? '시간 초과' : '오답입니다'}</div>
-  ${r.correct ? `<p class="fire">+${fmt(r.reward)}P ${r.mult > 1 ? '🔥 (2배 적용)' : ''}</p>` : ''}${r.guest ? '<p class="sub">체험모드이므로 포인트는 사라집니다.</p>' : ''}
+  ${r.correct ? `<p class="fire">+${fmt(r.reward)}P ${r.mult > 1 ? '🔥 (2배 적용)' : ''}</p>` : ''}${r.guest ? '<p class="sub">탐험모드이므로 포인트는 사라집니다.</p>' : ''}
   <p>정답: <b>${esc(fa(r.answer))}</b></p><p class="pts">${fmt(r.points)} P</p></div>
   <div class="card"><h2>해설</h2>${r.explImage ? `<div class="wm"><img class="eimg" src="${esc(r.explImage)}" alt=""></div>` : ''}${r.explanation || !r.explImage ? `<div class="expl">${esc(dm(r.explanation)) || '(해설이 아직 없습니다)'}</div>` : ''}
   ${r.extra ? `<div class="expl">${esc(dm(r.extra))}</div>` : ''}</div>
@@ -624,7 +624,7 @@ const subTop = (t, extra) => `<div class="top"><button class="back" id="bk">${IC
 async function renderStats() {
   const s = await api('stats'), pct = (a, n) => n ? Math.round(100 * a / n) : 0, mx = Math.max(1, ...s.days.map((x) => x.n));
   app(`${subTop('내 통계')}
-  <div class="card"><div class="stat3"><div><b>${fmt(s.total)}</b><span>푼 문제</span></div><div><b>${fmt(s.ok)}</b><span>맞힌 문제</span></div><div><b>${pct(s.ok, s.total)}%</b><span>정답률</span></div></div>${guest ? '<p class="sub">체험모드에서는 이번 체험 중의 기록만 집계됩니다.</p>' : ''}</div>
+  <div class="card"><div class="stat3"><div><b>${fmt(s.total)}</b><span>푼 문제</span></div><div><b>${fmt(s.ok)}</b><span>맞힌 문제</span></div><div><b>${pct(s.ok, s.total)}%</b><span>정답률</span></div></div>${guest ? '<p class="sub">탐험모드에서는 이번 탐험 중의 기록만 집계됩니다.</p>' : ''}</div>
   <div class="card"><h2>최근 7일</h2><div class="dchart">${s.days.map((x) => `<div class="dcol"><em>${x.n || ''}</em><div class="dtot" style="height:${Math.round(x.n / mx * 80)}%"><i style="height:${x.n ? Math.round(x.ok / x.n * 100) : 0}%"></i></div><span>${esc(x.d)}</span></div>`).join('')}</div><p class="sub" style="margin:6px 0 0">막대 전체는 푼 문제, 색이 진한 부분은 맞힌 문제입니다.</p></div>
   <div class="card"><h2>학년별 정답률</h2>${s.byGrade.length ? s.byGrade.map((g) => `<div class="gbar"><b style="width:34px">${esc(g.grade)}</b><div class="t"><i style="width:${pct(g.ok, g.n)}%"></i></div><span>${pct(g.ok, g.n)}% (${g.ok}/${g.n})</span></div>`).join('') : '<p class="sub">아직 푼 문제가 없습니다.</p>'}</div>
   ${guest ? '' : `<div class="card"><h2>약한 단원</h2>${s.weak.length ? s.weak.map((w) => `<div class="gbar"><b style="flex:1">${esc(w.unit)}</b><span>${pct(w.ok, w.n)}% (${w.ok}/${w.n})</span></div>`).join('') + '<p class="sub" style="margin:6px 0 0">3문제 이상 푼 대단원 중 정답률이 낮은 순서입니다.</p>' : '<p class="sub">3문제 이상 푼 단원이 생기면 표시됩니다.</p>'}</div>`}${navBar('more')}`);
@@ -705,7 +705,7 @@ async function renderCatchu() {
   const nums = (a) => (a || []).map((n) => esc(n) + '번').join(', ');
   app(`<div class="top"><h1 style="font-size:22px">내 오답노트</h1></div>
   <div class="seg"><button data-v="mine">내가 담은 문제</button><button data-v="catchu" class="on">캐치유테스트</button></div>
-  ${guest && list.length ? '<p class="sub" style="margin:0 0 8px">체험 모드 예시입니다. 로그인하면 내가 틀린 문항이 이곳에 모입니다.</p>' : ''}
+  ${guest && list.length ? '<p class="sub" style="margin:0 0 8px">탐험 모드 예시입니다. 로그인하면 내가 틀린 문항이 이곳에 모입니다.</p>' : ''}
   ${list.map((r) => {
     const wr = r.wrong || [], sw = r.stillWrong;
     const retest = Array.isArray(sw) ? (sw.length ? `재시험 ${r.retestDate ? ymd(r.retestDate) : ''} · 아직 틀린 문항 <b>${nums(sw)}</b>` : `재시험 ${r.retestDate ? ymd(r.retestDate) : ''} · 모두 맞혔습니다`) : '';
@@ -715,7 +715,7 @@ async function renderCatchu() {
     <div class="cbody" style="display:none">${wr.length ? `<p style="margin:10px 0 6px">${wr.map((n) => (r.have || []).includes(n) ? `<button class="cn" data-r="${esc(r.id)}" data-n="${n}">${n}번</button>` : `<b>${n}번</b>`).join(' ')}</p>` : ''}
     <div class="citem" data-r="${esc(r.id)}"></div>
     ${retest ? `<p class="sub" style="margin:6px 0 0">${retest}</p>` : ''}</div></div>`;
-  }).join('') || `<div class="card sub">${guest ? '체험모드에서는 캐치유테스트 기록이 없습니다.' : '아직 가져온 캐치유테스트 기록이 없습니다. 10월 4주차 테스트부터 이곳에 모입니다.'}</div>`}
+  }).join('') || `<div class="card sub">${guest ? '탐험모드에서는 캐치유테스트 기록이 없습니다.' : '아직 가져온 캐치유테스트 기록이 없습니다. 10월 4주차 테스트부터 이곳에 모입니다.'}</div>`}
   ${navBar('nt')}`);
   bindNav();
   document.querySelectorAll('.seg [data-v=mine]').forEach((b) => b.onclick = renderNotes);
@@ -746,7 +746,7 @@ const seasonRows = (top) => top.map((x) => `<div class="rk-row${x.me ? ' me' : '
 const avatar = (name, cls) => `<span class="av ${cls || ''}">${esc((name || '?').slice(0, 1))}</span>`;
 async function renderTeam(notice) {
   const head = '<div class="top"><img class="logo" src="logo.png" alt="캐슬수학"></div>';
-  if (guest) { app(`${head}<div class="card"><h2>팀</h2><p class="sub">체험 모드에서는 팀과 친구 기능을 사용할 수 없습니다. 로그인하면 팀을 만들고 친구를 초대할 수 있습니다.</p></div>${navBar('team')}`); bindNav(); return; }
+  if (guest) { app(`${head}<div class="card"><h2>팀</h2><p class="sub">탐험 모드에서는 팀과 친구 기능을 사용할 수 없습니다. 로그인하면 팀을 만들고 친구를 초대할 수 있습니다.</p></div>${navBar('team')}`); bindNav(); return; }
   let t, f;
   try { [t, f] = await Promise.all([api('team/info'), api('friend/list')]); } catch (e) { return renderHome(e.message); }
   const tm = t.team, s = t.season;
@@ -794,7 +794,7 @@ async function renderTeam(notice) {
 
 // ---------- 내 친구 (더보기) ----------
 async function renderFriends(notice) {
-  if (guest) { app(`${subTop('내 친구')}<div class="card"><p class="sub">체험 모드에서는 친구 기능을 사용할 수 없습니다. 로그인하면 친구를 등록하고 팀에 초대할 수 있습니다.</p></div>${navBar('more')}`); bindNav(); $('#bk').onclick = () => loadMe(); return; }
+  if (guest) { app(`${subTop('내 친구')}<div class="card"><p class="sub">탐험 모드에서는 친구 기능을 사용할 수 없습니다. 로그인하면 친구를 등록하고 팀에 초대할 수 있습니다.</p></div>${navBar('more')}`); bindNav(); $('#bk').onclick = () => loadMe(); return; }
   let f;
   try { f = await api('friend/list'); } catch (e) { return renderHome(e.message); }
   const fr = f.friends, inc = f.incoming, out = f.outgoing;
@@ -1036,7 +1036,7 @@ async function renderAdmin(tab) {
     } else if (tab === 'notice') {
       const list = await api('notices');
       const ed = list.find((n) => n.id === noticeEdit) || null;
-      app(`${tabs(tab)}<div class="card"><h2>${ed ? '공지 수정' : '공지 작성'}</h2><p class="sub">학생 화면의 더보기 > 공지사항에 보입니다. 체험모드에도 보입니다.</p>
+      app(`${tabs(tab)}<div class="card"><h2>${ed ? '공지 수정' : '공지 작성'}</h2><p class="sub">학생 화면의 더보기 > 공지사항에 보입니다. 탐험모드에도 보입니다.</p>
       <input id="nt1" maxlength="60" placeholder="제목" value="${ed ? esc(ed.title) : ''}"><textarea id="nb1" maxlength="2000" placeholder="내용" style="margin-top:8px;min-height:130px">${ed ? esc(ed.body) : ''}</textarea>
       <label style="display:flex;gap:8px;align-items:center"><input type="checkbox" id="np1" style="width:auto" ${ed && ed.pinned ? 'checked' : ''}> 맨 위에 고정</label>
       <div class="err" id="err"></div><div class="row"><button class="primary" id="sv" style="flex:1">${ed ? '수정 저장' : '등록'}</button>${ed ? '<button id="ncx" style="flex:0 0 auto">취소</button>' : ''}</div></div>
