@@ -1705,7 +1705,7 @@ async function renderFriends(notice) {
   let f;
   try { f = await api('friend/list'); } catch (e) { return renderHunt(e.message); }
   const fr = f.friends, inc = f.incoming, out = f.outgoing;
-  app(`<div class="top"><span class="brand"><img src="logo_mark.png" alt="캐슬"><b>캐슬 포인트 헌터스</b></span></div><h1 style="font-size:22px;margin:4px 0 12px">내 친구</h1><div class="err" id="ferr">${esc(notice || '')}</div>
+  app(`<div class="top"><span class="brand"><img src="logo_mark.png" alt="캐슬"><b>캐슬 포인트 헌터스</b></span></div><div class="err" id="ferr">${esc(notice || '')}</div>
   ${inc.length ? `<div class="card"><h2 style="margin-bottom:6px">받은 친구 신청 <span class="sub" style="font-weight:600">${inc.length}건</span></h2>${inc.map((x) => `<div class="row" style="margin-top:8px;flex-wrap:nowrap">${avatar(x.name)}<span style="flex:1">${esc(x.name)}<span class="gchip">${esc(x.grade || '')}</span></span><button class="primary facc" data-id="${esc(x.id)}" style="padding:6px 14px">수락</button><button class="fdec" data-id="${esc(x.id)}" style="padding:6px 14px">거절</button></div>`).join('')}</div>` : ''}
   <div class="card"><h2 style="margin-bottom:6px">내 친구 <span class="sub" style="font-weight:600">${fr.length}명</span></h2>
     ${fr.length ? fr.map((x) => `<div class="rk-row">${avatar(x.name)}<div class="rk-nm">${esc(x.name)}${x.grade ? `<span class="gchip">${esc(x.grade)}</span>` : ''}</div><button class="frm" data-id="${esc(x.id)}" style="padding:4px 10px">삭제</button></div>`).join('') : '<p class="sub" style="margin:0">아직 등록한 친구가 없습니다.</p>'}
