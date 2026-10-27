@@ -134,6 +134,28 @@ code{background:var(--bg);padding:1px 6px;border-radius:6px;font-size:.92em}
 .back{display:flex;align-items:center;gap:6px;border:none;background:none;padding:6px 4px;font-size:14px;color:var(--sub);font-weight:600}
 .back svg{width:20px;height:20px;stroke:currentColor}
 .chip{display:inline-block;padding:3px 9px;border-radius:999px;background:var(--bg);color:var(--sub);font-size:12px;font-weight:600}
+.thero{border-radius:20px;padding:20px 18px 16px;margin-bottom:12px;color:#fff;background:linear-gradient(135deg,#1f4fd8 0%,#2b6bff 55%,#5d8cff 100%);box-shadow:0 8px 22px rgba(43,107,255,.22);position:relative;overflow:hidden}
+.thero::after{content:"";position:absolute;right:-40px;top:-40px;width:150px;height:150px;border-radius:50%;background:rgba(255,255,255,.10)}
+.thero .tn{font-size:23px;font-weight:800;letter-spacing:-.3px;position:relative;z-index:1}
+.thero .tsub{font-size:13px;opacity:.85;margin-top:3px;position:relative;z-index:1}
+.thero .tscore{margin-top:12px;display:flex;align-items:baseline;gap:4px;position:relative;z-index:1}
+.thero .tscore b{font-size:42px;font-weight:800;font-variant-numeric:tabular-nums;line-height:1}
+.thero .tscore span{font-size:15px;font-weight:700;opacity:.85}
+.thero .slots{display:flex;gap:10px;margin-top:16px;position:relative;z-index:1}
+.thero .slot{display:flex;flex-direction:column;align-items:center;gap:5px;font-size:11.5px;font-weight:600;min-width:0;flex:1}
+.thero .slot span:last-child{max-width:100%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;opacity:.92}
+.thero.empty{background:linear-gradient(135deg,#243b7a 0%,#2b6bff 100%)}
+.thero.empty input{background:rgba(255,255,255,.96);color:#1a1d23;border-color:transparent}
+.tmk{flex:0 0 auto;width:auto;padding:0 20px;background:#fff;color:#1f4fd8;border-color:#fff;font-weight:800}
+.av{display:inline-flex;align-items:center;justify-content:center;flex:0 0 auto;width:36px;height:36px;border-radius:50%;background:var(--tint);color:var(--main);font-weight:800;font-size:15px}
+.thero .av{width:46px;height:46px;font-size:18px;background:rgba(255,255,255,.95);color:#1f4fd8}
+.thero .av.lead{box-shadow:0 0 0 3px #ffd34d}
+.thero .av.wait{opacity:.55}
+.thero .av.empty{background:rgba(255,255,255,.16);color:rgba(255,255,255,.8);border:1.5px dashed rgba(255,255,255,.6);font-weight:600}
+.av.lead{box-shadow:0 0 0 2px #f5b82e}
+.av.wait{opacity:.5}
+.rk-row .av{width:34px;height:34px;font-size:14px}
+.tquit{margin-top:14px;background:none;border:1px solid var(--line);color:var(--sub);font-weight:600}
 .rk-row{display:flex;align-items:center;gap:12px;padding:11px 10px;border-radius:14px}
 .rk-row:nth-child(-n+3){background:var(--bg)}
 .rk-row.me{background:var(--tint);color:var(--main);font-weight:800}
@@ -644,37 +666,43 @@ const teamRows = (top) => top.map((x) => `<div class="rk-row${x.me ? ' me' : ''}
 const seasonRows = (top) => top.map((x) => `<div class="rk-row${x.me ? ' me' : ''}"><div class="rk-no">${x.rank <= 3 ? trophy(MEDAL[x.rank - 1]) : x.rank}</div><div class="rk-nm">${esc(x.name)}${x.grade ? `<span class="gchip">${esc(x.grade)}</span>` : ''}${x.me ? ' <span class="chip">나</span>' : ''}</div><div class="rk-pt">${fmt(x.score)}점</div></div>`).join('');
 
 // ---------- 팀: 내 팀 · 친구 · 팀랭킹전 ----------
+const avatar = (name, cls) => `<span class="av ${cls || ''}">${esc((name || '?').slice(0, 1))}</span>`;
 async function renderTeam(notice) {
-  const head = '<div class="top"><img class="logo" src="logo.png" alt="캐슬수학"><span class="chip">팀</span></div>';
+  const head = '<div class="top"><img class="logo" src="logo.png" alt="캐슬수학"></div>';
   if (guest) { app(`${head}<div class="card"><h2>팀</h2><p class="sub">체험 모드에서는 팀과 친구 기능을 사용할 수 없습니다. 로그인하면 팀을 만들고 친구를 초대할 수 있습니다.</p></div>${navBar('team')}`); bindNav(); return; }
   let t, f;
   try { [t, f] = await Promise.all([api('team/info'), api('friend/list')]); } catch (e) { return renderHome(e.message); }
   const tm = t.team, s = t.season;
   const memberIds = tm ? tm.members.map((m) => m.id) : [];
   const canInvite = tm && tm.leader && tm.members.length < 4;
+  const joined = tm ? tm.members.filter((m) => m.state === 'joined').length : 0;
   let mine = '';
   if (tm) {
-    mine = `<div class="card"><h2 style="margin-bottom:4px">${esc(tm.name)}</h2>
-    <div class="sub" style="margin-bottom:8px">${tm.members.filter((m) => m.state === 'joined').length >= 2 ? (s ? `팀 점수 <b>${fmt(tm.score)}점</b> · 팀 순위 ${tm.rank}위` : '시즌이 등록되면 팀 순위가 시작됩니다.') : '팀원이 2명 이상 모이면 팀 순위에 오릅니다.'}</div>
-    ${tm.members.map((m) => `<div class="rk-row${m.me ? ' me' : ''}"><div class="rk-nm">${esc(m.name)}${m.grade ? `<span class="gchip">${esc(m.grade)}</span>` : ''}${m.leader ? ' <span class="chip">팀장</span>' : ''}${m.state === 'invited' ? ' <span class="sub">수락 대기</span>' : ''}</div>${m.state === 'invited' ? (tm.leader ? `<button class="tcancel" data-id="${esc(m.id)}" style="padding:4px 10px">취소</button>` : '') : `<div class="rk-pt">${fmt(m.score)}점</div>`}</div>`).join('')}
-    ${tm.leader && tm.members.length < 4 ? '<label style="margin-top:12px">팀원 초대 (상대의 아이디)</label><div class="row" style="flex-wrap:nowrap"><input id="tinvid" placeholder="예: 해원고홍길동" autocomplete="off" autocapitalize="none"><button class="primary" id="tinvgo" style="flex:0 0 auto;width:auto;padding:0 18px">초대</button></div><p class="sub" style="margin:6px 0 0">친구 목록에서 "팀 초대"를 눌러도 됩니다.</p>' : ''}
-    <button id="tleave" style="margin-top:12px">${tm.leader ? '팀 해체' : '팀 탈퇴'}</button></div>`;
+    const slots = [0, 1, 2, 3].map((i) => { const m = tm.members[i]; return m ? `<div class="slot">${avatar(m.name, (m.leader ? 'lead ' : '') + (m.state === 'invited' ? 'wait' : ''))}<span>${esc(m.name)}</span></div>` : '<div class="slot"><span class="av empty">+</span><span>&nbsp;</span></div>'; }).join('');
+    mine = `<div class="thero"><div class="tn">${esc(tm.name)}</div>
+      <div class="tsub">팀원 ${joined}/4${joined >= 2 && s ? ` · ${esc(s.name)} 팀랭킹전 ${tm.rank}위` : joined >= 2 ? '' : ' · 2명 이상 모이면 순위에 오릅니다'}</div>
+      <div class="tscore"><b>${fmt(tm.score)}</b><span>점</span></div>
+      <div class="slots">${slots}</div></div>
+    <div class="card">
+      ${tm.members.map((m) => `<div class="rk-row${m.me ? ' me' : ''}">${avatar(m.name, (m.leader ? 'lead ' : '') + (m.state === 'invited' ? 'wait' : ''))}<div class="rk-nm">${esc(m.name)}${m.grade ? `<span class="gchip">${esc(m.grade)}</span>` : ''}${m.leader ? ' <span class="chip">팀장</span>' : ''}${m.state === 'invited' ? ' <span class="sub">수락 대기</span>' : ''}</div>${m.state === 'invited' ? (tm.leader ? `<button class="tcancel" data-id="${esc(m.id)}" style="padding:4px 10px">취소</button>` : '') : `<div class="rk-pt">${fmt(m.score)}점</div>`}</div>`).join('')}
+      ${canInvite ? '<label style="margin-top:14px">팀원 초대 (상대의 아이디)</label><div class="row" style="flex-wrap:nowrap"><input id="tinvid" placeholder="예: 해원고홍길동" autocomplete="off" autocapitalize="none"><button class="primary" id="tinvgo" style="flex:0 0 auto;width:auto;padding:0 18px">초대</button></div>' : ''}
+      <button id="tleave" class="tquit">${tm.leader ? '팀 해체' : '팀 탈퇴'}</button></div>`;
   } else if (t.canPlay) {
-    mine = `<div class="card"><h2 style="margin-bottom:4px">내 팀</h2>
-    ${t.invites.map((i) => `<div class="pbox" style="margin:8px 0"><b>${esc(i.teamName)}</b> 팀에서 초대했습니다.<br><span class="sub">팀장 ${esc(i.from)} · 현재 ${i.size}명</span><div class="row" style="margin-top:8px"><button class="primary tacc" data-t="${i.teamId}" style="flex:1">수락</button><button class="tdec" data-t="${i.teamId}" style="flex:1">거절</button></div></div>`).join('')}
-    <label>팀 만들기 (팀장이 됩니다)</label><div class="row" style="flex-wrap:nowrap"><input id="tname" maxlength="12" placeholder="팀 이름 (2~12자)" autocomplete="off"><button class="primary" id="tmake" style="flex:0 0 auto;width:auto;padding:0 18px">만들기</button></div></div>`;
+    mine = `<div class="thero empty"><div class="tn">나만의 팀을 만들어 보세요</div><div class="tsub">친구와 함께 점수를 모아 팀랭킹전에 도전합니다</div>
+      <div class="row" style="flex-wrap:nowrap;margin-top:14px"><input id="tname" maxlength="12" placeholder="팀 이름 (2~12자)" autocomplete="off"><button class="tmk" id="tmake">만들기</button></div></div>
+    ${t.invites.length ? `<div class="card"><h2 style="margin-bottom:6px">받은 초대</h2>${t.invites.map((i) => `<div class="pbox" style="margin:8px 0"><b>${esc(i.teamName)}</b> 팀에서 초대했습니다.<br><span class="sub">팀장 ${esc(i.from)} · 현재 ${i.size}명</span><div class="row" style="margin-top:8px"><button class="primary tacc" data-t="${i.teamId}" style="flex:1">수락</button><button class="tdec" data-t="${i.teamId}" style="flex:1">거절</button></div></div>`).join('')}</div>` : ''}`;
   }
   const fr = f.friends, inc = f.incoming, out = f.outgoing;
   const friendsCard = t.canPlay ? `<div class="card"><h2 style="margin-bottom:6px">친구 <span class="sub" style="font-weight:600">${fr.length}명</span></h2>
-    ${inc.length ? `<div class="pbox" style="margin:0 0 8px"><b>친구 신청</b>${inc.map((x) => `<div class="row" style="margin-top:8px;flex-wrap:nowrap"><span style="flex:1">${esc(x.name)}<span class="gchip">${esc(x.grade || '')}</span></span><button class="primary facc" data-id="${esc(x.id)}" style="padding:6px 12px">수락</button><button class="fdec" data-id="${esc(x.id)}" style="padding:6px 12px">거절</button></div>`).join('')}</div>` : ''}
-    ${fr.length ? fr.map((x) => `<div class="rk-row"><div class="rk-nm">${esc(x.name)}${x.grade ? `<span class="gchip">${esc(x.grade)}</span>` : ''}</div>${canInvite && !memberIds.includes(x.id) ? `<button class="tinv" data-id="${esc(x.id)}" style="padding:4px 12px">팀 초대</button>` : ''}<button class="frm" data-id="${esc(x.id)}" style="padding:4px 10px">삭제</button></div>`).join('') : '<p class="sub" style="margin:0 0 8px">아직 등록한 친구가 없습니다.</p>'}
-    ${out.length ? `<p class="sub" style="margin:10px 0 4px">보낸 신청 (상대가 수락하면 친구가 됩니다)</p>${out.map((x) => `<div class="row" style="flex-wrap:nowrap;margin-bottom:4px"><span style="flex:1">${esc(x.name)}</span><button class="frm" data-id="${esc(x.id)}" style="padding:4px 10px">취소</button></div>`).join('')}` : ''}
+    ${inc.length ? `<div class="pbox" style="margin:0 0 8px"><b>친구 신청</b>${inc.map((x) => `<div class="row" style="margin-top:8px;flex-wrap:nowrap">${avatar(x.name)}<span style="flex:1">${esc(x.name)}<span class="gchip">${esc(x.grade || '')}</span></span><button class="primary facc" data-id="${esc(x.id)}" style="padding:6px 12px">수락</button><button class="fdec" data-id="${esc(x.id)}" style="padding:6px 12px">거절</button></div>`).join('')}</div>` : ''}
+    ${fr.length ? fr.map((x) => `<div class="rk-row">${avatar(x.name)}<div class="rk-nm">${esc(x.name)}${x.grade ? `<span class="gchip">${esc(x.grade)}</span>` : ''}</div>${canInvite && !memberIds.includes(x.id) ? `<button class="tinv" data-id="${esc(x.id)}" style="padding:4px 12px">팀 초대</button>` : ''}<button class="frm" data-id="${esc(x.id)}" style="padding:4px 10px">삭제</button></div>`).join('') : '<p class="sub" style="margin:0 0 8px">아직 등록한 친구가 없습니다.</p>'}
+    ${out.length ? `<p class="sub" style="margin:10px 0 4px">보낸 신청 (상대가 수락하면 친구가 됩니다)</p>${out.map((x) => `<div class="row" style="flex-wrap:nowrap;margin-bottom:4px">${avatar(x.name, 'wait')}<span style="flex:1">${esc(x.name)}</span><button class="frm" data-id="${esc(x.id)}" style="padding:4px 10px">취소</button></div>`).join('')}` : ''}
     <label style="margin-top:12px">친구 신청 (상대의 아이디)</label><div class="row" style="flex-wrap:nowrap"><input id="fid" placeholder="예: 해원고홍길동" autocomplete="off" autocapitalize="none"><button class="primary" id="fadd" style="flex:0 0 auto;width:auto;padding:0 18px">신청</button></div></div>` : '';
   const state = !s ? '' : s.status === 'active' ? '진행 중' : s.status === 'upcoming' ? `${fmtDay(s.startsAt)}에 시작합니다. 시작 전에 미리 팀을 꾸릴 수 있습니다.` : '시즌이 끝났습니다';
   const board = `<div class="card"><h2 style="display:flex;align-items:center;gap:8px;margin-bottom:4px">${trophy('#f5b82e')}${s ? esc(s.name) + ' ' : ''}팀랭킹전 <span class="sub" style="font-weight:600">${t.total}팀</span></h2>
     ${state ? `<div class="sub" style="margin-bottom:6px">${state}</div>` : ''}
-    <ul class="rules"><li>팀장이 팀을 만들고 친구를 초대하면, 초대받은 학생이 수락해 같은 팀이 됩니다.</li><li>팀은 <b>2명부터 4명까지</b>이며, 한 팀에만 속할 수 있습니다.</li><li>팀은 시즌 시작 전에도, 시즌 중에도 자유롭게 꾸리거나 탈퇴할 수 있습니다.</li><li>팀 점수는 그 팀에 속해 있는 동안 팀원이 얻은 개인랭킹전 점수를 모두 더한 값입니다. 가입 전이나 탈퇴 후의 점수는 포함되지 않습니다.</li></ul>
-    ${t.top.length ? teamRows(t.top) : '<p class="sub">아직 순위에 오른 팀이 없습니다.</p>'}</div>`;
+    ${t.top.length ? teamRows(t.top) : '<p class="sub" style="margin:8px 0 12px">아직 순위에 오른 팀이 없습니다.</p>'}
+    <ul class="rules"><li>팀장이 팀을 만들고 초대하면, 초대받은 학생이 수락해 같은 팀이 됩니다.</li><li>팀은 <b>2명부터 4명까지</b>이며, 한 팀에만 속할 수 있습니다.</li><li>팀은 시즌 시작 전에도, 시즌 중에도 자유롭게 꾸리거나 탈퇴할 수 있습니다.</li><li>팀 점수는 그 팀에 속해 있는 동안 팀원이 얻은 개인랭킹전 점수를 모두 더한 값입니다. 가입 전이나 탈퇴 후의 점수는 포함되지 않습니다.</li></ul></div>`;
   app(`${head}<div class="err" id="terr">${esc(notice || '')}</div>${mine}${friendsCard}${board}${navBar('team')}`);
   bindNav();
   const go = async (path, body) => { try { await api(path, body || {}); renderTeam(); } catch (e) { renderTeam(e.message); } };
