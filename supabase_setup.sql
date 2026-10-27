@@ -477,6 +477,11 @@ begin
   perform castle.auth(tok, 'admin');
   if v_t = '' then perform castle.fail(400, '제목을 입력해 주십시오.'); end if;
   if length(v_t) > 60 or length(v_b) > 2000 then perform castle.fail(400, '제목은 60자, 내용은 2000자까지 쓸 수 있습니다.'); end if;
+  if nullif(b->>'id', '') is not null then   -- id 가 있으면 수정
+    update castle.notices set title = v_t, body = v_b, pinned = coalesce((b->>'pinned')::boolean, false) where id = (b->>'id')::int;
+    if not found then perform castle.fail(404, '공지를 찾을 수 없습니다.'); end if;
+    return jsonb_build_object('ok', true);
+  end if;
   insert into castle.notices (title, body, pinned) values (v_t, v_b, coalesce((b->>'pinned')::boolean, false));
   return jsonb_build_object('ok', true);
 end $$;

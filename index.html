@@ -813,6 +813,7 @@ function tabs(cur) {
 }
 function bindTabs() { $('#out').onclick = logout; if ($('#tostu')) $('#tostu').onclick = () => switchTo('student'); document.querySelectorAll('.tabs button').forEach((b) => b.onclick = () => renderAdmin(b.dataset.t)); }
 let stuSort = 'name';
+let noticeEdit = 0;
 const byName = (a, b) => a.id.localeCompare(b.id, 'ko');
 const SORTS = { name: byName, pts: (a, b) => b.points - a.points || byName(a, b), ptsa: (a, b) => a.points - b.points || byName(a, b),
   seen: (a, b) => (b.lastSeen || 0) - (a.lastSeen || 0) || byName(a, b), seena: (a, b) => (a.lastSeen || 0) - (b.lastSeen || 0) || byName(a, b) };
@@ -965,14 +966,17 @@ async function renderAdmin(tab) {
       };
     } else if (tab === 'notice') {
       const list = await api('notices');
-      app(`${tabs(tab)}<div class="card"><h2>공지 작성</h2><p class="sub">학생 화면의 더보기 > 공지사항에 보입니다. 체험모드에도 보입니다.</p>
-      <input id="nt1" maxlength="60" placeholder="제목"><textarea id="nb1" maxlength="2000" placeholder="내용" style="margin-top:8px"></textarea>
-      <label style="display:flex;gap:8px;align-items:center"><input type="checkbox" id="np1" style="width:auto"> 맨 위에 고정</label>
-      <div class="err" id="err"></div><button class="primary" id="sv">등록</button></div>
-      ${list.map((n) => `<div class="card"><div class="sub">${n.pinned ? '<span class="chip">고정</span> ' : ''}<span style="white-space:nowrap">${ymd(n.t)}</span></div><h2 style="margin:6px 0">${esc(n.title)}</h2><div style="white-space:pre-wrap">${esc(n.body)}</div><button class="danger ndl" data-i="${n.id}" style="margin-top:10px">삭제</button></div>`).join('')}`);
+      const ed = list.find((n) => n.id === noticeEdit) || null;
+      app(`${tabs(tab)}<div class="card"><h2>${ed ? '공지 수정' : '공지 작성'}</h2><p class="sub">학생 화면의 더보기 > 공지사항에 보입니다. 체험모드에도 보입니다.</p>
+      <input id="nt1" maxlength="60" placeholder="제목" value="${ed ? esc(ed.title) : ''}"><textarea id="nb1" maxlength="2000" placeholder="내용" style="margin-top:8px;min-height:130px">${ed ? esc(ed.body) : ''}</textarea>
+      <label style="display:flex;gap:8px;align-items:center"><input type="checkbox" id="np1" style="width:auto" ${ed && ed.pinned ? 'checked' : ''}> 맨 위에 고정</label>
+      <div class="err" id="err"></div><div class="row"><button class="primary" id="sv" style="flex:1">${ed ? '수정 저장' : '등록'}</button>${ed ? '<button id="ncx" style="flex:0 0 auto">취소</button>' : ''}</div></div>
+      ${list.map((n) => `<div class="card"><div class="sub">${n.pinned ? '<span class="chip">고정</span> ' : ''}<span style="white-space:nowrap">${ymd(n.t)}</span></div><h2 style="margin:6px 0">${esc(n.title)}</h2><div style="white-space:pre-wrap">${esc(n.body)}</div><div class="row" style="margin-top:10px"><button class="nedit" data-i="${n.id}">수정</button><button class="danger ndl" data-i="${n.id}">삭제</button></div></div>`).join('')}`);
       bindTabs();
-      $('#sv').onclick = async () => { try { await api('admin/notice/save', { title: $('#nt1').value, body: $('#nb1').value, pinned: $('#np1').checked }); renderAdmin('notice'); } catch (e) { showErr(e.message); } };
-      document.querySelectorAll('.ndl').forEach((b) => b.onclick = async () => { if (confirm('이 공지를 삭제하시겠습니까?')) { await api('admin/notice/del', { id: Number(b.dataset.i) }); renderAdmin('notice'); } });
+      $('#sv').onclick = async () => { try { await api('admin/notice/save', { id: ed ? ed.id : undefined, title: $('#nt1').value, body: $('#nb1').value, pinned: $('#np1').checked }); noticeEdit = 0; renderAdmin('notice'); } catch (e) { showErr(e.message); } };
+      if ($('#ncx')) $('#ncx').onclick = () => { noticeEdit = 0; renderAdmin('notice'); };
+      document.querySelectorAll('.nedit').forEach((b) => b.onclick = () => { noticeEdit = Number(b.dataset.i); renderAdmin('notice'); window.scrollTo(0, 0); });
+      document.querySelectorAll('.ndl').forEach((b) => b.onclick = async () => { if (confirm('이 공지를 삭제하시겠습니까?')) { await api('admin/notice/del', { id: Number(b.dataset.i) }); if (noticeEdit === Number(b.dataset.i)) noticeEdit = 0; renderAdmin('notice'); } });
     } else {
       app(`${tabs(tab)}<div class="card"><h2>관리자 비밀번호 변경</h2><input id="np" type="password" placeholder="새 비밀번호 (4자 이상)"><div class="err" id="err"></div><button class="primary" id="sv">변경</button></div>`);
       bindTabs();
