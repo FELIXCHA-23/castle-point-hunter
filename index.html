@@ -997,7 +997,7 @@ async function renderHome() {
   <h2 class="hsec">공지사항</h2>${noticeCards(list)}
   ${navBar('home')}`);
   $('#my').onclick = () => renderMy(); bindNav();
-  $('#ptgo').onclick = () => renderHistory();
+  $('#ptgo').onclick = () => renderHistory('home');
 }
 // 마이페이지: 내 기록·통계 등 개인 메뉴와 로그아웃
 function renderMy() {
@@ -1010,7 +1010,7 @@ function renderMy() {
   <div class="card hmenu">${rows.map(([k, n, d]) => `<button data-m="${k}"><b>${n}</b><span>${d}</span><i>›</i></button>`).join('')}</div>
   ${navBar('home')}`);
   bindNav(); $('#bk').onclick = () => loadMe();
-  const f = { hist: renderHistory, stats: renderStats, roster: renderRoster, admin: () => switchTo('admin'), out: logout };
+  const f = { hist: () => renderHistory(), stats: renderStats, roster: renderRoster, admin: () => switchTo('admin'), out: logout };
   document.querySelectorAll('.hmenu button').forEach((b) => b.onclick = () => f[b.dataset.m]());
 }
 // 학습 화면(사냥): 학년을 고르고 문제를 시작한다
@@ -1045,7 +1045,7 @@ function renderHunt(notice) {
   ${navBar('hunt')}`);
   bindHead();
   $('#hist').onclick = () => renderHistory();
-  $('#ptgo').onclick = () => renderHistory();
+  $('#ptgo').onclick = () => renderHistory('hunt');
   // 학년을 눌러도 화면을 다시 그리지 않고 그 자리에서 표시만 바꾼다 (스크롤 위치가 움직이지 않도록)
   document.querySelectorAll('.grades button').forEach((b) => b.onclick = () => {
     pickedGrade = b.dataset.g;
@@ -1208,14 +1208,15 @@ function renderGuide() {
   ${guideCards()}${navBar('home')}`);
   bindNav(); $('#bk').onclick = () => loadMe();
 }
-async function renderHistory() {
+async function renderHistory(from) {
+  const back = from === 'home' ? ['홈', () => loadMe()] : from === 'hunt' ? ['사냥', () => loadMe('', 'hunt')] : ['마이페이지', () => renderMy()];
   const h = await api('history');
-  app(`${subTop('내 기록 <span class="sub">최근 30개</span>', '', '마이페이지')}
+  app(`${subTop('내 기록 <span class="sub">최근 30개</span>', '', back[0])}
   ${h.map((x) => `<div class="card"><div class="sub">${esc(x.grade)} · ${new Date(x.t).toLocaleString('ko-KR')} · <b class="${x.correct ? 'ok' : 'bad'}">${x.correct ? '정답 +' + x.reward : x.timeout ? '시간초과' : '오답'}</b></div>
   ${probHtml(x)}
   <p>내 답: ${esc(x.myAnswer || '-')} / 정답: <b>${esc(fa(x.answer))}</b></p>
   ${x.explImage ? `<div class="wm"><img class="eimg" src="${esc(x.explImage)}" alt=""></div>` : ''}${x.explanation ? `<div class="expl">${esc(dm(x.explanation))}</div>` : ''}${x.extra ? `<div class="expl">${esc(dm(x.extra))}</div>` : ''}${x.pid ? `<button class="nbh" data-p="${esc(x.pid)}">오답노트에 담기</button>` : ''}</div>`).join('') || '<div class="card sub">아직 푼 문제가 없습니다.</div>'}${navBar('home')}`);
-  bindNav(); $('#bk').onclick = () => renderMy();
+  bindNav(); $('#bk').onclick = back[1];
   document.querySelectorAll('.nbh').forEach((b) => b.onclick = async () => { try { await api('note/add', { pid: b.dataset.p }); b.textContent = '담았습니다'; b.disabled = true; } catch (e) { alert(e.message); } });
 }
 // 오답노트: 학생마다 따로 메모를 적고, 단원별·시기별로 찾는다
