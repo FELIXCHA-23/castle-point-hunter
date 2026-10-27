@@ -173,6 +173,7 @@ code{background:var(--bg);padding:1px 6px;border-radius:6px;font-size:.92em}
 .mrow .sub{font-size:12.5px;font-weight:500;margin:0}
 .mrow i{font-style:normal;color:var(--sub);font-weight:400}
 .chead{display:flex;width:100%;align-items:center;justify-content:space-between;gap:8px;background:none;border:0;padding:0;text-align:left;font:inherit;color:inherit;cursor:pointer}.chead .ct{flex:1;min-width:0;line-height:1.4}.chead .car{color:var(--sub,#888);font-size:16px}
+.cnl{display:flex;flex-wrap:wrap;gap:8px;margin:12px 0 6px}.cnl .cn{margin:0}.cn0{padding:4px 11px}
 .cn{padding:4px 11px;border-radius:6px;font-size:14px;font-weight:700;margin:0 2px 4px 0}
 .eimg{display:block;max-width:100%;height:auto}
 .dchart{display:flex;gap:6px;align-items:flex-end;height:120px;margin:12px 0 4px}
@@ -1210,7 +1211,7 @@ async function renderCatchu() {
     const mw = /(\d+)\s*월\s*(\d+)\s*주차/.exec(r.title || ''), nm = mw ? `[${mw[1]}월${mw[2]}주차] ` : '';
     const cnt = wr.length ? `${wr.length}문항` : '틀린 문항 없음';
     return `<div class="card ctest"><button class="chead" aria-expanded="false"><span class="ct"><b>${esc(nm + r.grade)}</b>${r.scope ? `<span class="sub"> (${esc(r.scope)})</span>` : ''}<span class="sub" style="display:block;margin-top:2px">${r.date ? ymd(r.date) + ' · ' : ''}${cnt}</span></span><span class="car">▾</span></button>
-    <div class="cbody" style="display:none">${wr.length ? `<p style="margin:10px 0 6px">${wr.map((n) => (r.have || []).includes(n) ? `<button class="cn" data-r="${esc(r.id)}" data-n="${n}">${n}번</button>` : `<b>${n}번</b>`).join(' ')}</p>` : ''}
+    <div class="cbody" style="display:none">${wr.length ? `<div class="cnl">${wr.map((n) => (r.have || []).includes(n) ? `<button class="cn" data-r="${esc(r.id)}" data-n="${n}">${n}번</button>` : `<b class="cn0">${n}번</b>`).join('')}</div>` : ''}
     <div class="citem" data-r="${esc(r.id)}"></div>
     ${retest ? `<p class="sub" style="margin:6px 0 0">${retest}</p>` : ''}</div></div>`;
   }).join('') || `<div class="card sub">${guest ? '탐험모드에서는 캐치유테스트 기록이 없습니다.' : '아직 가져온 캐치유테스트 기록이 없습니다. 10월 4주차 테스트부터 이곳에 모입니다.'}</div>`}
