@@ -735,6 +735,12 @@ body{
 .myhead{display:flex;align-items:center;gap:14px}
 .myhead b{font-size:18px}
 .myhead .av.big{width:52px;height:52px;font-size:22px}
+.av.emo{background:var(--tint);font-size:19px;line-height:1}
+.mychip .av.emo{font-size:18px}
+.myhead .av.big.emo{font-size:30px}
+.emogrid{display:grid;grid-template-columns:repeat(6,1fr);gap:8px}
+.emogrid button{height:46px;border-radius:12px;border:1px solid var(--line);background:#fff;box-shadow:none;font-size:23px;padding:0;line-height:1}
+.emogrid button.on{border-color:var(--main);box-shadow:0 0 0 2px var(--main) inset;background:var(--tint)}
 </style>
 </head>
 <body>
@@ -771,11 +777,11 @@ async function api(path, body) {
 
 // ---------- 로그인 없이 탐험하기 (탐험 모드: 문제는 실제 문제, 포인트·기록은 이 화면 안에서만 쓰고 나가면 사라짐) ----------
 let guest = false;
-const G = { tok: null, cur: null, seen: [], sseen: [], score: 0, ok: 0, n: 0, points: 500, today: 0, hist: [], fr: [], team: null, log: [{ t: Date.now(), delta: 500, reason: '기본 포인트', balance: 500 }] };
+const G = { tok: null, cur: null, seen: [], sseen: [], score: 0, ok: 0, n: 0, points: 500, today: 0, hist: [], fr: [], team: null, avatar: '', log: [{ t: Date.now(), delta: 500, reason: '기본 포인트', balance: 500 }] };
 // 탐험 모드의 포인트 내역 (이 화면 안에서만 기록)
 const glog = (d, why, set) => { const bal = set ? G.points : G.points + d; G.log.push({ t: Date.now(), delta: set || d, reason: why, balance: bal }); return bal; };
 const gfill = (p) => (p < 50 ? 110 : p);  // 풀이 포인트보다 모자라면 110P로 맞춤 (실제와 같은 규칙)
-const guestMe = () => ({ id: 'guest', name: '탐험가', title: '님', grade: '', points: G.points, mustChange: false, isAdmin: false, isTeacher: false,
+const guestMe = () => ({ id: 'guest', name: '탐험가', avatar: G.avatar, title: '님', grade: '', points: G.points, mustChange: false, isAdmin: false, isTeacher: false,
   grades: ['중1', '중2', '중3', '고1', '고2', '고3'], cfg: { START_POINTS: 500, PREVIEW_COST: 10, PREVIEW_SEC: 10, ACCEPT_COST: 50, TIME_LIMIT_SEC: 300, REWARD: 100, DAILY_BONUS_COUNT: 15, MORNING_FROM: 7, MORNING_TO: 9 },
   mult: { morning: false, daily: G.today >= 15, value: G.today >= 15 ? 2 : 1 }, todayCount: G.today, todayN: G.hist.length, streak: G.hist.length ? 1 : 0, active: G.cur ? gview(G.cur) : null, serverNow: Date.now() });
 const gview = (a) => ({ state: a.state, season: !!a.season, problem: { id: a.p.id, grade: a.p.grade, text: a.p.text, image: a.p.image, kind: a.p.kind }, previewEndsAt: a.previewEndsAt || 0, deadline: a.deadline || 0 });
@@ -819,6 +825,7 @@ async function guestApi(path, b) {
       days[6].n = G.hist.length; days[6].ok = G.hist.filter((x) => x.ok).length;
       return { total: G.hist.length, ok: days[6].ok, days, byGrade: Object.values(bg).sort((a, b) => a.grade < b.grade ? -1 : 1), weak: [] };
     }
+    case 'avatar/set': G.avatar = String((b && b.avatar) || ''); return { ok: true };
     case 'points/log': return G.log.slice().reverse();
     case 'notes': case 'history': return [];
     case 'catchu': return api('guest/catchu');
@@ -983,7 +990,10 @@ function head() {
 }
 function bindHead() { $('#my').onclick = () => renderMy(); bindNav(); }
 // 홈: 인사, 내 현황, 이용 안내, 공지사항
-const myChip = () => `<button id="my" class="mychip" aria-label="마이페이지"><span class="av">${esc((me.name || '?').slice(0, 1))}</span>${esc(me.name)}<i>⌄</i></button>`;
+const EMOJIS = ['🙂', '😎', '🤓', '😄', '🥳', '🤩', '😺', '🐶', '🐱', '🐰', '🦊', '🐻', '🐼', '🐨', '🐯', '🦁', '🐸', '🐵', '🐧', '🐥', '🦄', '🐲', '🐙', '🦋', '🐢', '🐬', '🦉', '🐺', '🦖', '🐳',
+  '🔥', '⚡', '🌟', '🌈', '🚀', '🎯', '🏆', '👑', '💎', '📚', '✏️', '🧠', '🎮', '⚽', '🏀', '🎵', '🍀', '🌸', '🍎', '🍕', '🍩', '🍉', '☀️', '🌙', '❄️', '🌊', '🛡️', '⚔️', '🏹', '🧩'];
+const avOf = () => (me && me.avatar) || '🙂';
+const myChip = () => `<button id="my" class="mychip" aria-label="마이페이지"><span class="av emo">${avOf()}</span>${esc(me.name)}<i>⌄</i></button>`;
 async function renderHome() {
   const c = me.cfg, tn = me.todayN || 0, rate = tn ? Math.round(100 * me.todayCount / tn) : null, st = me.streak || 0;
   const m = me.mult, fire = m.value > 1 ? `<div class="banner">🔥 포인트 2배 적용 중${m.morning ? ' · 주말·공휴일 아침 타임' : ''}${m.daily ? ` · 오늘 ${c.DAILY_BONUS_COUNT}문제 맞힘` : ''}</div>` : '';
@@ -1009,10 +1019,15 @@ function renderMy() {
   if (me.isAdmin) rows.push(['admin', '관리자 화면', '학생, 문제, 시즌 관리']);
   rows.push(['out', guest ? '나가기' : '로그아웃', '']);
   app(`${subTop('마이페이지')}
-  <div class="card myhead"><span class="av big">${esc((me.name || '?').slice(0, 1))}</span><div><b>${esc(me.name)}${esc(me.title || '님')}</b><div class="sub">${me.grade ? esc(me.grade) + ' · ' : ''}${fmt(me.points)} P</div></div></div>
+  <div class="card myhead"><span class="av big emo">${avOf()}</span><div><b>${esc(me.name)}${esc(me.title || '님')}</b><div class="sub">${me.grade ? esc(me.grade) + ' · ' : ''}${fmt(me.points)} P</div></div></div>
   <div class="card hmenu">${rows.map(([k, n, d]) => `<button data-m="${k}"><b>${n}</b><span>${d}</span><i>›</i></button>`).join('')}</div>
+  <div class="card"><h2 style="margin-bottom:4px">내 이모티콘 고르기</h2><p class="sub" style="margin:0 0 10px">마음에 드는 모양을 누르면 바로 바뀝니다.</p>
+    <div class="emogrid">${EMOJIS.map((e) => `<button data-e="${e}" class="${e === avOf() ? 'on' : ''}">${e}</button>`).join('')}</div></div>
   ${navBar('home')}`);
   bindNav(); $('#bk').onclick = () => loadMe();
+  document.querySelectorAll('.emogrid button').forEach((b) => b.onclick = async () => {
+    try { await api('avatar/set', { avatar: b.dataset.e }); me.avatar = b.dataset.e; renderMy(); } catch (e) { alert(e.message); }
+  });
   const f = { hist: () => renderHistory(), stats: renderStats, roster: renderRoster, admin: () => switchTo('admin'), out: logout };
   document.querySelectorAll('.hmenu button').forEach((b) => b.onclick = () => f[b.dataset.m]());
 }

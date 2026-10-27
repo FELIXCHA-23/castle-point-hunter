@@ -28,6 +28,7 @@ create unique index if not exists problems_src_uq on castle.problems (src) where
 alter table castle.students add column if not exists is_admin boolean not null default false;      -- 선생님 계정에 관리자 권한을 줄 때
 alter table castle.students add column if not exists is_teacher boolean not null default false;  -- 선생님(담당 학생 현황을 볼 수 있음)
 alter table castle.students add column if not exists title text not null default '';             -- 호칭: 선생님 / 원장님 / 관리자님 (비우면 '님')
+alter table castle.students add column if not exists avatar text not null default '';             -- 프로필 이모티콘 (학생이 직접 고름)
 alter table castle.students add column if not exists grade text not null default '';             -- 학생 학년: 중1 … 고3 (학년별 순위용)
 alter table castle.problems add column if not exists book text not null default '';              -- 문제 출처 설명 (예: 미래엔 교과서 문제 변형). 나중에 분류할 때 써요
 alter table castle.problems add column if not exists level int not null default 0;               -- 난이도 1하 2중하 3중 4상 5최상 (0=미정)
@@ -375,7 +376,7 @@ declare st castle.students := castle.stu(tok); a castle.attempts := castle.settl
 begin
   update castle.students set last_seen = now() where id = st.id and (last_seen is null or last_seen < now() - interval '2 minutes');
   select points into v_pts from castle.students where id = st.id;
-  return jsonb_build_object('id', st.id, 'name', st.name, 'points', v_pts, 'mustChange', st.must_change, 'isAdmin', st.is_admin, 'isTeacher', st.is_teacher, 'title', st.title, 'grade', st.grade,
+  return jsonb_build_object('id', st.id, 'name', st.name, 'points', v_pts, 'mustChange', st.must_change, 'isAdmin', st.is_admin, 'isTeacher', st.is_teacher, 'title', st.title, 'grade', st.grade, 'avatar', st.avatar,
     'grades', to_jsonb(castle.allowed_grades(st)), 'cfg', castle.cfg_all(), 'mult', castle.next_mult(st.id),
     'todayCount', castle.today_count(st.id), 'todayN', castle.today_done(st.id), 'streak', castle.study_streak(st.id), 'active', castle.active_view(a), 'serverNow', castle.ms(clock_timestamp()));
 end $$;
@@ -1334,6 +1335,15 @@ begin
           from (select * from castle.log where sid = st.id order by id desc limit 100) q);
 end $$;
 
+-- 프로필 이모티콘 저장 (빈 값이면 기본 모양)
+create or replace function castle.r_avatar_set(tok text, b jsonb) returns jsonb language plpgsql as $$
+declare st castle.students := castle.stu(tok); v text := btrim(coalesce(b->>'avatar', ''));
+begin
+  if char_length(v) > 8 then perform castle.fail(400, '이모티콘이 올바르지 않습니다.'); end if;
+  update castle.students set avatar = v where id = st.id;
+  return jsonb_build_object('ok', true, 'avatar', v);
+end $$;
+
 create or replace function castle.dispatch(p_path text, tok text, b jsonb) returns jsonb language plpgsql as $$
 begin
   case p_path
@@ -1361,6 +1371,7 @@ begin
     when 'note/del' then return castle.r_note_del(tok, b);
     when 'history' then return castle.r_history(tok);
     when 'points/log' then return castle.r_points_log(tok);
+    when 'avatar/set' then return castle.r_avatar_set(tok, b);
     when 'stats' then return castle.r_stats(tok);
     when 'catchu' then return castle.r_catchu(tok);
     when 'catchu/item' then return castle.r_catchu_item(tok, b);
