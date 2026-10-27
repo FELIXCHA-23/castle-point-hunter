@@ -1159,7 +1159,7 @@ function siteHeader() {
   a.querySelectorAll('.top').forEach((t) => { if (t.querySelector('.brand')) t.remove(); });
   const h = document.createElement('div');
   h.className = 'top sitehead';
-  h.innerHTML = `<span class="brand"><img src="logo_mark.png?v=3" alt="캐슬"><b>캐슬 포인트 헌터스</b></span><span style="display:flex;gap:4px;align-items:center">${myChip()}</span>`;
+  h.innerHTML = `<span class="brand"><img src="logo_mark.png?v=4" alt="캐슬"><b>캐슬 포인트 헌터스</b></span><span style="display:flex;gap:4px;align-items:center">${myChip()}</span>`;
   const gb = a.querySelector('.guestbar');
   if (gb) gb.after(h); else a.prepend(h);
   h.querySelector('#my').onclick = () => renderMy();
@@ -1214,7 +1214,7 @@ function bindNav() {
 
 // ---------- 로그인 ----------
 function renderLogin(msg, signup) {
-  app(`<div style="text-align:center;margin:9vh 0 26px"><img class="mark-big" src="logo_mark.png?v=3" alt="캐슬" style="margin:0 auto 14px"><h1>캐슬 포인트 헌터스</h1><p class="sub" style="margin-top:6px">${signup ? '아이디와 비밀번호만 정하면 바로 시작합니다' : '수학문제를 풀고 포인트를 모아보자!<br>주말, 공휴일 오전 7시~9시에는 2배 이벤트!! 🔥'}</p></div>
+  app(`<div style="text-align:center;margin:9vh 0 26px"><img class="mark-big" src="logo_mark.png?v=4" alt="캐슬" style="margin:0 auto 14px"><h1>캐슬 포인트 헌터스</h1><p class="sub" style="margin-top:6px">${signup ? '아이디와 비밀번호만 정하면 바로 시작합니다' : '수학문제를 풀고 포인트를 모아보자!<br>주말, 공휴일 오전 7시~9시에는 2배 이벤트!! 🔥'}</p></div>
   <div class="card">${signup ? '' : '<div class="pbox" style="margin:0 0 4px">아이디는 학교+이름으로 이미 등록되어 있습니다.<br><span style="font-weight:600">(예시: 신현고차캐슬, 해원중김캐슬)</span></div>'}<label style="margin-top:10px">아이디${signup ? ' (한글·영문·숫자 2~20자)' : ''}</label><input id="id" autocomplete="username" autocapitalize="none" autocorrect="off">
   <label>비밀번호${signup ? ' (4자 이상)' : ''}</label><input id="pw" type="password" autocomplete="${signup ? 'new-password' : 'current-password'}">
   <div class="err" id="err">${esc(msg || '')}</div>
@@ -1290,7 +1290,7 @@ async function loadMe(notice, to) {
 function head() {
   const m = me.mult;
   const fire = m.value > 1 ? `<div class="banner">🔥 포인트 2배 적용 중${m.morning ? ' · 주말·공휴일 아침 타임' : ''}${m.daily ? ` · 오늘 ${me.cfg.DAILY_BONUS_COUNT}문제 맞힘` : ''}</div>` : '';
-  return `<div class="top"><span class="brand"><img src="logo_mark.png?v=3" alt="캐슬"><b>캐슬 포인트 헌터스</b></span><span style="display:flex;gap:4px;align-items:center">${me.isAdmin ? '<button id="toadm" class="back">관리자 화면</button>' : ''}<button id="out" class="back" style="margin-right:-4px">${IC.out}${guest ? '나가기' : '로그아웃'}</button></span></div>
+  return `<div class="top"><span class="brand"><img src="logo_mark.png?v=4" alt="캐슬"><b>캐슬 포인트 헌터스</b></span><span style="display:flex;gap:4px;align-items:center">${me.isAdmin ? '<button id="toadm" class="back">관리자 화면</button>' : ''}<button id="out" class="back" style="margin-right:-4px">${IC.out}${guest ? '나가기' : '로그아웃'}</button></span></div>
   <div class="hello"><h1>안녕하세요! ${esc(me.name)}${esc(me.title || '님')}</h1></div>
   <div class="card pcard"><div><div class="sub">총 포인트</div><div class="pts">${fmt(me.points)}<span style="font-size:16px;font-weight:700;color:var(--sub);margin-left:3px">P</span></div></div></div>
   ${fire}`;
@@ -1321,7 +1321,7 @@ async function renderHome() {
   const m = me.mult, fire = m.value > 1 ? `<div class="banner">🔥 포인트 2배 적용 중${m.morning ? ' · 주말·공휴일 아침 타임' : ''}${m.daily ? ` · 오늘 ${c.DAILY_BONUS_COUNT}문제 맞힘` : ''}</div>` : '';
   const list = await api('notices').catch(() => []);
   const top = list[0];
-  app(`<div class="top"><span class="brand"><img src="logo_mark.png?v=3" alt="캐슬"><b>캐슬 포인트 헌터스</b></span><span style="display:flex;gap:4px;align-items:center">${myChip()}</span></div>
+  app(`<div class="top"><span class="brand"><img src="logo_mark.png?v=4" alt="캐슬"><b>캐슬 포인트 헌터스</b></span><span style="display:flex;gap:4px;align-items:center">${myChip()}</span></div>
   <div class="hero cmp"><div class="deco"><i></i><i></i><i></i></div>
     <div class="hi">오늘도 캐슬수학과 함께</div><h1>안녕하세요!<br>${esc(me.name)}${esc(me.title || '님')}</h1></div>
   ${fire}
@@ -1363,7 +1363,7 @@ function renderHunt(notice) {
   const tn = me.todayN || 0, rate = tn ? Math.round(100 * me.todayCount / tn) : null, st = me.streak || 0;
   const R = 33, C = 2 * Math.PI * R, off = C * (1 - cnt / c.DAILY_BONUS_COUNT);
   const ico = HICO;
-  app(`<div class="top"><span class="brand"><img src="logo_mark.png?v=3" alt="캐슬"><b>캐슬 포인트 헌터스</b></span><span style="display:flex;gap:4px;align-items:center">${myChip()}</span></div>
+  app(`<div class="top"><span class="brand"><img src="logo_mark.png?v=4" alt="캐슬"><b>캐슬 포인트 헌터스</b></span><span style="display:flex;gap:4px;align-items:center">${myChip()}</span></div>
   ${fire}
   ${ptcCard(true, 'cmp')}
   <div class="card hsel"><div class="sec"><h2>학년 선택</h2><span class="sub">학년을 고르고 시작하십시오.</span></div>
@@ -1652,7 +1652,7 @@ const seasonRows = (top) => top.map((x) => `<div class="rk-row${x.me ? ' me' : '
 // ---------- 팀: 내 팀 · 친구 · 팀랭킹전 ----------
 const avatar = (name, cls) => `<span class="av ${cls || ''}">${esc((name || '?').slice(0, 1))}</span>`;
 async function renderTeam(notice) {
-  const head = '<div class="top"><span class="brand"><img src="logo_mark.png?v=3" alt="캐슬"><b>캐슬 포인트 헌터스</b></span></div>';
+  const head = '<div class="top"><span class="brand"><img src="logo_mark.png?v=4" alt="캐슬"><b>캐슬 포인트 헌터스</b></span></div>';
   let t, f;
   try { [t, f] = await Promise.all([api('team/info'), api('friend/list')]); } catch (e) { return renderHunt(e.message); }
   const tm = t.team, s = t.season;
@@ -1703,7 +1703,7 @@ async function renderFriends(notice) {
   let f;
   try { f = await api('friend/list'); } catch (e) { return renderHunt(e.message); }
   const fr = f.friends, inc = f.incoming, out = f.outgoing;
-  app(`<div class="top"><span class="brand"><img src="logo_mark.png?v=3" alt="캐슬"><b>캐슬 포인트 헌터스</b></span></div><div class="err" id="ferr">${esc(notice || '')}</div>
+  app(`<div class="top"><span class="brand"><img src="logo_mark.png?v=4" alt="캐슬"><b>캐슬 포인트 헌터스</b></span></div><div class="err" id="ferr">${esc(notice || '')}</div>
   ${inc.length ? `<div class="card"><h2 style="margin-bottom:6px">받은 친구 신청 <span class="sub" style="font-weight:600">${inc.length}건</span></h2>${inc.map((x) => `<div class="row" style="margin-top:8px;flex-wrap:nowrap">${avatar(x.name)}<span style="flex:1">${esc(x.name)}<span class="gchip">${esc(x.grade || '')}</span></span><button class="primary facc" data-id="${esc(x.id)}" style="padding:6px 14px">수락</button><button class="fdec" data-id="${esc(x.id)}" style="padding:6px 14px">거절</button></div>`).join('')}</div>` : ''}
   <div class="card"><h2 style="margin-bottom:6px">내 친구 <span class="sub" style="font-weight:600">${fr.length}명</span></h2>
     ${fr.length ? fr.map((x) => `<div class="rk-row">${avatar(x.name)}<div class="rk-nm">${esc(x.name)}${x.grade ? `<span class="gchip">${esc(x.grade)}</span>` : ''}</div><button class="frm" data-id="${esc(x.id)}" style="padding:4px 10px">삭제</button></div>`).join('') : '<p class="sub" style="margin:0">아직 등록한 친구가 없습니다.</p>'}
@@ -1724,7 +1724,7 @@ async function renderSeason(notice) {
   let d;
   try { d = await api('season/info', seasonGrade ? { grade: seasonGrade } : {}); if (d.pickGrades) seasonGrade = d.selGrade; else seasonGrade = ''; } catch (e) { return renderHunt(e.message); }
   const s = d.season;
-  const head2 = `<div class="top"><span class="brand"><img src="logo_mark.png?v=3" alt="캐슬"><b>캐슬 포인트 헌터스</b></span><span class="chip">시즌 랭킹전</span></div>`;
+  const head2 = `<div class="top"><span class="brand"><img src="logo_mark.png?v=4" alt="캐슬"><b>캐슬 포인트 헌터스</b></span><span class="chip">시즌 랭킹전</span></div>`;
   if (!s) {
     app(`${head2}<div class="card"><h2>시즌 랭킹전</h2><p class="sub">현재 진행중인 시즌이 없습니다.</p></div>${navBar('season')}`);
     bindNav(); return;
