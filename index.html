@@ -972,6 +972,10 @@ input:focus,textarea:focus,select:focus{border-color:var(--gold);box-shadow:0 0 
 .ptc .p2>div svg{width:19px;height:19px}
 .card.ptc .p2 .t{font-size:12.5px}
 .card.ptc .p2{grid-template-columns:1.05fr 1.05fr 1.3fr}
+.ptc .p2>div:last-child svg{display:inline-block}
+.card.ptc .p2{grid-template-columns:1fr 1fr 1fr}
+.card.ptc .p2>div,.card.ptc .p2>div:first-child,.card.ptc .p2>div:last-child,.card.ptc .p2>div+div{justify-content:center;padding:16px 4px;gap:8px}
+.card.ptc .p2 .enc{font-size:12.5px;line-height:1.5}
 </style>
 </head>
 <body>
@@ -1236,7 +1240,7 @@ async function renderHome() {
   <div class="card ptc"><div class="p1" id="ptgo"><div><div class="lb">총 포인트</div><div class="big">${fmt(me.points)}<em>P</em></div></div><span class="ch">›</span></div>
     <div class="p2"><div><div><div class="t">정답률</div><div class="v">${rate === null ? '-' : rate + '<u>%</u>'}</div></div></div>
       <div><div><div class="t">연속 학습</div><div class="v">${st ? st + '<u>일</u>' : '-'}</div></div></div>
-      <div><div class="enc">${st >= 2 ? '지금의 꾸준함이<br>더 큰 성과를 만듭니다.' : '오늘 한 문제부터<br>시작해 보십시오.'}</div></div></div></div>
+      <div><div class="enc">${st >= 2 ? '꾸준함이<br>성과가 됩니다.' : '첫 문제부터<br>시작하십시오.'}</div></div></div></div>
   <h2 class="hsec">이용 안내</h2>${foldCards(guideCards())}
   <h2 class="hsec">공지사항</h2>${noticeCards(list)}
   ${navBar('home')}`);
@@ -1270,7 +1274,7 @@ function renderHunt(notice) {
   const tn = me.todayN || 0, rate = tn ? Math.round(100 * me.todayCount / tn) : null, st = me.streak || 0;
   const R = 33, C = 2 * Math.PI * R, off = C * (1 - cnt / c.DAILY_BONUS_COUNT);
   const ico = {
-    coin: '<svg class="coin" viewBox="0 0 48 48"><circle cx="24" cy="24" r="21" fill="#9C7F48"/><circle cx="24" cy="24" r="19.500" fill="#D4B278"/><circle cx="22.500" cy="22.500" r="17" fill="#E3C690"/><circle cx="24" cy="24" r="14.500" fill="#D4B278" stroke="#9C7F48" stroke-width="1.600"/><path d="M19.500 33.500V14.500h6.500a5.500 5.500 0 0 1 0 11h-6.500" fill="none" stroke="#7A6232" stroke-width="3.200" stroke-linecap="round" stroke-linejoin="round"/><path d="M19.500 33.500V14.500h6.500a5.500 5.500 0 0 1 0 11h-6.500" fill="none" stroke="#FFF1CC" stroke-width="1.200" stroke-linecap="round" stroke-linejoin="round" opacity=".7"/></svg>',
+    coin: '<svg class="coin" viewBox="0 0 48 48"><circle cx="24" cy="25.500" r="21" fill="#7C6434"/><circle cx="24" cy="24" r="21" fill="#9C7F48"/><circle cx="24" cy="24" r="19.600" fill="#D9B97C"/><circle cx="24" cy="24" r="18.600" fill="none" stroke="#A88A4E" stroke-width="2.200" stroke-dasharray="1.500 1.700"/><circle cx="24" cy="24" r="14.800" fill="#E8D0A0" stroke="#A88A4E" stroke-width="1.500"/><circle cx="24" cy="24" r="12.600" fill="none" stroke="#F8E9C4" stroke-width=".8" opacity=".9"/><polygon points="24.00,16.80 25.94,21.93 31.42,22.19 27.14,25.62 28.58,30.91 24.00,27.90 19.42,30.91 20.86,25.62 16.58,22.19 22.06,21.93" fill="#B8975A" stroke="#8F7440" stroke-width="1" stroke-linejoin="round"/><path d="M11.500 17.500A14 14 0 0 1 21 10.200" fill="none" stroke="#FFF6DA" stroke-width="1.800" stroke-linecap="round" opacity=".85"/></svg>',
     target: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><circle cx="12" cy="12" r="8.5"/><circle cx="12" cy="12" r="4.5"/><circle cx="12" cy="12" r="1" fill="currentColor"/></svg>',
     cal: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="5.5" width="16" height="14.5" rx="2.5"/><path d="M4 10h16M8.5 3.5v4M15.5 3.5v4"/></svg>',
     crown: '<svg viewBox="0 0 24 24" fill="currentColor"><path d="M4 17.500 3 8l5 4 4-7 4 7 5-4-1 9.500z"/><rect x="5" y="19" width="14" height="2" rx="1"/></svg>'
@@ -1281,7 +1285,7 @@ function renderHunt(notice) {
   <div class="card ptc"><div class="p1" id="ptgo">${ico.coin}<div><div class="lb">총 포인트</div><div class="big">${fmt(me.points)}<em>P</em></div></div><span class="ch">›</span></div>
     <div class="p2"><div>${ico.target}<div><div class="t">정답률</div><div class="v">${rate === null ? '-' : rate + '<u>%</u>'}</div></div></div>
       <div>${ico.cal}<div><div class="t">연속 학습</div><div class="v">${st ? st + '<u>일</u>' : '-'}</div></div></div>
-      <div>${ico.crown}<div class="enc">${st >= 2 ? '지금의 꾸준함이<br>더 큰 성과를 만듭니다.' : '오늘 한 문제부터<br>시작해 보십시오.'}</div></div></div></div>
+      <div>${ico.crown}<div class="enc">${st >= 2 ? '꾸준함이<br>성과가 됩니다.' : '첫 문제부터<br>시작하십시오.'}</div></div></div></div>
   <div class="card"><div class="sec"><h2>학년 선택</h2><span class="sub">학년을 고르고 문제를 시작하십시오.</span></div>
     <div class="grades">${me.grades.map((g) => `<button data-g="${g}" class="${g === pickedGrade ? 'on' : ''}">${g}</button>`).join('')}</div>
     <div class="err" id="err">${esc(notice || '')}</div></div>
