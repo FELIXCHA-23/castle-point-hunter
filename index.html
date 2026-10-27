@@ -1592,7 +1592,7 @@ async function renderNotes() {
   ${probHtml(n)}
   <button class="sh">정답·해설 보기</button><div class="shw" style="display:none"><p>정답: <b>${esc(fa(n.answer))}</b></p>${n.explImage ? `<div class="wm"><img class="eimg" src="${esc(n.explImage)}" alt=""></div>` : ''}${n.explanation || !n.explImage ? `<div class="expl">${esc(dm(n.explanation)) || '(해설이 아직 없습니다)'}</div>` : ''}${n.extra ? `<div class="expl">${esc(dm(n.extra))}</div>` : ''}</div>
   <label>내 메모</label><textarea class="nmm" maxlength="1000" placeholder="왜 틀렸는지, 기억할 점을 적어 두십시오">${esc(n.memo)}</textarea>
-  <div class="row"><button class="primary nsv">저장</button><button class="danger ndl">오답노트에서 빼기</button></div></div>`).join('') || `<div class="card sub">${list.length ? '조건에 맞는 문제가 없습니다.' : '아직 담은 문제가 없습니다. 결과 화면이나 내 기록에서 “오답노트에 담기”를 눌러 보십시오.'}</div>`}
+  <div class="row"><button class="primary nsv">저장</button><button class="danger ndl">오답노트에서 빼기</button></div></div>`).join('') || `<div class="card sub">${list.length ? '조건에 맞는 문제가 없습니다.' : '아직 담은 문제가 없습니다.<br>결과 화면이나 <span style="white-space:nowrap">내 기록</span>에서<br>“오답노트에 담기”를 눌러 보십시오.'}</div>`}
   ${navBar('nt')}`);
   bindNav();
   document.querySelectorAll('.seg [data-v=catchu]').forEach((b) => b.onclick = renderCatchu);
