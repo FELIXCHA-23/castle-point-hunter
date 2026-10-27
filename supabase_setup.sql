@@ -514,6 +514,7 @@ end $$;
 -- ----- 캐치유 테스트 오답모음 (KMMS 에서 복사해 온 데이터, 학생은 본인 것만 조회) -----
 create table if not exists castle.catchu_rounds (
   id text primary key, title text not null, date date, grade text not null default '', total int not null default 0);
+alter table castle.catchu_rounds add column if not exists scope text not null default '';   -- 시험 범위 (화면에 괄호로 표시)
 create table if not exists castle.catchu_wrong (
   round_id text not null references castle.catchu_rounds(id) on delete cascade,
   sid text not null references castle.students(id) on delete cascade,
@@ -530,7 +531,7 @@ alter table castle.catchu_wrong enable row level security;
 create or replace function castle.r_catchu(tok text) returns jsonb language plpgsql as $$
 declare st castle.students := castle.stu(tok);
 begin
-  return (select coalesce(jsonb_agg(jsonb_build_object('id', r.id, 'title', r.title, 'date', r.date, 'grade', r.grade, 'total', r.total,
+  return (select coalesce(jsonb_agg(jsonb_build_object('id', r.id, 'title', r.title, 'date', r.date, 'grade', r.grade, 'scope', r.scope, 'total', r.total,
             'wrong', w.wrong, 'retestDate', w.retest_date, 'stillWrong', w.still_wrong, 'have', to_jsonb(castle.catchu_have(r.id))) order by r.date desc nulls last, r.title), '[]')
           from castle.catchu_wrong w join castle.catchu_rounds r on r.id = w.round_id where w.sid = st.id);
 end $$;
