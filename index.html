@@ -1026,6 +1026,7 @@ body{overflow-x:clip;overflow-y:visible}
 .brand img{height:36px;width:36px;flex:none;object-fit:contain}
 .brand b{font-size:15px;font-weight:800;letter-spacing:-.2px;color:#f1ece0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .mark-big{display:block;width:104px;height:104px;object-fit:contain}
+.gout{display:block;width:100%;margin:12px 0 0}
 </style>
 </head>
 <body>
@@ -1327,8 +1328,10 @@ async function renderHome() {
   ${ptcCard(true, 'cmp')}
   <div class="card hmenu"><button id="hg"><b>이용 안내</b><span>포인트·랭킹전·오답노트 규칙</span><i>›</i></button>
     <button id="hn"><b>공지사항</b><span>${top ? esc(top.title) : '등록된 공지가 없습니다'}</span>${list.length ? `<em class="cnt">${list.length}</em>` : ''}<i>›</i></button></div>
+  ${guest ? '<button id="gout" class="primary btn-big gout">탐험 나가기 · 로그인하러 가기</button>' : ''}
   ${navBar('home')}`);
   $('#my').onclick = () => renderMy(); bindNav();
+  if ($('#gout')) $('#gout').onclick = logout;
   $('#ptgo').onclick = () => renderPoints('home');
   $('#hg').onclick = () => openSheet('이용 안내', foldCards(guideCards()));
   $('#hn').onclick = () => openSheet('공지사항', noticeCards(list));
