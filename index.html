@@ -865,20 +865,17 @@ async function renderAdmin(tab) {
         const key = (u) => `${u.subject}|${u.unit_large}|${u.unit}`, groups = [];
         us.forEach((u) => { const gk = u.subject + '|' + u.unit_large; let g = groups.find((x) => x.k === gk); if (!g) groups.push(g = { k: gk, subject: u.subject, large: u.unit_large, items: [] }); g.items.push(u); });
         app(`${tabs('units')}<div class="card"><h2>학생에게 보여줄 단원</h2>
-        <p class="sub">학년을 고르고, 지금 학생들에게 출제할 <b>대단원·중단원</b>에 체크한 뒤 저장하십시오. 시험 시기에 맞춰 바꾸면 됩니다. 체크한 단원의 문제만 나오고, <b>아무것도 저장하지 않은 학년은 모든 문제가 나옵니다.</b> 단원이 비어 있는 문제는 제한을 걸면 나오지 않습니다.</p>
+        <p class="sub">학년을 고르고, 지금 학생들에게 출제할 단원에 체크(포함)하거나 체크를 풀어(제외) 저장하십시오. 시험 시기에 맞춰 바꾸면 됩니다. 체크한 단원의 문제만 나오고, <b>아무것도 저장하지 않은 학년은 모든 문제가 나옵니다.</b></p>
         <div class="grades" style="grid-template-columns:repeat(6,1fr);margin:10px 0">${G.map((g) => `<button data-g="${g}" class="${g === cur ? 'on' : ''}">${g}${Array.isArray(d.selected[g]) ? ' ✓' : ''}</button>`).join('')}</div>
-        <div class="banner" >${cur}: ${limited ? `선택한 ${sel.length}개 중단원의 문제만 출제 중` : '제한 없음 (등록된 모든 문제가 출제됩니다)'}</div>
-        ${us.length ? groups.map((g, gi) => `<div class="hist"><label style="margin:0;color:var(--ink)"><input type="checkbox" class="lg" data-gi="${gi}" style="width:auto"> <b>${esc(g.subject ? g.subject + ' · ' : '')}${esc(g.large || '(대단원 없음)')}</b> <span class="sub">${g.items.reduce((a, u) => a + u.n, 0)}문제</span></label>
-          ${g.items.map((u) => `<label style="margin:2px 0 2px 26px;color:var(--ink)"><input type="checkbox" class="un" data-gi="${gi}" value="${esc(key(u))}" ${limited && sel.includes(key(u)) ? 'checked' : ''} style="width:auto"> ${esc(u.unit || '(중단원 없음)')} <span class="sub">${u.n}문제</span></label>`).join('')}</div>`).join('') : '<p class="sub">이 학년에는 등록된 문제가 없습니다.</p>'}
+        <div class="banner" >${cur}: ${limited ? `선택한 ${sel.length}개 단원의 문제만 출제 중` : '제한 없음 (등록된 모든 문제가 출제됩니다)'}</div>
+        ${us.length ? `<div class="hist">${us.map((u) => `<label style="margin:2px 0;color:var(--ink);display:flex;gap:8px;align-items:center"><input type="checkbox" class="un" value="${esc(key(u))}" ${limited && sel.includes(key(u)) ? 'checked' : ''} style="width:auto;flex:0 0 auto"> <span style="flex:1;min-width:0">${esc(u.unit || u.unit_large || '(단원 없음)')}</span><span class="sub" style="flex:0 0 auto">${u.n}문제</span></label>`).join('')}</div>` : '<p class="sub">이 학년에는 등록된 문제가 없습니다.</p>'}
         <div class="row" style="margin-top:12px"><button class="primary" id="sv" ${us.length ? '' : 'disabled'}>저장</button><button id="all2">모두 체크</button><button id="none2">모두 해제</button><button class="danger" id="rel" ${limited ? '' : 'disabled'}>제한 풀기</button></div><div class="err" id="err"></div></div>`);
         bindTabs();
         document.querySelectorAll('[data-g]').forEach((b) => b.onclick = () => { cur = window.__ug = b.dataset.g; draw(); });
-        const sync = () => document.querySelectorAll('.lg').forEach((l) => { const c = [...document.querySelectorAll(`.un[data-gi="${l.dataset.gi}"]`)]; const n = c.filter((x) => x.checked).length; l.checked = n === c.length; l.indeterminate = n > 0 && n < c.length; });
-        document.querySelectorAll('.lg').forEach((l) => l.onchange = () => { document.querySelectorAll(`.un[data-gi="${l.dataset.gi}"]`).forEach((x) => x.checked = l.checked); sync(); });
-        document.querySelectorAll('.un').forEach((x) => x.onchange = sync); sync();
+        const sync = () => {};
         $('#all2').onclick = () => { document.querySelectorAll('.un').forEach((x) => x.checked = true); sync(); };
         $('#none2').onclick = () => { document.querySelectorAll('.un').forEach((x) => x.checked = false); sync(); };
-        const save = async (units) => { try { await api('admin/setunits', { grade: cur, units }); if (units.length) d.selected[cur] = units; else delete d.selected[cur]; alert(units.length ? `${cur}: ${units.length}개 중단원만 출제됩니다.` : `${cur}: 제한을 풀었습니다. 모든 문제가 출제됩니다.`); draw(); } catch (e) { showErr(e.message); } };
+        const save = async (units) => { try { await api('admin/setunits', { grade: cur, units }); if (units.length) d.selected[cur] = units; else delete d.selected[cur]; alert(units.length ? `${cur}: ${units.length}개 단원만 출제됩니다.` : `${cur}: 제한을 풀었습니다. 모든 문제가 출제됩니다.`); draw(); } catch (e) { showErr(e.message); } };
         $('#sv').onclick = () => { const u = [...document.querySelectorAll('.un:checked')].map((x) => x.value); if (!u.length && !confirm('아무것도 체크하지 않으면 제한이 풀리고 모든 문제가 출제됩니다. 계속하시겠습니까?')) return; save(u); };
         $('#rel').onclick = () => { if (confirm(cur + ' 제한을 풀고 모든 문제를 출제하시겠습니까?')) save([]); };
       };
