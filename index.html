@@ -983,6 +983,17 @@ input:focus,textarea:focus,select:focus{border-color:var(--gold);box-shadow:0 0 
 /* 안내문 분수: 분모만 분수선 쪽으로 올려 붙인다 (분자는 그대로) */
 .pnote .katex .mfrac .vlist>span:nth-child(1){transform:translateY(-.22em)}
 .logo.logo-big{height:auto;width:78%;max-width:300px;object-fit:contain}
+.ptc.cmp .p1{padding:12px 18px 8px;gap:12px}
+.ptc.cmp .coin{width:46px;height:46px}
+.card.ptc.cmp .p1 .lb{font-size:13.5px}
+.card.ptc.cmp .p1 .big{font-size:30px}
+.card.ptc.cmp .p2>div,.card.ptc.cmp .p2>div:first-child,.card.ptc.cmp .p2>div:last-child,.card.ptc.cmp .p2>div+div{padding:8px 4px}
+.card.ptc.cmp .p2 .v{font-size:20px}
+.hsel{padding:14px 16px}
+.hsel .sec{margin-bottom:10px}
+.hsel .grades button{height:42px;font-size:15px}
+.hsel .cta{margin-top:12px;min-height:46px;height:46px;padding:0 15px}
+.hsel .err{min-height:0;margin-top:6px}
 </style>
 </head>
 <body>
@@ -1251,9 +1262,9 @@ const HICO = {
   };
 
 // 홈·사냥·포인트 내역에서 같은 모양으로 쓰는 총 포인트 카드
-function ptcCard(full) {
+function ptcCard(full, cls) {
   const tn = me.todayN || 0, rate = tn ? Math.round(100 * me.todayCount / tn) : null, st = me.streak || 0;
-  return `<div class="card ptc"><div class="p1"${full ? ' id="ptgo"' : ''}>${HICO.coin}<div><div class="lb">총 포인트</div><div class="big">${fmt(me.points)}<em>P</em></div></div>${full ? '<span class="ch">›</span>' : ''}</div>${full ? `
+  return `<div class="card ptc${cls ? ' ' + cls : ''}"><div class="p1"${full ? ' id="ptgo"' : ''}>${HICO.coin}<div><div class="lb">총 포인트</div><div class="big">${fmt(me.points)}<em>P</em></div></div>${full ? '<span class="ch">›</span>' : ''}</div>${full ? `
     <div class="p2"><div>${HICO.target}<div><div class="t">정답률</div><div class="v">${rate === null ? '-' : rate + '<u>%</u>'}</div></div></div>
       <div>${HICO.cal}<div><div class="t">연속 학습</div><div class="v">${st ? st + '<u>일</u>' : '-'}</div></div></div>
       <div>${HICO.crown}<div class="enc">${st >= 2 ? '꾸준함이<br>성과가 됩니다.' : '첫 문제부터<br>시작하십시오.'}</div></div></div>` : ''}</div>`;
@@ -1307,15 +1318,15 @@ function renderHunt(notice) {
   const ico = HICO;
   app(`<div class="top"><img class="logo" src="logo_dark.png" alt="캐슬수학"><span style="display:flex;gap:4px;align-items:center">${myChip()}</span></div>
   ${fire}
-  ${ptcCard(true)}
-  <div class="card"><div class="sec"><h2>학년 선택</h2><span class="sub">학년을 고르고 문제를 시작하십시오.</span></div>
+  ${ptcCard(true, 'cmp')}
+  <div class="card hsel"><div class="sec"><h2>학년 선택</h2><span class="sub">학년을 고르고 시작하십시오.</span></div>
     <div class="grades">${me.grades.map((g) => `<button data-g="${g}" class="${g === pickedGrade ? 'on' : ''}">${g}</button>`).join('')}</div>
+    <button class="primary cta" id="pv" ${pickedGrade ? '' : 'disabled'}>${pickedGrade ? `<span>▶</span> 학습 시작하기 · ${pickedGrade} <span>→</span>` : '학년을 먼저 골라 주십시오'}</button>
     <div class="err" id="err">${esc(notice || '')}</div></div>
   <div class="card"><div class="sec"><h2>오늘의 학습</h2></div>
     <div class="learn"><div class="ring"><svg viewBox="0 0 76 76"><circle cx="38" cy="38" r="${R}" fill="none" stroke="var(--line)" stroke-width="7"/><circle cx="38" cy="38" r="${R}" fill="none" stroke="var(--main)" stroke-width="7" stroke-linecap="round" stroke-dasharray="${C.toFixed(1)}" stroke-dashoffset="${off.toFixed(1)}"/></svg><b>${me.todayCount}<small>/ ${c.DAILY_BONUS_COUNT}</small></b></div>
       <div class="r2"><div class="l1"><span>오늘 맞힌 문제</span><span>${left > 0 ? `${left}문제 더 맞히면 🔥 포인트 2배` : '🔥 오늘은 포인트 2배 적용 중'}</span></div><div class="bar"><div style="width:${Math.round(cnt / c.DAILY_BONUS_COUNT * 100)}%"></div></div></div></div>
-    <p class="sub" style="margin:12px 0 0">미리보기 ${c.PREVIEW_SEC}초 (-${c.PREVIEW_COST}P) · 풀기 -${c.ACCEPT_COST}P · 제한시간 ${c.TIME_LIMIT_SEC / 60}분 · 정답 +${c.REWARD}P</p>
-    <button class="primary cta" id="pv" ${pickedGrade ? '' : 'disabled'}>${pickedGrade ? `<span>▶</span> 학습 시작하기 · ${pickedGrade} <span>→</span>` : '학년을 먼저 골라 주십시오'}</button></div>
+    <p class="sub" style="margin:12px 0 0">미리보기 ${c.PREVIEW_SEC}초 (-${c.PREVIEW_COST}P) · 풀기 -${c.ACCEPT_COST}P · 제한시간 ${c.TIME_LIMIT_SEC / 60}분 · 정답 +${c.REWARD}P</p></div>
   <div class="card keep"><div class="ic">${ico.cal}</div><div class="tx"><b>오늘도 꾸준히!</b><span>지금의 노력이 내일의 성적을 만듭니다.</span></div><button id="hist">학습 기록 보기 ›</button></div>
   ${navBar('hunt')}`);
   bindHead();
