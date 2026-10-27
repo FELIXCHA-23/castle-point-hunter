@@ -1345,7 +1345,7 @@ async function renderTeam(notice) {
       <div class="slots">${slots}</div></div>
     <div class="card">
       ${tm.members.map((m) => `<div class="rk-row${m.me ? ' me' : ''}">${avatar(m.name, (m.leader ? 'lead ' : '') + (m.state === 'invited' ? 'wait' : ''))}<div class="rk-nm">${esc(m.name)}${m.grade ? `<span class="gchip">${esc(m.grade)}</span>` : ''}${m.leader ? ' <span class="chip">팀장</span>' : ''}${m.state === 'invited' ? ' <span class="sub">수락 대기</span>' : ''}</div>${m.state === 'invited' ? (tm.leader ? `<button class="tcancel" data-id="${esc(m.id)}" style="padding:4px 10px">취소</button>` : '') : `<div class="rk-pt">${fmt(m.score)}점</div>`}</div>`).join('')}
-      ${canInvite ? '<label style="margin-top:14px">팀원 초대 (상대의 아이디)</label><div class="row" style="flex-wrap:nowrap"><input id="tinvid" placeholder="예: 해원고홍길동" autocomplete="off" autocapitalize="none"><button class="primary" id="tinvgo" style="flex:0 0 auto;width:auto;padding:0 18px">초대</button></div>' : ''}
+      ${canInvite ? '<label style="margin-top:14px">팀원 초대 (상대의 아이디)</label><div class="row" style="flex-wrap:nowrap"><input id="tinvid" placeholder="예: 신현고김캐슬" autocomplete="off" autocapitalize="none"><button class="primary" id="tinvgo" style="flex:0 0 auto;width:auto;padding:0 18px">초대</button></div>' : ''}
       <button id="tleave" class="tquit">${tm.leader ? '팀 해체' : '팀 탈퇴'}</button></div>`;
   } else if (t.canPlay) {
     mine = `<div class="thero empty"><div class="tn">나만의 팀을 만들어 보세요</div><div class="tsub">친구와 함께 점수를 모아 팀랭킹전에 도전합니다</div>
@@ -1385,8 +1385,8 @@ async function renderFriends(notice) {
   <div class="card"><h2 style="margin-bottom:6px">내 친구 <span class="sub" style="font-weight:600">${fr.length}명</span></h2>
     ${fr.length ? fr.map((x) => `<div class="rk-row">${avatar(x.name)}<div class="rk-nm">${esc(x.name)}${x.grade ? `<span class="gchip">${esc(x.grade)}</span>` : ''}</div><button class="frm" data-id="${esc(x.id)}" style="padding:4px 10px">삭제</button></div>`).join('') : '<p class="sub" style="margin:0">아직 등록한 친구가 없습니다.</p>'}
     ${out.length ? `<p class="sub" style="margin:12px 0 4px">보낸 신청 (상대가 수락하면 친구가 됩니다)</p>${out.map((x) => `<div class="row" style="flex-wrap:nowrap;margin-bottom:4px">${avatar(x.name, 'wait')}<span style="flex:1">${esc(x.name)}</span><button class="frm" data-id="${esc(x.id)}" style="padding:4px 10px">취소</button></div>`).join('')}` : ''}</div>
-  <div class="card"><label style="margin-top:0">친구 신청 (상대의 아이디)</label><div class="row" style="flex-wrap:nowrap"><input id="fid" placeholder="예: 해원고홍길동" autocomplete="off" autocapitalize="none"><button class="primary" id="fadd" style="flex:0 0 auto;width:auto;padding:0 18px">신청</button></div>
-    <p class="sub" style="margin:8px 0 0">친구는 팀을 꾸릴 때 바로 초대할 수 있습니다. 팀 초대는 친구가 아니어도 아이디로 보낼 수 있습니다.</p></div>${navBar('home')}`);
+  <div class="card"><label style="margin-top:0">친구 신청 (상대의 아이디)</label><div class="row" style="flex-wrap:nowrap"><input id="fid" placeholder="예: 신현고김캐슬" autocomplete="off" autocapitalize="none"><button class="primary" id="fadd" style="flex:0 0 auto;width:auto;padding:0 18px">신청</button></div>
+    <p class="sub" style="margin:8px 0 0">친구는 팀을 꾸릴 때 바로 초대할 수 있습니다. 팀 초대는 친구가 아니어도 아이디로 보낼 수 있습니다.</p></div>${navBar('fr')}`);
   bindNav();
   const go = async (path, body) => { try { await api(path, body || {}); renderFriends(); } catch (e) { renderFriends(e.message); } };
   if ($('#fadd')) $('#fadd').onclick = () => go('friend/add', { id: $('#fid').value });
