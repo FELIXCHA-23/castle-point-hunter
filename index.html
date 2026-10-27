@@ -994,6 +994,27 @@ input:focus,textarea:focus,select:focus{border-color:var(--gold);box-shadow:0 0 
 .hsel .grades button{height:42px;font-size:15px}
 .hsel .cta{margin-top:12px;min-height:46px;height:46px;padding:0 15px}
 .hsel .err{min-height:0;margin-top:6px}
+/* ---- 스크롤 줄이기: 헤더 고정, 홈 한 화면, 아래 고정 버튼, 아래에서 올라오는 창 ---- */
+.sitehead:first-child{margin-top:-17px}
+.sitehead{position:sticky;top:0;z-index:15;margin:0 -16px 12px;padding:10px 16px 8px;background:rgba(11,12,15,.92);backdrop-filter:blur(14px);-webkit-backdrop-filter:blur(14px)}
+.hero.cmp{min-height:0;padding:16px 18px 14px;margin-bottom:10px}
+.hero.cmp h1{font-size:23px;margin:0}
+.hero.cmp .hi{margin-bottom:6px}
+.hmenu .cnt{font-style:normal;min-width:20px;height:20px;padding:0 6px;border-radius:10px;background:var(--gold);color:#1B1D23;font-size:12px;font-weight:800;display:inline-flex;align-items:center;justify-content:center}
+.hmenu span{overflow:hidden;text-overflow:ellipsis;white-space:nowrap;min-width:0}
+.stick{position:sticky;bottom:0;z-index:12;margin:10px -16px 0;padding:14px 16px calc(12px + env(safe-area-inset-bottom,0px));background:linear-gradient(180deg,rgba(11,12,15,0),rgba(11,12,15,.97) 26%)}
+.stick .btn-big{margin-top:8px;padding:13px}
+.stick .err{margin:0 0 4px;min-height:0}
+.solvebox label{margin-top:0}
+.sheet-bg{position:fixed;inset:0;z-index:50;background:rgba(0,0,0,.62);display:flex;align-items:flex-end;backdrop-filter:blur(4px);-webkit-backdrop-filter:blur(4px)}
+.sheet{width:100%;max-width:520px;margin:0 auto;max-height:84vh;display:flex;flex-direction:column;background:#14161B;border:1px solid rgba(212,178,120,.28);border-bottom:0;border-radius:22px 22px 0 0;box-shadow:0 -20px 60px rgba(0,0,0,.6)}
+.sh-h{display:flex;justify-content:space-between;align-items:center;padding:16px 18px 8px}
+.sh-h b{font-size:18px;letter-spacing:-.03em}
+.sh-h button{padding:7px 14px;font-size:13px}
+.sh-b{overflow:auto;padding:4px 12px calc(20px + env(safe-area-inset-bottom,0px))}
+.sh-b .card{background:#181A20}
+/* sticky(고정 헤더·아래 고정 버튼)가 동작하려면 body 가 스크롤 상자가 되면 안 된다 */
+body{overflow-x:clip;overflow-y:visible}
 </style>
 </head>
 <body>
@@ -1275,19 +1296,22 @@ const EMOJIS = ['🙂', '😎', '🤓', '😄', '🥳', '🤩', '😺', '🐶', 
 const avOf = () => (me && me.avatar) || '🙂';
 const myChip = () => `<button id="my" class="mychip" aria-label="마이페이지"><span class="av emo">${avOf()}</span>${esc(me.name)}<i>⌄</i></button>`;
 async function renderHome() {
-  const c = me.cfg, tn = me.todayN || 0, rate = tn ? Math.round(100 * me.todayCount / tn) : null, st = me.streak || 0;
+  const c = me.cfg;
   const m = me.mult, fire = m.value > 1 ? `<div class="banner">🔥 포인트 2배 적용 중${m.morning ? ' · 주말·공휴일 아침 타임' : ''}${m.daily ? ` · 오늘 ${c.DAILY_BONUS_COUNT}문제 맞힘` : ''}</div>` : '';
   const list = await api('notices').catch(() => []);
+  const top = list[0];
   app(`<div class="top"><img class="logo" src="logo_dark.png" alt="캐슬수학"><span style="display:flex;gap:4px;align-items:center">${myChip()}</span></div>
-  <div class="hero"><div class="deco"><i></i><i></i><i></i></div>
-    <div class="hi">오늘도 캐슬수학과 함께</div><h1>안녕하세요!<br>${esc(me.name)}${esc(me.title || '님')}</h1><div class="go">더 높은 곳을 향해, 오늘도 한 걸음 나아가세요.</div></div>
+  <div class="hero cmp"><div class="deco"><i></i><i></i><i></i></div>
+    <div class="hi">오늘도 캐슬수학과 함께</div><h1>안녕하세요!<br>${esc(me.name)}${esc(me.title || '님')}</h1></div>
   ${fire}
-  ${ptcCard(true)}
-  <h2 class="hsec">이용 안내</h2>${foldCards(guideCards())}
-  <h2 class="hsec">공지사항</h2>${noticeCards(list)}
+  ${ptcCard(true, 'cmp')}
+  <div class="card hmenu"><button id="hg"><b>이용 안내</b><span>포인트·랭킹전·오답노트 규칙</span><i>›</i></button>
+    <button id="hn"><b>공지사항</b><span>${top ? esc(top.title) : '등록된 공지가 없습니다'}</span>${list.length ? `<em class="cnt">${list.length}</em>` : ''}<i>›</i></button></div>
   ${navBar('home')}`);
   $('#my').onclick = () => renderMy(); bindNav();
   $('#ptgo').onclick = () => renderPoints('home');
+  $('#hg').onclick = () => openSheet('이용 안내', foldCards(guideCards()));
+  $('#hn').onclick = () => openSheet('공지사항', noticeCards(list));
 }
 // 마이페이지: 내 기록·통계 등 개인 메뉴와 로그아웃
 function renderMy() {
@@ -1356,8 +1380,8 @@ function renderPreview(a) {
   app(`<div class="top"><button class="back" id="hm">${IC.back}${esc(a.problem.grade)} 미리보기</button><div class="timer" id="t"></div></div>
   <div class="bar"><div id="b"></div></div>
   <div class="card" style="margin-top:12px" id="pv">${probHtml(a.problem)}</div>
-  <button class="primary btn-big" id="ac">이 문제 풀기 (-${me.cfg.ACCEPT_COST}P)</button>
-  <button class="btn-big soft" id="sk" style="border-color:transparent">다음 문제로 넘기기 (-${me.cfg.PREVIEW_COST}P)</button><div class="err" id="err"></div>`, true);
+  <div class="stick"><div class="err" id="err"></div><button class="primary btn-big" id="ac">이 문제 풀기 (-${me.cfg.ACCEPT_COST}P)</button>
+  <button class="btn-big soft" id="sk" style="border-color:transparent">다음 문제로 넘기기 (-${me.cfg.PREVIEW_COST}P)</button></div>`, true);
   pickedGrade = a.problem.grade;
   const total = me.cfg.PREVIEW_SEC * 1000;
   const upd = () => {
@@ -1379,11 +1403,10 @@ function renderPreview(a) {
 }
 function renderSolve(a) {
   const isSet = a.problem.kind === 'set';
-  app(`<div class="top"><div class="timer" id="t"></div></div>
+  app(`<div class="top"><button class="back" id="hm">${IC.back}포기하고 나가기</button><div class="timer" id="t"></div></div>
   <div class="card">${probHtml(a.problem)}</div>
-  <div class="card">${isSet ? `<label>정답 (해당하는 보기의 기호를 모두 쓰십시오. 예: ㄱ, ㄷ)</label><div class="row" style="flex-wrap:nowrap"><input id="ans" autocomplete="off" enterkeyhint="done" placeholder="예: ㄱ, ㄷ"></div>` : `<label>정답 (숫자만, 예: 12 / -3 / 0.5)</label><div class="row" style="flex-wrap:nowrap"><input id="ans" inputmode="decimal" autocomplete="off" enterkeyhint="done"><button id="neg" style="flex:0 0 92px;font-size:15px" title="마이너스 부호 넣기/빼기">− (부호)</button></div>`}
-  <div class="err" id="err"></div><button class="primary btn-big" id="sub">답안 제출</button></div>
-  <button class="btn-big" id="hm" style="background:none;border-color:var(--line);color:var(--sub)">포기하고 나가기</button>`, true);
+  <div class="stick solvebox">${isSet ? `<label>정답 (해당하는 보기의 기호를 모두 쓰십시오. 예: ㄱ, ㄷ)</label><div class="row" style="flex-wrap:nowrap"><input id="ans" autocomplete="off" enterkeyhint="done" placeholder="예: ㄱ, ㄷ"></div>` : `<label>정답 (숫자만, 예: 12 / -3 / 0.5)</label><div class="row" style="flex-wrap:nowrap"><input id="ans" inputmode="decimal" autocomplete="off" enterkeyhint="done"><button id="neg" style="flex:0 0 92px;font-size:15px" title="마이너스 부호 넣기/빼기">− (부호)</button></div>`}
+  <div class="err" id="err"></div><button class="primary btn-big" id="sub">답안 제출</button></div>`, true);
   let done = false;
   const submit = async () => {
     if (done) return; done = true; clearInterval(tick);
@@ -1453,7 +1476,17 @@ async function renderRank() {
   draw(rkKind);
 }
 
-function closeMore() {}
+function closeMore() { const o = document.getElementById('sheet'); if (o) o.remove(); }
+// 아래에서 올라오는 창(이용 안내·공지 등을 한 화면 안에서 보여 줄 때)
+function openSheet(title, html) {
+  closeMore();
+  const o = document.createElement('div'); o.id = 'sheet'; o.className = 'sheet-bg';
+  o.innerHTML = `<div class="sheet"><div class="sh-h"><b>${esc(title)}</b><button id="shx">닫기</button></div><div class="sh-b">${html}</div></div>`;
+  document.body.appendChild(o);
+  o.onclick = (e) => { if (e.target === o) closeMore(); };
+  o.querySelector('#shx').onclick = closeMore;
+  math(o);
+}
 const subTop = (t, extra, back) => `<div class="top"><button class="back" id="bk">${IC.back}${back || '홈'}</button>${extra || ''}</div><h1 style="font-size:22px;margin:4px 0 12px">${t}</h1>`;
 async function renderStats() {
   const s = await api('stats'), pct = (a, n) => n ? Math.round(100 * a / n) : 0, mx = Math.max(1, ...s.days.map((x) => x.n));
