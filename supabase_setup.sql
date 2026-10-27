@@ -146,6 +146,15 @@ begin
   end if;
 end $$;
 
+-- 오늘 푼(제출한) 문제 수와 연속 학습일 (오늘 또는 어제까지 하루도 빠짐없이 푼 날의 수)
+create or replace function castle.today_done(p_sid text) returns int language sql stable as $$
+  select count(*)::int from castle.attempts where sid = p_sid and state = 'done' and (end_at at time zone 'Asia/Seoul')::date = castle.kst_today() $$;
+create or replace function castle.study_streak(p_sid text) returns int language sql stable as $$
+  with d as (select distinct (end_at at time zone 'Asia/Seoul')::date as day from castle.attempts where sid = p_sid and state = 'done' and end_at is not null),
+       g as (select day, day + (row_number() over (order by day desc))::int as k from d)
+  select coalesce((select count(*)::int from g where k = (select k from g order by day desc limit 1)
+                   and (select max(day) from d) >= castle.kst_today() - 1), 0) $$;
+
 create or replace function castle.today_count(p_sid text) returns int language sql stable as $$
   select count(*)::int from castle.attempts where sid = p_sid and day = castle.kst_today() and correct is true $$;  -- 오늘 맞힌 문제 수만 센다
 
@@ -368,7 +377,7 @@ begin
   select points into v_pts from castle.students where id = st.id;
   return jsonb_build_object('id', st.id, 'name', st.name, 'points', v_pts, 'mustChange', st.must_change, 'isAdmin', st.is_admin, 'isTeacher', st.is_teacher, 'title', st.title, 'grade', st.grade,
     'grades', to_jsonb(castle.allowed_grades(st)), 'cfg', castle.cfg_all(), 'mult', castle.next_mult(st.id),
-    'todayCount', castle.today_count(st.id), 'active', castle.active_view(a), 'serverNow', castle.ms(clock_timestamp()));
+    'todayCount', castle.today_count(st.id), 'todayN', castle.today_done(st.id), 'streak', castle.study_streak(st.id), 'active', castle.active_view(a), 'serverNow', castle.ms(clock_timestamp()));
 end $$;
 
 create or replace function castle.r_rank(tok text) returns jsonb language plpgsql as $$
