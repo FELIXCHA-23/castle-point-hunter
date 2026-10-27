@@ -605,7 +605,7 @@ async function renderCatchu() {
   ${list.map((r) => {
     const wr = r.wrong || [], sw = r.stillWrong;
     const retest = Array.isArray(sw) ? (sw.length ? `재시험 ${r.retestDate ? ymd(r.retestDate) : ''} · 아직 틀린 문항 <b>${nums(sw)}</b>` : `재시험 ${r.retestDate ? ymd(r.retestDate) : ''} · 모두 맞혔습니다`) : (wr.length ? '재시험 기록이 아직 없습니다' : '');
-    const mw = /(\d+)\s*월\s*(\d+)\s*주차/.exec(r.title || ''), nm = mw ? `${mw[1]}월 ${mw[2]}주차 ` : '';
+    const mw = /(\d+)\s*월\s*(\d+)\s*주차/.exec(r.title || ''), nm = mw ? `[${mw[1]}월${mw[2]}주차] ` : '';
     const cnt = wr.length ? `${wr.length}문항` : '틀린 문항 없음';
     return `<div class="card ctest"><button class="chead" aria-expanded="false"><span class="ct"><b>${esc(nm + r.grade)}</b>${r.scope ? `<span class="sub"> (${esc(r.scope)})</span>` : ''}<span class="sub" style="display:block;margin-top:2px">${r.date ? ymd(r.date) + ' · ' : ''}${cnt}</span></span><span class="car">▾</span></button>
     <div class="cbody" style="display:none">${wr.length ? `<p style="margin:10px 0 6px">${wr.map((n) => (r.have || []).includes(n) ? `<button class="cn" data-r="${esc(r.id)}" data-n="${n}">${n}번</button>` : `<b>${n}번</b>`).join(' ')}</p>` : ''}
