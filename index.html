@@ -1044,7 +1044,7 @@ function renderHunt(notice) {
   <div class="card keep"><div class="ic">${ico.cal}</div><div class="tx"><b>오늘도 꾸준히!</b><span>지금의 노력이 내일의 성적을 만듭니다.</span></div><button id="hist">학습 기록 보기 ›</button></div>
   ${navBar('hunt')}`);
   bindHead();
-  $('#hist').onclick = () => renderHistory();
+  $('#hist').onclick = () => renderHistory('hunt');
   $('#ptgo').onclick = () => renderHistory('hunt');
   // 학년을 눌러도 화면을 다시 그리지 않고 그 자리에서 표시만 바꾼다 (스크롤 위치가 움직이지 않도록)
   document.querySelectorAll('.grades button').forEach((b) => b.onclick = () => {
