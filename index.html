@@ -962,6 +962,16 @@ input:focus,textarea:focus,select:focus{border-color:var(--gold);box-shadow:0 0 
 .rk-row:nth-child(-n+3){background:none;border-color:transparent}
 .rk-row:has(.rk-no svg){background:linear-gradient(90deg,rgba(212,178,120,.18),rgba(212,178,120,.03));border-color:rgba(212,178,120,.28)}
 .rk-row.me{background:rgba(212,178,120,.12);border-color:rgba(212,178,120,.4);color:var(--gold2)}
+.ptc .p2>div{padding:16px 14px}
+.ptc .p2>div:first-child{padding-left:0}
+.ptc .p2>div:last-child{padding-right:0}
+.ptc .p2>div+div{padding-left:18px}
+.ptc .p2>div:last-child svg{display:none}
+.card.ptc .p2{grid-template-columns:1fr 1fr 1.35fr}
+.ptc .p2>div{gap:8px}
+.ptc .p2>div svg{width:19px;height:19px}
+.card.ptc .p2 .t{font-size:12.5px}
+.card.ptc .p2{grid-template-columns:1.05fr 1.05fr 1.3fr}
 </style>
 </head>
 <body>
@@ -1224,8 +1234,8 @@ async function renderHome() {
     <div class="hi">오늘도 캐슬수학과 함께</div><h1>안녕하세요!<br>${esc(me.name)}${esc(me.title || '님')}</h1><div class="go">더 높은 곳을 향해, 오늘도 한 걸음 나아가세요.</div></div>
   ${fire}
   <div class="card ptc"><div class="p1" id="ptgo"><div><div class="lb">총 포인트</div><div class="big">${fmt(me.points)}<em>P</em></div></div><span class="ch">›</span></div>
-    <div class="p2"><div><div><div class="t">오늘의 정답률</div><div class="v">${rate === null ? '-' : rate + '<u>%</u>'}</div></div></div>
-      <div><div><div class="t">연속 학습일</div><div class="v">${st ? st + '<u>일</u>' : '-'}</div></div></div>
+    <div class="p2"><div><div><div class="t">정답률</div><div class="v">${rate === null ? '-' : rate + '<u>%</u>'}</div></div></div>
+      <div><div><div class="t">연속 학습</div><div class="v">${st ? st + '<u>일</u>' : '-'}</div></div></div>
       <div><div class="enc">${st >= 2 ? '지금의 꾸준함이<br>더 큰 성과를 만듭니다.' : '오늘 한 문제부터<br>시작해 보십시오.'}</div></div></div></div>
   <h2 class="hsec">이용 안내</h2>${foldCards(guideCards())}
   <h2 class="hsec">공지사항</h2>${noticeCards(list)}
@@ -1269,8 +1279,8 @@ function renderHunt(notice) {
   <h1 style="font-size:22px;margin:4px 0 12px">사냥</h1>
   ${fire}
   <div class="card ptc"><div class="p1" id="ptgo">${ico.coin}<div><div class="lb">총 포인트</div><div class="big">${fmt(me.points)}<em>P</em></div></div><span class="ch">›</span></div>
-    <div class="p2"><div>${ico.target}<div><div class="t">오늘의 정답률</div><div class="v">${rate === null ? '-' : rate + '<u>%</u>'}</div></div></div>
-      <div>${ico.cal}<div><div class="t">연속 학습일</div><div class="v">${st ? st + '<u>일</u>' : '-'}</div></div></div>
+    <div class="p2"><div>${ico.target}<div><div class="t">정답률</div><div class="v">${rate === null ? '-' : rate + '<u>%</u>'}</div></div></div>
+      <div>${ico.cal}<div><div class="t">연속 학습</div><div class="v">${st ? st + '<u>일</u>' : '-'}</div></div></div>
       <div>${ico.crown}<div class="enc">${st >= 2 ? '지금의 꾸준함이<br>더 큰 성과를 만듭니다.' : '오늘 한 문제부터<br>시작해 보십시오.'}</div></div></div></div>
   <div class="card"><div class="sec"><h2>학년 선택</h2><span class="sub">학년을 고르고 문제를 시작하십시오.</span></div>
     <div class="grades">${me.grades.map((g) => `<button data-g="${g}" class="${g === pickedGrade ? 'on' : ''}">${g}</button>`).join('')}</div>
