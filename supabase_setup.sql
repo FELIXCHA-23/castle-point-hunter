@@ -187,6 +187,10 @@ begin
   select * into s from castle.sessions where token = tok and exp > now();
   if not found then perform castle.fail(401, '다시 로그인해 주십시오.'); end if;
   if want is not null and s.role <> want then perform castle.fail(403, '권한이 없습니다.'); end if;
+  -- 학생 로그인은 쓰는 동안 계속 연장해서(최대 180일) 앱을 열 때마다 다시 로그인하지 않게 합니다. 관리자·탐험은 그대로.
+  if s.role = 'student' and s.exp < now() + interval '170 days' then
+    update castle.sessions set exp = now() + interval '180 days' where token = tok;
+  end if;
   return s.id;
 end $$;
 
