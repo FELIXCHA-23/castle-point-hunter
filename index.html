@@ -980,9 +980,8 @@ input:focus,textarea:focus,select:focus{border-color:var(--gold);box-shadow:0 0 
 .pnote{color:#E4E2DD}
 .pnote .katex,.pnote .katex *{color:inherit}
 .pnote .katex .frac-line{border-bottom-color:currentColor!important;border-bottom-width:1.5px!important}
-/* 안내문 분수: 분자·분모를 분수선 쪽으로 모아 붙인다 */
-.pnote .katex .mfrac .vlist>span:nth-child(1){transform:translateY(-.12em)}
-.pnote .katex .mfrac .vlist>span:nth-child(3){transform:translateY(.05em)}
+/* 안내문 분수: 분모만 분수선 쪽으로 올려 붙인다 (분자는 그대로) */
+.pnote .katex .mfrac .vlist>span:nth-child(1){transform:translateY(-.22em)}
 </style>
 </head>
 <body>
