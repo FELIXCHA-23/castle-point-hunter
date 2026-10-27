@@ -790,7 +790,7 @@ async function guestApi(path, b) {
   switch (path) {
     case 'me': return guestMe();
     case 'logout': return {};
-    case 'rank': { const on = G.points >= 1000, row = [{ rank: 1, name: '탐*가', grade: '', points: G.points, me: true }]; return { grade: '', top: on ? row : [], myRank: on ? 1 : null, total: on ? 1 : 0, gradeTop: [], myGradeRank: null, gradeTotal: 0 }; }
+    case 'rank': { const on = G.points > 500, row = [{ rank: 1, name: '탐*가', grade: '', points: G.points, me: true }]; return { grade: '', top: on ? row : [], myRank: on ? 1 : null, total: on ? 1 : 0, gradeTop: [], myGradeRank: null, gradeTotal: 0 }; }
     case 'season/info': { const pool = await api('guest/pool', { minLevel: 3 });
       return { serverNow: now, grade: '', canPlay: true, poolLeft: pool.n, total: 0, top: [], gradeTop: [], me: { score: G.score, rank: null, gradeRank: null, ok: G.ok, n: G.n },
         season: { id: 0, name: '탐험 시즌', status: 'active', startsAt: now - 864e5, endsAt: now + 7 * 864e5, prize: '', minLevel: 3, timeLimitSec: 300 } }; }
@@ -1176,7 +1176,7 @@ async function renderRank() {
       rows = s.top.length ? seasonRows(s.top) : '';
     } else {
       const grade = k === 'grade', list = grade ? r.gradeTop : r.top;
-      sum = grade ? (r.myGradeRank ? `내 학년 순위 ${r.myGradeRank}위 / ${r.gradeTotal}명` : '1,000P 이상부터 순위에 오릅니다') : (r.myRank ? `내 순위 ${r.myRank}위 / ${r.total}명` : '1,000P 이상부터 순위에 오릅니다');
+      sum = grade ? (r.myGradeRank ? `내 학년 순위 ${r.myGradeRank}위 / ${r.gradeTotal}명` : '500P를 넘으면 순위에 오릅니다') : (r.myRank ? `내 순위 ${r.myRank}위 / ${r.total}명` : '500P를 넘으면 순위에 오릅니다');
       rows = list.length ? rankRows(list) : '';
     }
     $('#rkb').innerHTML = `<div class="sub" style="font-weight:600;margin-bottom:6px">${sum}</div>${rows || '<p class="sub">아직 순위에 오른 학생이 없습니다.</p>'}`;
@@ -1211,7 +1211,7 @@ const guideCards = () => {
   <li>정답이면 +${c.REWARD}P를 받습니다. 하루에 ${c.DAILY_BONUS_COUNT}문제를 맞히면 이후 포인트가 2배입니다.</li>
   <li>주말·공휴일 오전 ${c.MORNING_FROM}시~${c.MORNING_TO}시에는 포인트가 2배입니다.</li>
   <li>포인트가 적어 문제풀이가 불가능한 경우, 문제풀이가 가능한 최소한의 포인트가 자동 지급됩니다.</li>
-  <li>1,000P 이상이 되면 순위에 오릅니다.</li><li>10000P 이상 적립 시 장학카드에 장학금으로 전환할 수 있습니다.</li></ul></div>
+  <li>500P를 넘으면 헌터순위에 오르며, 전체와 내 학년의 상위 20명이 보입니다.</li><li>10000P 이상 적립 시 장학카드에 장학금으로 전환할 수 있습니다.</li></ul></div>
   <div class="card"><h2>시즌 랭킹전</h2><ul class="rules">
   <li>순위는 학년 구분 없이 모두 함께 겨룹니다. 문제는 본인 학년의 문제만 나옵니다.</li>
   <li>랭킹전은 포인트의 적립 및 사용과 무관하며, 오직 점수제로만 운영됩니다.</li>

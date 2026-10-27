@@ -384,19 +384,19 @@ end $$;
 create or replace function castle.r_rank(tok text) returns jsonb language plpgsql as $$
 declare st castle.students := castle.stu(tok); v_ok boolean := (not st.is_teacher and not st.is_admin);
 begin
-  -- 순위는 학생만, 1,000P 이상만 보인다 (전체 순위 + 내 학년 순위)
+  -- 순위는 학생만, 500P를 넘는 학생만 보인다, 상위 20명 (전체 순위 + 내 학년 순위)
   return jsonb_build_object('grade', st.grade,
     'top', (select coalesce(jsonb_agg(jsonb_build_object('rank', rk, 'name', castle.mask_name(name), 'grade', grade, 'points', points, 'me', id = st.id) order by rk), '[]')
             from (select id, name, grade, points, row_number() over (order by points desc, created_at) as rk
-                  from castle.students where points >= 1000 and not is_teacher and not is_admin) q where rk <= 10),
-    'myRank', case when v_ok and st.points >= 1000 then 1 + (select count(*) from castle.students where points > st.points and not is_teacher and not is_admin) end,
-    'total', (select count(*) from castle.students where points >= 1000 and not is_teacher and not is_admin),
+                  from castle.students where points > 500 and not is_teacher and not is_admin) q where rk <= 20),
+    'myRank', case when v_ok and st.points > 500 then 1 + (select count(*) from castle.students where points > st.points and not is_teacher and not is_admin) end,
+    'total', (select count(*) from castle.students where points > 500 and not is_teacher and not is_admin),
     'gradeTop', (select coalesce(jsonb_agg(jsonb_build_object('rank', rk, 'name', castle.mask_name(name), 'grade', grade, 'points', points, 'me', id = st.id) order by rk), '[]')
             from (select id, name, grade, points, row_number() over (order by points desc, created_at) as rk
-                  from castle.students where points >= 1000 and not is_teacher and not is_admin and grade = st.grade and st.grade <> '') q where rk <= 10),
-    'myGradeRank', case when v_ok and st.grade <> '' and st.points >= 1000
+                  from castle.students where points > 500 and not is_teacher and not is_admin and grade = st.grade and st.grade <> '') q where rk <= 20),
+    'myGradeRank', case when v_ok and st.grade <> '' and st.points > 500
                    then 1 + (select count(*) from castle.students where points > st.points and not is_teacher and not is_admin and grade = st.grade) end,
-    'gradeTotal', (select count(*) from castle.students where points >= 1000 and not is_teacher and not is_admin and grade = st.grade and st.grade <> ''));
+    'gradeTotal', (select count(*) from castle.students where points > 500 and not is_teacher and not is_admin and grade = st.grade and st.grade <> ''));
 end $$;
 
 create or replace function castle.r_preview(tok text, b jsonb) returns jsonb language plpgsql as $$
