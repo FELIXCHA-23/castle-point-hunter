@@ -721,6 +721,13 @@ body{
 @media(prefers-reduced-motion:no-preference){
   .card,.grades button,.cta,button{transition:background-color .16s ease,border-color .16s ease,box-shadow .16s ease,transform .12s ease}
 }
+.nav button{font-size:9.5px;letter-spacing:-.04em;white-space:nowrap}
+.hmenu{padding:2px 16px}
+.hmenu button{display:flex;align-items:baseline;gap:10px;width:100%;background:none;border:0;border-radius:0;box-shadow:none;border-top:1px solid var(--line);padding:15px 0;text-align:left;color:inherit;font-size:15px}
+.hmenu button:first-child{border-top:0}
+.hmenu b{font-weight:650}
+.hmenu span{flex:1;font-size:12.5px;color:var(--sub);font-weight:500}
+.hmenu i{font-style:normal;color:var(--sub);font-size:18px}
 </style>
 </head>
 <body>
@@ -870,6 +877,7 @@ const IC = {
   rank: '<svg viewBox="0 0 24 24" fill="none" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M8 4h8v5a4 4 0 0 1-8 0z"/><path d="M8 6H5v1.5A3 3 0 0 0 8 10.5M16 6h3v1.5a3 3 0 0 1-3 3"/><path d="M12 13v4M8.5 20h7"/></svg>',
   season: '<svg viewBox="0 0 24 24" fill="none" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M4 17.5 3 8l5 4 4-7 4 7 5-4-1 9.5z"/><path d="M5.5 20.5h13"/></svg>',
   hunt: '<svg viewBox="0 0 24 24" fill="none" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="7.5"/><circle cx="12" cy="12" r="2.6"/><path d="M12 2.5v3.5M12 18v3.5M2.5 12H6M18 12h3.5"/></svg>',
+  friend: '<svg viewBox="0 0 24 24" fill="none" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="10" cy="8.5" r="3.2"/><path d="M4 19.5c.4-3.600 2.800-5.300 6-5.300s5.600 1.700 6 5.300"/><path d="M18.500 8v5M16 10.500h5"/></svg>',
   team: '<svg viewBox="0 0 24 24" fill="none" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="9" cy="8.5" r="3"/><path d="M3.5 19c.4-3.3 2.6-5 5.5-5s5.1 1.7 5.5 5"/><circle cx="17" cy="9.5" r="2.3"/><path d="M16.5 14.2c2.4-.2 4 1.2 4.4 4"/></svg>',
   more: '<svg viewBox="0 0 24 24" fill="none" stroke-width="3.4" stroke-linecap="round"><path d="M5.5 12h.01M12 12h.01M18.5 12h.01"/></svg>',
   sms: '<svg viewBox="0 0 24 24" fill="none" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M4 5.5h16v11H11l-4.5 3.5V16.5H4z"/><path d="M8.5 11h.01M12 11h.01M15.5 11h.01" stroke-width="2.6"/></svg>',
@@ -881,11 +889,11 @@ const trophy = (c) => `<svg viewBox="0 0 24 24" width="22" height="22" aria-hidd
 const MEDAL = ['#f5b82e', '#9aa6b8', '#cd7f4a'];
 const rankRows = (top) => top.map((x) => `<div class="rk-row${x.me ? ' me' : ''}"><div class="rk-no">${x.rank <= 3 ? trophy(MEDAL[x.rank - 1]) : x.rank}</div><div class="rk-nm">${esc(x.name)}${x.grade ? `<span class="gchip">${esc(x.grade)}</span>` : ''}${x.me ? ' <span class="chip">나</span>' : ''}</div><div class="rk-pt">${fmt(x.points)} P</div></div>`).join('');
 function navBar(cur) {
-  const it = [['home', me && (me.isTeacher || me.isAdmin) ? '홈' : '사냥', IC.hunt], ['nt', '오답노트', IC.note], ['rk', '순위', IC.rank], ['season', '시즌', IC.season], ['team', '팀', IC.team], ['more', '더보기', IC.more]];
+  const it = [['home', '홈', IC.home], ['hunt', '사냥', IC.hunt], ['rk', '순위', IC.rank], ['season', '랭킹전', IC.season], ['fr', '친구', IC.friend], ['team', '팀', IC.team], ['nt', '오답노트', IC.note]];
   return `<div class="nav"><div>${it.map(([k, n, ic]) => `<button data-n="${k}" class="${k === cur ? 'on' : ''}">${ic}${n}</button>`).join('')}</div></div>`;
 }
 function bindNav() {
-  const f = { home: () => loadMe(), season: () => renderSeason(), team: () => renderTeam(), nt: renderNotes, rk: () => renderRank(), more: renderMore };
+  const f = { home: () => loadMe(), hunt: () => loadMe('', 'hunt'), season: () => renderSeason(), team: () => renderTeam(), fr: () => renderFriends(), nt: renderNotes, rk: () => renderRank() };
   document.querySelectorAll('.nav button').forEach((b) => b.onclick = () => Promise.resolve(f[b.dataset.n]()).catch(() => {}));
 }
 
@@ -949,11 +957,11 @@ async function start() {
   if (role === 'admin') return renderAdmin('students');
   try { await loadMe(); } catch (e) { return renderLogin(e.message); }
 }
-async function loadMe(notice) {
+async function loadMe(notice, to) {
   me = await api('me'); skew = me.serverNow - Date.now();
   if (me.mustChange) return renderSetPw();
   if (me.active) return me.active.state === 'preview' ? renderPreview(me.active) : renderSolve(me.active);
-  renderHome(notice);
+  if (to === 'hunt' || notice) renderHunt(notice); else renderHome();
 }
 function head() {
   const m = me.mult;
@@ -964,7 +972,32 @@ function head() {
   ${fire}`;
 }
 function bindHead() { $('#out').onclick = logout; if ($('#toadm')) $('#toadm').onclick = () => switchTo('admin'); bindNav(); }
-function renderHome(notice) {
+// 홈: 인사, 내 현황, 바로가기
+function renderHome() {
+  const c = me.cfg, tn = me.todayN || 0, rate = tn ? Math.round(100 * me.todayCount / tn) : null, st = me.streak || 0;
+  const m = me.mult, fire = m.value > 1 ? `<div class="banner">🔥 포인트 2배 적용 중${m.morning ? ' · 주말·공휴일 아침 타임' : ''}${m.daily ? ` · 오늘 ${c.DAILY_BONUS_COUNT}문제 맞힘` : ''}</div>` : '';
+  const rows = [['hist', '내 기록', '최근 푼 문제 30개'], ['stats', '내 통계', '정답률과 약한 단원'], ['notice', '공지사항', '학원 소식과 이벤트'], ['guide', '이용 안내', '포인트와 시즌 규칙']];
+  if (me.isTeacher) rows.push(['roster', '담당 학생 현황', '내 반 학생의 학습 현황']);
+  if (me.isAdmin) rows.push(['admin', '관리자 화면', '학생, 문제, 시즌 관리']);
+  app(`<div class="top"><img class="logo" src="logo.png" alt="캐슬수학"><span style="display:flex;gap:4px;align-items:center"><button id="out" class="back" style="margin-right:-4px">${IC.out}${guest ? '나가기' : '로그아웃'}</button></span></div>
+  <div class="hero"><div class="deco"><i></i><i></i><i></i></div>
+    <div class="hi">오늘도 수학과 함께,</div><h1>안녕하세요!<br>${esc(me.name)}${esc(me.title || '님')}</h1><div class="go">더 높은 곳을 향해, 오늘도 한 걸음 나아가세요.</div></div>
+  ${fire}
+  <div class="card ptc"><div class="p1" id="ptgo"><div><div class="lb">총 포인트</div><div class="big">${fmt(me.points)}<em>P</em></div></div><span class="ch">›</span></div>
+    <div class="p2"><div><div><div class="t">오늘의 정답률</div><div class="v">${rate === null ? '-' : rate + '<u>%</u>'}</div></div></div>
+      <div><div><div class="t">연속 학습일</div><div class="v">${st ? st + '<u>일</u>' : '-'}</div></div></div>
+      <div><div class="enc">${st >= 2 ? '지금의 꾸준함이<br>더 큰 성과를 만듭니다.' : '오늘 한 문제부터<br>시작해 보십시오.'}</div></div></div></div>
+  <div class="card"><button class="primary cta" id="gohunt"><span>▶</span> 사냥 시작하기 <span>→</span></button></div>
+  <div class="card hmenu">${rows.map(([k, n, d]) => `<button data-m="${k}"><b>${n}</b><span>${d}</span><i>›</i></button>`).join('')}</div>
+  ${navBar('home')}`);
+  $('#out').onclick = logout; bindNav();
+  $('#gohunt').onclick = () => renderHunt();
+  $('#ptgo').onclick = () => renderHistory();
+  const f = { hist: renderHistory, stats: renderStats, notice: renderNotices, guide: renderGuide, roster: renderRoster, admin: () => switchTo('admin') };
+  document.querySelectorAll('.hmenu button').forEach((b) => b.onclick = () => f[b.dataset.m]());
+}
+// 학습 화면(사냥): 학년을 고르고 문제를 시작한다
+function renderHunt(notice) {
   if (!me.grades.includes(pickedGrade)) pickedGrade = me.grades.includes(me.grade) ? me.grade : null;
   const c = me.cfg, cnt = Math.min(me.todayCount, c.DAILY_BONUS_COUNT), left = Math.max(0, c.DAILY_BONUS_COUNT - me.todayCount);
   const m = me.mult, fire = m.value > 1 ? `<div class="banner">🔥 포인트 2배 적용 중${m.morning ? ' · 주말·공휴일 아침 타임' : ''}${m.daily ? ` · 오늘 ${c.DAILY_BONUS_COUNT}문제 맞힘` : ''}</div>` : '';
@@ -977,8 +1010,7 @@ function renderHome(notice) {
     crown: '<svg viewBox="0 0 24 24" fill="currentColor"><path d="M4 17.500 3 8l5 4 4-7 4 7 5-4-1 9.500z"/><rect x="5" y="19" width="14" height="2" rx="1"/></svg>'
   };
   app(`<div class="top"><img class="logo" src="logo.png" alt="캐슬수학"><span style="display:flex;gap:4px;align-items:center">${me.isAdmin ? '<button id="toadm" class="back">관리자 화면</button>' : ''}<button id="out" class="back" style="margin-right:-4px">${IC.out}${guest ? '나가기' : '로그아웃'}</button></span></div>
-  <div class="hero"><div class="deco"><i></i><i></i><i></i></div>
-    <div class="hi">오늘도 수학과 함께,</div><h1>안녕하세요!<br>${esc(me.name)}${esc(me.title || '님')}</h1><div class="go">더 높은 곳을 향해, 오늘도 한 걸음 나아가세요.</div></div>
+  <h1 style="font-size:22px;margin:4px 0 12px">사냥</h1>
   ${fire}
   <div class="card ptc"><div class="p1" id="ptgo">${ico.coin}<div><div class="lb">총 포인트</div><div class="big">${fmt(me.points)}<em>P</em></div></div><span class="ch">›</span></div>
     <div class="p2"><div>${ico.target}<div><div class="t">오늘의 정답률</div><div class="v">${rate === null ? '-' : rate + '<u>%</u>'}</div></div></div>
@@ -993,7 +1025,7 @@ function renderHome(notice) {
     <p class="sub" style="margin:12px 0 0">미리보기 ${c.PREVIEW_SEC}초 (-${c.PREVIEW_COST}P) · 풀기 -${c.ACCEPT_COST}P · 제한시간 ${c.TIME_LIMIT_SEC / 60}분 · 정답 +${c.REWARD}P</p>
     <button class="primary cta" id="pv" ${pickedGrade ? '' : 'disabled'}>${pickedGrade ? `<span>▶</span> 학습 시작하기 · ${pickedGrade} <span>→</span>` : '학년을 먼저 골라 주십시오'}</button></div>
   <div class="card keep"><div class="ic">${ico.cal}</div><div class="tx"><b>오늘도 꾸준히!</b><span>지금의 노력이 내일의 성적을 만듭니다.</span></div><button id="hist">학습 기록 보기 ›</button></div>
-  ${navBar('home')}`);
+  ${navBar('hunt')}`);
   bindHead();
   $('#hist').onclick = () => renderHistory();
   $('#ptgo').onclick = () => renderHistory();
@@ -1012,7 +1044,7 @@ function renderHome(notice) {
 async function nextPreview(g) {
   g = g || pickedGrade; pickedGrade = g;
   try { const r = await api('preview', { grade: g }); skew = r.serverNow - Date.now(); me.points = r.points; renderPreview(r.active); }
-  catch (e) { loadMe(e.message); }
+  catch (e) { loadMe(e.message, 'hunt'); }
 }
 // 줄바꿈이 필요한 수식(경우 나누기 등)은 가운데 정렬된 별도 줄로 보여 준다
 const dm = (s) => String(s ?? '').replace(/\$([^$]*\\begin\{cases\}[^$]*)\$/g, (m, f) => '$$' + f + '$$');
@@ -1037,10 +1069,10 @@ function renderPreview(a) {
   upd(); tick = setInterval(upd, 200);
   $('#ac').onclick = async () => {
     try { const r = await api('accept', {}); skew = r.serverNow - Date.now(); me.points = r.points; renderSolve(r.active); }
-    catch (e) { showErr(e.message); setTimeout(() => loadMe(e.message), 1200); }
+    catch (e) { showErr(e.message); setTimeout(() => loadMe(e.message, 'hunt'), 1200); }
   };
   $('#sk').onclick = async () => { clearInterval(tick); await api('skip', {}).catch(() => {}); nextPreview(a.problem.grade); };
-  $('#hm').onclick = async () => { clearInterval(tick); await api('skip', {}).catch(() => {}); loadMe(); };
+  $('#hm').onclick = async () => { clearInterval(tick); await api('skip', {}).catch(() => {}); loadMe('', 'hunt'); };
 }
 function renderSolve(a) {
   const isSet = a.problem.kind === 'set';
@@ -1065,7 +1097,7 @@ function renderSolve(a) {
     if (!confirm('포기하고 나가시겠습니까? 이 문제는 오답으로 처리됩니다.')) return;
     done = true; clearInterval(tick);
     try { await api('submit', { answer: '' }); } catch (e) {}
-    loadMe();
+    loadMe('', 'hunt');
   };
   $('#ans').onkeydown = (e) => { if (e.key === 'Enter') $('#sub').click(); };
   if ($('#neg')) $('#neg').onclick = () => { const i = $('#ans'); i.value = i.value.startsWith('-') ? i.value.slice(1) : '-' + i.value; i.focus(); };
@@ -1084,7 +1116,7 @@ function renderResult(r) {
   $('#nb').onclick = async () => { try { await api('note/add', { pid: r.pid }); $('#nb').textContent = '오답노트에 담았습니다'; $('#nb').disabled = true; } catch (e) { alert(e.message); } };
   if (r.correct) $('#nb').textContent = '오답노트에 담기 (맞힌 문제)';
   $('#nx').onclick = () => nextPreview(pickedGrade);
-  $('#hm').onclick = () => loadMe();
+  $('#hm').onclick = () => loadMe('', 'hunt');
 }
 
 // ---------- 순위 탭 (포인트 전체 · 내 학년 · 시즌) ----------
@@ -1092,7 +1124,7 @@ let rkKind = 'all';
 async function renderRank() {
   let r, s = null;
   let tm = null;
-  try { r = await api('rank'); s = await api('season/info').catch(() => null); if (!guest) tm = await api('team/info').catch(() => null); } catch (e) { return renderHome(e.message); }
+  try { r = await api('rank'); s = await api('season/info').catch(() => null); if (!guest) tm = await api('team/info').catch(() => null); } catch (e) { return renderHunt(e.message); }
   app(`<div class="top"><h1 style="font-size:22px;display:flex;align-items:center;gap:8px">${trophy('#f5b82e')}순위</h1></div>
   <div class="card"><div class="seg"><button data-k="all">포인트 전체</button><button data-k="grade">내 학년${r.grade ? ' · ' + esc(r.grade) : ''}</button><button data-k="season">개인랭킹전</button>${tm ? '<button data-k="team">팀랭킹전</button>' : ''}</div><div id="rkb"></div></div>${navBar('rk')}`);
   bindNav();
@@ -1118,35 +1150,21 @@ async function renderRank() {
   draw(rkKind);
 }
 
-// ---------- 더보기: 탭 위로 목록이 뜨고, 고르면 각 화면으로 이동 ----------
-function closeMore() { const o = $('#mpop'); if (o) o.remove(); }
-function renderMore() {
-  if ($('#mpop')) return closeMore();
-  const rows = [['hist', '내 기록', '최근 푼 문제 30개'], ['stats', '내 통계', '정답률과 약한 단원'], ['friends', '내 친구', '친구 신청과 목록'], ['notice', '공지사항', '학원 소식과 이벤트'], ['guide', '이용 안내', '포인트와 시즌 규칙']];
-  if (me.isTeacher) rows.push(['roster', '담당 학생 현황', '내 반 학생의 학습 현황']);
-  if (me.isAdmin) rows.push(['admin', '관리자 화면', '학생, 문제, 시즌 관리']);
-  rows.push(['out', guest ? '나가기' : '로그아웃', '']);
-  const o = document.createElement('div'); o.id = 'mpop'; o.className = 'mpop-bg';
-  o.innerHTML = `<div class="mpop">${rows.map(([k, n]) => `<button class="mrow" data-m="${k}">${n}</button>`).join('')}</div>`;
-  document.body.appendChild(o);
-  o.onclick = (e) => { if (e.target === o) closeMore(); };
-  const f = { hist: renderHistory, stats: renderStats, friends: () => renderFriends(), notice: renderNotices, guide: renderGuide, roster: renderRoster, admin: () => switchTo('admin'), out: logout };
-  o.querySelectorAll('.mrow').forEach((b) => b.onclick = () => { closeMore(); f[b.dataset.m](); });
-}
-const subTop = (t, extra) => `<div class="top"><button class="back" id="bk">${IC.back}사냥</button>${extra || ''}</div><h1 style="font-size:22px;margin:4px 0 12px">${t}</h1>`;
+function closeMore() {}
+const subTop = (t, extra) => `<div class="top"><button class="back" id="bk">${IC.back}홈</button>${extra || ''}</div><h1 style="font-size:22px;margin:4px 0 12px">${t}</h1>`;
 async function renderStats() {
   const s = await api('stats'), pct = (a, n) => n ? Math.round(100 * a / n) : 0, mx = Math.max(1, ...s.days.map((x) => x.n));
   app(`${subTop('내 통계')}
   <div class="card"><div class="stat3"><div><b>${fmt(s.total)}</b><span>푼 문제</span></div><div><b>${fmt(s.ok)}</b><span>맞힌 문제</span></div><div><b>${pct(s.ok, s.total)}%</b><span>정답률</span></div></div>${guest ? '<p class="sub">탐험모드에서는 이번 탐험 중의 기록만 집계됩니다.</p>' : ''}</div>
   <div class="card"><h2>최근 7일</h2><div class="dchart">${s.days.map((x) => `<div class="dcol"><em>${x.n || ''}</em><div class="dtot" style="height:${Math.round(x.n / mx * 80)}%"><i style="height:${x.n ? Math.round(x.ok / x.n * 100) : 0}%"></i></div><span>${esc(x.d)}</span></div>`).join('')}</div><p class="sub" style="margin:6px 0 0">막대 전체는 푼 문제, 색이 진한 부분은 맞힌 문제입니다.</p></div>
   <div class="card"><h2>학년별 정답률</h2>${s.byGrade.length ? s.byGrade.map((g) => `<div class="gbar"><b style="width:34px">${esc(g.grade)}</b><div class="t"><i style="width:${pct(g.ok, g.n)}%"></i></div><span>${pct(g.ok, g.n)}% (${g.ok}/${g.n})</span></div>`).join('') : '<p class="sub">아직 푼 문제가 없습니다.</p>'}</div>
-  ${guest ? '' : `<div class="card"><h2>약한 단원</h2>${s.weak.length ? s.weak.map((w) => `<div class="gbar"><b style="flex:1">${esc(w.unit)}</b><span>${pct(w.ok, w.n)}% (${w.ok}/${w.n})</span></div>`).join('') + '<p class="sub" style="margin:6px 0 0">3문제 이상 푼 대단원 중 정답률이 낮은 순서입니다.</p>' : '<p class="sub">3문제 이상 푼 단원이 생기면 표시됩니다.</p>'}</div>`}${navBar('more')}`);
+  ${guest ? '' : `<div class="card"><h2>약한 단원</h2>${s.weak.length ? s.weak.map((w) => `<div class="gbar"><b style="flex:1">${esc(w.unit)}</b><span>${pct(w.ok, w.n)}% (${w.ok}/${w.n})</span></div>`).join('') + '<p class="sub" style="margin:6px 0 0">3문제 이상 푼 대단원 중 정답률이 낮은 순서입니다.</p>' : '<p class="sub">3문제 이상 푼 단원이 생기면 표시됩니다.</p>'}</div>`}${navBar('home')}`);
   bindNav(); $('#bk').onclick = () => loadMe();
 }
 async function renderNotices() {
   const list = await api('notices');
   app(`${subTop('공지사항')}
-  ${list.map((n) => `<div class="card"><div class="sub">${n.pinned ? '<span class="chip">고정</span> ' : ''}<span style="white-space:nowrap">${ymd(n.t)}</span></div><h2 style="margin:6px 0">${esc(n.title)}</h2><div style="white-space:pre-wrap;line-height:1.65">${esc(n.body)}</div></div>`).join('') || '<div class="card sub">등록된 공지가 없습니다.</div>'}${navBar('more')}`);
+  ${list.map((n) => `<div class="card"><div class="sub">${n.pinned ? '<span class="chip">고정</span> ' : ''}<span style="white-space:nowrap">${ymd(n.t)}</span></div><h2 style="margin:6px 0">${esc(n.title)}</h2><div style="white-space:pre-wrap;line-height:1.65">${esc(n.body)}</div></div>`).join('') || '<div class="card sub">등록된 공지가 없습니다.</div>'}${navBar('home')}`);
   bindNav(); $('#bk').onclick = () => loadMe();
 }
 function renderGuide() {
@@ -1166,7 +1184,7 @@ function renderGuide() {
   <li>맞히면 난이도×10점, 오답을 제출하면 난이도×5점이 감점됩니다. 시간 초과는 감점이 없습니다.</li>
   <li>랭킹전은 포인트 대신 순위만 있습니다.</li>
   <li>시즌이 끝나면 상위 학생에게 상품 이벤트가 있습니다.</li></ul></div>
-  <div class="card"><h2>오답노트</h2><ul class="rules"><li>결과 화면이나 내 기록에서 “오답노트에 담기”를 누르면 모아 두고, 분류 이름과 메모를 적을 수 있습니다.</li></ul></div>${navBar('more')}`);
+  <div class="card"><h2>오답노트</h2><ul class="rules"><li>결과 화면이나 내 기록에서 “오답노트에 담기”를 누르면 모아 두고, 분류 이름과 메모를 적을 수 있습니다.</li></ul></div>${navBar('home')}`);
   bindNav(); $('#bk').onclick = () => loadMe();
 }
 async function renderHistory() {
@@ -1175,7 +1193,7 @@ async function renderHistory() {
   ${h.map((x) => `<div class="card"><div class="sub">${esc(x.grade)} · ${new Date(x.t).toLocaleString('ko-KR')} · <b class="${x.correct ? 'ok' : 'bad'}">${x.correct ? '정답 +' + x.reward : x.timeout ? '시간초과' : '오답'}</b></div>
   ${probHtml(x)}
   <p>내 답: ${esc(x.myAnswer || '-')} / 정답: <b>${esc(fa(x.answer))}</b></p>
-  ${x.explImage ? `<div class="wm"><img class="eimg" src="${esc(x.explImage)}" alt=""></div>` : ''}${x.explanation ? `<div class="expl">${esc(dm(x.explanation))}</div>` : ''}${x.extra ? `<div class="expl">${esc(dm(x.extra))}</div>` : ''}${x.pid ? `<button class="nbh" data-p="${esc(x.pid)}">오답노트에 담기</button>` : ''}</div>`).join('') || '<div class="card sub">아직 푼 문제가 없습니다.</div>'}${navBar('more')}`);
+  ${x.explImage ? `<div class="wm"><img class="eimg" src="${esc(x.explImage)}" alt=""></div>` : ''}${x.explanation ? `<div class="expl">${esc(dm(x.explanation))}</div>` : ''}${x.extra ? `<div class="expl">${esc(dm(x.extra))}</div>` : ''}${x.pid ? `<button class="nbh" data-p="${esc(x.pid)}">오답노트에 담기</button>` : ''}</div>`).join('') || '<div class="card sub">아직 푼 문제가 없습니다.</div>'}${navBar('home')}`);
   bindNav(); $('#bk').onclick = () => loadMe();
   document.querySelectorAll('.nbh').forEach((b) => b.onclick = async () => { try { await api('note/add', { pid: b.dataset.p }); b.textContent = '담았습니다'; b.disabled = true; } catch (e) { alert(e.message); } });
 }
@@ -1260,7 +1278,7 @@ const avatar = (name, cls) => `<span class="av ${cls || ''}">${esc((name || '?')
 async function renderTeam(notice) {
   const head = '<div class="top"><img class="logo" src="logo.png" alt="캐슬수학"></div>';
   let t, f;
-  try { [t, f] = await Promise.all([api('team/info'), api('friend/list')]); } catch (e) { return renderHome(e.message); }
+  try { [t, f] = await Promise.all([api('team/info'), api('friend/list')]); } catch (e) { return renderHunt(e.message); }
   const tm = t.team, s = t.season;
   const memberIds = tm ? tm.members.map((m) => m.id) : [];
   const canInvite = tm && tm.leader && tm.members.length < 4;
@@ -1307,16 +1325,16 @@ async function renderTeam(notice) {
 // ---------- 내 친구 (더보기) ----------
 async function renderFriends(notice) {
   let f;
-  try { f = await api('friend/list'); } catch (e) { return renderHome(e.message); }
+  try { f = await api('friend/list'); } catch (e) { return renderHunt(e.message); }
   const fr = f.friends, inc = f.incoming, out = f.outgoing;
-  app(`${subTop('내 친구')}<div class="err" id="ferr">${esc(notice || '')}</div>
+  app(`<div class="top"><img class="logo" src="logo.png" alt="캐슬수학"></div><h1 style="font-size:22px;margin:4px 0 12px">내 친구</h1><div class="err" id="ferr">${esc(notice || '')}</div>
   ${inc.length ? `<div class="card"><h2 style="margin-bottom:6px">받은 친구 신청 <span class="sub" style="font-weight:600">${inc.length}건</span></h2>${inc.map((x) => `<div class="row" style="margin-top:8px;flex-wrap:nowrap">${avatar(x.name)}<span style="flex:1">${esc(x.name)}<span class="gchip">${esc(x.grade || '')}</span></span><button class="primary facc" data-id="${esc(x.id)}" style="padding:6px 14px">수락</button><button class="fdec" data-id="${esc(x.id)}" style="padding:6px 14px">거절</button></div>`).join('')}</div>` : ''}
   <div class="card"><h2 style="margin-bottom:6px">내 친구 <span class="sub" style="font-weight:600">${fr.length}명</span></h2>
     ${fr.length ? fr.map((x) => `<div class="rk-row">${avatar(x.name)}<div class="rk-nm">${esc(x.name)}${x.grade ? `<span class="gchip">${esc(x.grade)}</span>` : ''}</div><button class="frm" data-id="${esc(x.id)}" style="padding:4px 10px">삭제</button></div>`).join('') : '<p class="sub" style="margin:0">아직 등록한 친구가 없습니다.</p>'}
     ${out.length ? `<p class="sub" style="margin:12px 0 4px">보낸 신청 (상대가 수락하면 친구가 됩니다)</p>${out.map((x) => `<div class="row" style="flex-wrap:nowrap;margin-bottom:4px">${avatar(x.name, 'wait')}<span style="flex:1">${esc(x.name)}</span><button class="frm" data-id="${esc(x.id)}" style="padding:4px 10px">취소</button></div>`).join('')}` : ''}</div>
   <div class="card"><label style="margin-top:0">친구 신청 (상대의 아이디)</label><div class="row" style="flex-wrap:nowrap"><input id="fid" placeholder="예: 해원고홍길동" autocomplete="off" autocapitalize="none"><button class="primary" id="fadd" style="flex:0 0 auto;width:auto;padding:0 18px">신청</button></div>
-    <p class="sub" style="margin:8px 0 0">친구는 팀을 꾸릴 때 바로 초대할 수 있습니다. 팀 초대는 친구가 아니어도 아이디로 보낼 수 있습니다.</p></div>${navBar('more')}`);
-  bindNav(); $('#bk').onclick = () => loadMe();
+    <p class="sub" style="margin:8px 0 0">친구는 팀을 꾸릴 때 바로 초대할 수 있습니다. 팀 초대는 친구가 아니어도 아이디로 보낼 수 있습니다.</p></div>${navBar('home')}`);
+  bindNav();
   const go = async (path, body) => { try { await api(path, body || {}); renderFriends(); } catch (e) { renderFriends(e.message); } };
   if ($('#fadd')) $('#fadd').onclick = () => go('friend/add', { id: $('#fid').value });
   const on = (sel, fn) => document.querySelectorAll(sel).forEach((b) => b.onclick = () => fn(b));
@@ -1328,7 +1346,7 @@ async function renderFriends(notice) {
 let seasonGrade = '';
 async function renderSeason(notice) {
   let d;
-  try { d = await api('season/info', seasonGrade ? { grade: seasonGrade } : {}); if (d.pickGrades) seasonGrade = d.selGrade; else seasonGrade = ''; } catch (e) { return renderHome(e.message); }
+  try { d = await api('season/info', seasonGrade ? { grade: seasonGrade } : {}); if (d.pickGrades) seasonGrade = d.selGrade; else seasonGrade = ''; } catch (e) { return renderHunt(e.message); }
   const s = d.season;
   const head2 = `<div class="top"><img class="logo" src="logo.png" alt="캐슬수학"><span class="chip">시즌 랭킹전</span></div>`;
   if (!s) {
