@@ -662,6 +662,64 @@ input:focus,textarea:focus,select:focus{border-color:#C8161D;box-shadow:0 0 0 3p
   #app{max-width:500px;padding-top:24px}
   .hero{min-height:180px}
 }
+
+
+/* PREMIUM BACKGROUND REFINEMENT
+   Warmer porcelain canvas, cleaner white surfaces, barely-there tonal depth.
+*/
+:root{
+  --bg:#F2F0EC;
+  --bg2:#F2F0EC;
+  --card:#FFFEFC;
+  --line:#E5E0D9;
+  --tint:#F8EBEA;
+  --shadow:0 1px 2px rgba(25,22,20,.018),0 8px 24px rgba(25,22,20,.035);
+}
+html{
+  background:#F2F0EC;
+}
+body{
+  background:
+    radial-gradient(ellipse at 50% -12%,rgba(255,255,255,.92) 0%,rgba(255,255,255,0) 54%),
+    #F2F0EC;
+}
+#app{
+  background:transparent;
+}
+.card{
+  background:#FFFEFC;
+  border-color:rgba(42,35,30,.065);
+  box-shadow:0 1px 2px rgba(42,35,30,.018),0 7px 22px rgba(42,35,30,.028);
+}
+.card.keep{
+  background:linear-gradient(135deg,#FFFEFC 0%,#FAF8F4 100%);
+}
+.ptc{
+  background:#FFFEFC;
+  border-color:#E5E0D9;
+  box-shadow:0 4px 18px rgba(42,35,30,.03);
+}
+.grades button{
+  background:#F8F6F2;
+  border-color:#E9E4DD;
+}
+.learn .bar,.bar{
+  background:#E8E4DE;
+}
+.stat3>div,.rk-row:nth-child(-n+3){
+  background:#F8F6F2;
+  border-color:#ECE7E0;
+}
+.pnote,.expl{
+  background:#F8F6F2;
+}
+.nav{
+  background:rgba(250,248,244,.94);
+  border-top-color:rgba(42,35,30,.08);
+}
+@media(prefers-reduced-motion:no-preference){
+  .card,.grades button,.cta,button{transition:background-color .16s ease,border-color .16s ease,box-shadow .16s ease,transform .12s ease}
+}
 </style>
 </head>
 <body>
