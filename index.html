@@ -1237,6 +1237,21 @@ function head() {
   ${fire}`;
 }
 function bindHead() { $('#my').onclick = () => renderMy(); bindNav(); }
+const HICO = {
+    coin: '<svg class="coin" viewBox="0 0 48 48"><path d="M24 36v4.6a9.6 3.9 0 0 0 19.2 0v-4.6z" fill="#CBA35A" stroke="#8F7440" stroke-width=".8" stroke-linejoin="round"/><ellipse cx="33.6" cy="36" rx="9.6" ry="3.9" fill="#F4E0AE" stroke="#A88A4E" stroke-width="1"/><ellipse cx="33.6" cy="36" rx="7" ry="2.7" fill="none" stroke="#FFF3CF" stroke-width=".6" opacity=".7"/><path d="M24 31.4v4.6a9.6 3.9 0 0 0 19.2 0v-4.6z" fill="#CBA35A" stroke="#8F7440" stroke-width=".8" stroke-linejoin="round"/><ellipse cx="33.6" cy="31.4" rx="9.6" ry="3.9" fill="#F4E0AE" stroke="#A88A4E" stroke-width="1"/><ellipse cx="33.6" cy="31.4" rx="7" ry="2.7" fill="none" stroke="#FFF3CF" stroke-width=".6" opacity=".7"/><path d="M24 26.8v4.6a9.6 3.9 0 0 0 19.2 0v-4.6z" fill="#CBA35A" stroke="#8F7440" stroke-width=".8" stroke-linejoin="round"/><ellipse cx="33.6" cy="26.8" rx="9.6" ry="3.9" fill="#F4E0AE" stroke="#A88A4E" stroke-width="1"/><ellipse cx="33.6" cy="26.8" rx="7" ry="2.7" fill="none" stroke="#FFF3CF" stroke-width=".6" opacity=".7"/><path d="M24 22.2v4.6a9.6 3.9 0 0 0 19.2 0v-4.6z" fill="#CBA35A" stroke="#8F7440" stroke-width=".8" stroke-linejoin="round"/><ellipse cx="33.6" cy="22.2" rx="9.6" ry="3.9" fill="#F4E0AE" stroke="#A88A4E" stroke-width="1"/><ellipse cx="33.6" cy="22.2" rx="7" ry="2.7" fill="none" stroke="#FFF3CF" stroke-width=".6" opacity=".7"/><path d="M5 41v4.6a9.6 3.9 0 0 0 19.2 0v-4.6z" fill="#CBA35A" stroke="#8F7440" stroke-width=".8" stroke-linejoin="round"/><ellipse cx="14.6" cy="41" rx="9.6" ry="3.9" fill="#F4E0AE" stroke="#A88A4E" stroke-width="1"/><ellipse cx="14.6" cy="41" rx="7" ry="2.7" fill="none" stroke="#FFF3CF" stroke-width=".6" opacity=".7"/><path d="M5 36.4v4.6a9.6 3.9 0 0 0 19.2 0v-4.6z" fill="#CBA35A" stroke="#8F7440" stroke-width=".8" stroke-linejoin="round"/><ellipse cx="14.6" cy="36.4" rx="9.6" ry="3.9" fill="#F4E0AE" stroke="#A88A4E" stroke-width="1"/><ellipse cx="14.6" cy="36.4" rx="7" ry="2.7" fill="none" stroke="#FFF3CF" stroke-width=".6" opacity=".7"/><path d="M5 31.8v4.6a9.6 3.9 0 0 0 19.2 0v-4.6z" fill="#CBA35A" stroke="#8F7440" stroke-width=".8" stroke-linejoin="round"/><ellipse cx="14.6" cy="31.8" rx="9.6" ry="3.9" fill="#F4E0AE" stroke="#A88A4E" stroke-width="1"/><ellipse cx="14.6" cy="31.8" rx="7" ry="2.7" fill="none" stroke="#FFF3CF" stroke-width=".6" opacity=".7"/><path d="M5 27.2v4.6a9.6 3.9 0 0 0 19.2 0v-4.6z" fill="#CBA35A" stroke="#8F7440" stroke-width=".8" stroke-linejoin="round"/><ellipse cx="14.6" cy="27.2" rx="9.6" ry="3.9" fill="#F4E0AE" stroke="#A88A4E" stroke-width="1"/><ellipse cx="14.6" cy="27.2" rx="7" ry="2.7" fill="none" stroke="#FFF3CF" stroke-width=".6" opacity=".7"/><path d="M5 22.6v4.6a9.6 3.9 0 0 0 19.2 0v-4.6z" fill="#CBA35A" stroke="#8F7440" stroke-width=".8" stroke-linejoin="round"/><ellipse cx="14.6" cy="22.6" rx="9.6" ry="3.9" fill="#F4E0AE" stroke="#A88A4E" stroke-width="1"/><ellipse cx="14.6" cy="22.6" rx="7" ry="2.7" fill="none" stroke="#FFF3CF" stroke-width=".6" opacity=".7"/></svg>',
+    target: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><circle cx="12" cy="12" r="8.5"/><circle cx="12" cy="12" r="4.5"/><circle cx="12" cy="12" r="1" fill="currentColor"/></svg>',
+    cal: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="5.5" width="16" height="14.5" rx="2.5"/><path d="M4 10h16M8.5 3.5v4M15.5 3.5v4"/></svg>',
+    crown: '<svg viewBox="0 0 24 24" fill="currentColor"><path d="M4 17.500 3 8l5 4 4-7 4 7 5-4-1 9.500z"/><rect x="5" y="19" width="14" height="2" rx="1"/></svg>'
+  };
+
+// 홈·사냥·포인트 내역에서 같은 모양으로 쓰는 총 포인트 카드
+function ptcCard(full) {
+  const tn = me.todayN || 0, rate = tn ? Math.round(100 * me.todayCount / tn) : null, st = me.streak || 0;
+  return `<div class="card ptc"><div class="p1"${full ? ' id="ptgo"' : ''}>${HICO.coin}<div><div class="lb">총 포인트</div><div class="big">${fmt(me.points)}<em>P</em></div></div>${full ? '<span class="ch">›</span>' : ''}</div>${full ? `
+    <div class="p2"><div>${HICO.target}<div><div class="t">정답률</div><div class="v">${rate === null ? '-' : rate + '<u>%</u>'}</div></div></div>
+      <div>${HICO.cal}<div><div class="t">연속 학습</div><div class="v">${st ? st + '<u>일</u>' : '-'}</div></div></div>
+      <div>${HICO.crown}<div class="enc">${st >= 2 ? '꾸준함이<br>성과가 됩니다.' : '첫 문제부터<br>시작하십시오.'}</div></div></div>` : ''}</div>`;
+}
 // 홈: 인사, 내 현황, 이용 안내, 공지사항
 const EMOJIS = ['🙂', '😎', '🤓', '😄', '🥳', '🤩', '😺', '🐶', '🐱', '🐰', '🦊', '🐻', '🐼', '🐨', '🐯', '🦁', '🐸', '🐵', '🐧', '🐥', '🦄', '🐲', '🐙', '🦋', '🐢', '🐬', '🦉', '🐺', '🦖', '🐳',
   '🔥', '⚡', '🌟', '🌈', '🚀', '🎯', '🏆', '👑', '💎', '📚', '✏️', '🧠', '🎮', '⚽', '🏀', '🎵', '🍀', '🌸', '🍎', '🍕', '🍩', '🍉', '☀️', '🌙', '❄️', '🌊', '🛡️', '⚔️', '🏹', '🧩'];
@@ -1250,10 +1265,7 @@ async function renderHome() {
   <div class="hero"><div class="deco"><i></i><i></i><i></i></div>
     <div class="hi">오늘도 캐슬수학과 함께</div><h1>안녕하세요!<br>${esc(me.name)}${esc(me.title || '님')}</h1><div class="go">더 높은 곳을 향해, 오늘도 한 걸음 나아가세요.</div></div>
   ${fire}
-  <div class="card ptc"><div class="p1" id="ptgo"><div><div class="lb">총 포인트</div><div class="big">${fmt(me.points)}<em>P</em></div></div><span class="ch">›</span></div>
-    <div class="p2"><div><div><div class="t">정답률</div><div class="v">${rate === null ? '-' : rate + '<u>%</u>'}</div></div></div>
-      <div><div><div class="t">연속 학습</div><div class="v">${st ? st + '<u>일</u>' : '-'}</div></div></div>
-      <div><div class="enc">${st >= 2 ? '꾸준함이<br>성과가 됩니다.' : '첫 문제부터<br>시작하십시오.'}</div></div></div></div>
+  ${ptcCard(true)}
   <h2 class="hsec">이용 안내</h2>${foldCards(guideCards())}
   <h2 class="hsec">공지사항</h2>${noticeCards(list)}
   ${navBar('home')}`);
@@ -1286,18 +1298,10 @@ function renderHunt(notice) {
   const m = me.mult, fire = m.value > 1 ? `<div class="banner">🔥 포인트 2배 적용 중${m.morning ? ' · 주말·공휴일 아침 타임' : ''}${m.daily ? ` · 오늘 ${c.DAILY_BONUS_COUNT}문제 맞힘` : ''}</div>` : '';
   const tn = me.todayN || 0, rate = tn ? Math.round(100 * me.todayCount / tn) : null, st = me.streak || 0;
   const R = 33, C = 2 * Math.PI * R, off = C * (1 - cnt / c.DAILY_BONUS_COUNT);
-  const ico = {
-    coin: '<svg class="coin" viewBox="0 0 48 48"><path d="M24 36v4.6a9.6 3.9 0 0 0 19.2 0v-4.6z" fill="#CBA35A" stroke="#8F7440" stroke-width=".8" stroke-linejoin="round"/><ellipse cx="33.6" cy="36" rx="9.6" ry="3.9" fill="#F4E0AE" stroke="#A88A4E" stroke-width="1"/><ellipse cx="33.6" cy="36" rx="7" ry="2.7" fill="none" stroke="#FFF3CF" stroke-width=".6" opacity=".7"/><path d="M24 31.4v4.6a9.6 3.9 0 0 0 19.2 0v-4.6z" fill="#CBA35A" stroke="#8F7440" stroke-width=".8" stroke-linejoin="round"/><ellipse cx="33.6" cy="31.4" rx="9.6" ry="3.9" fill="#F4E0AE" stroke="#A88A4E" stroke-width="1"/><ellipse cx="33.6" cy="31.4" rx="7" ry="2.7" fill="none" stroke="#FFF3CF" stroke-width=".6" opacity=".7"/><path d="M24 26.8v4.6a9.6 3.9 0 0 0 19.2 0v-4.6z" fill="#CBA35A" stroke="#8F7440" stroke-width=".8" stroke-linejoin="round"/><ellipse cx="33.6" cy="26.8" rx="9.6" ry="3.9" fill="#F4E0AE" stroke="#A88A4E" stroke-width="1"/><ellipse cx="33.6" cy="26.8" rx="7" ry="2.7" fill="none" stroke="#FFF3CF" stroke-width=".6" opacity=".7"/><path d="M24 22.2v4.6a9.6 3.9 0 0 0 19.2 0v-4.6z" fill="#CBA35A" stroke="#8F7440" stroke-width=".8" stroke-linejoin="round"/><ellipse cx="33.6" cy="22.2" rx="9.6" ry="3.9" fill="#F4E0AE" stroke="#A88A4E" stroke-width="1"/><ellipse cx="33.6" cy="22.2" rx="7" ry="2.7" fill="none" stroke="#FFF3CF" stroke-width=".6" opacity=".7"/><path d="M5 41v4.6a9.6 3.9 0 0 0 19.2 0v-4.6z" fill="#CBA35A" stroke="#8F7440" stroke-width=".8" stroke-linejoin="round"/><ellipse cx="14.6" cy="41" rx="9.6" ry="3.9" fill="#F4E0AE" stroke="#A88A4E" stroke-width="1"/><ellipse cx="14.6" cy="41" rx="7" ry="2.7" fill="none" stroke="#FFF3CF" stroke-width=".6" opacity=".7"/><path d="M5 36.4v4.6a9.6 3.9 0 0 0 19.2 0v-4.6z" fill="#CBA35A" stroke="#8F7440" stroke-width=".8" stroke-linejoin="round"/><ellipse cx="14.6" cy="36.4" rx="9.6" ry="3.9" fill="#F4E0AE" stroke="#A88A4E" stroke-width="1"/><ellipse cx="14.6" cy="36.4" rx="7" ry="2.7" fill="none" stroke="#FFF3CF" stroke-width=".6" opacity=".7"/><path d="M5 31.8v4.6a9.6 3.9 0 0 0 19.2 0v-4.6z" fill="#CBA35A" stroke="#8F7440" stroke-width=".8" stroke-linejoin="round"/><ellipse cx="14.6" cy="31.8" rx="9.6" ry="3.9" fill="#F4E0AE" stroke="#A88A4E" stroke-width="1"/><ellipse cx="14.6" cy="31.8" rx="7" ry="2.7" fill="none" stroke="#FFF3CF" stroke-width=".6" opacity=".7"/><path d="M5 27.2v4.6a9.6 3.9 0 0 0 19.2 0v-4.6z" fill="#CBA35A" stroke="#8F7440" stroke-width=".8" stroke-linejoin="round"/><ellipse cx="14.6" cy="27.2" rx="9.6" ry="3.9" fill="#F4E0AE" stroke="#A88A4E" stroke-width="1"/><ellipse cx="14.6" cy="27.2" rx="7" ry="2.7" fill="none" stroke="#FFF3CF" stroke-width=".6" opacity=".7"/><path d="M5 22.6v4.6a9.6 3.9 0 0 0 19.2 0v-4.6z" fill="#CBA35A" stroke="#8F7440" stroke-width=".8" stroke-linejoin="round"/><ellipse cx="14.6" cy="22.6" rx="9.6" ry="3.9" fill="#F4E0AE" stroke="#A88A4E" stroke-width="1"/><ellipse cx="14.6" cy="22.6" rx="7" ry="2.7" fill="none" stroke="#FFF3CF" stroke-width=".6" opacity=".7"/></svg>',
-    target: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><circle cx="12" cy="12" r="8.5"/><circle cx="12" cy="12" r="4.5"/><circle cx="12" cy="12" r="1" fill="currentColor"/></svg>',
-    cal: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="5.5" width="16" height="14.5" rx="2.5"/><path d="M4 10h16M8.5 3.5v4M15.5 3.5v4"/></svg>',
-    crown: '<svg viewBox="0 0 24 24" fill="currentColor"><path d="M4 17.500 3 8l5 4 4-7 4 7 5-4-1 9.500z"/><rect x="5" y="19" width="14" height="2" rx="1"/></svg>'
-  };
+  const ico = HICO;
   app(`<div class="top"><img class="logo" src="logo_dark.png" alt="캐슬수학"><span style="display:flex;gap:4px;align-items:center">${myChip()}</span></div>
   ${fire}
-  <div class="card ptc"><div class="p1" id="ptgo">${ico.coin}<div><div class="lb">총 포인트</div><div class="big">${fmt(me.points)}<em>P</em></div></div><span class="ch">›</span></div>
-    <div class="p2"><div>${ico.target}<div><div class="t">정답률</div><div class="v">${rate === null ? '-' : rate + '<u>%</u>'}</div></div></div>
-      <div>${ico.cal}<div><div class="t">연속 학습</div><div class="v">${st ? st + '<u>일</u>' : '-'}</div></div></div>
-      <div>${ico.crown}<div class="enc">${st >= 2 ? '꾸준함이<br>성과가 됩니다.' : '첫 문제부터<br>시작하십시오.'}</div></div></div></div>
+  ${ptcCard(true)}
   <div class="card"><div class="sec"><h2>학년 선택</h2><span class="sub">학년을 고르고 문제를 시작하십시오.</span></div>
     <div class="grades">${me.grades.map((g) => `<button data-g="${g}" class="${g === pickedGrade ? 'on' : ''}">${g}</button>`).join('')}</div>
     <div class="err" id="err">${esc(notice || '')}</div></div>
@@ -1482,7 +1486,7 @@ async function renderPoints(from) {
   try { list = await api('points/log'); } catch (e) { return renderHunt(e.message); }
   const fmtT = (t) => { const d = new Date(t); return `${d.getMonth() + 1}/${d.getDate()} ${String(d.getHours()).padStart(2, '0')}:${String(d.getMinutes()).padStart(2, '0')}`; };
   app(`${subTop('포인트 내역', '', back[0])}
-  <div class="card ptc"><div class="p1"><div><div class="lb">총 포인트</div><div class="big">${fmt(me.points)}<em>P</em></div></div></div></div>
+  ${ptcCard(false)}
   <div class="card"><h2 style="margin-bottom:4px">적립·사용 내역 <span class="sub" style="font-weight:600">최근 ${list.length}건</span></h2>
   ${list.map((x) => `<div class="rk-row"><div class="rk-nm" style="flex:1;min-width:0"><div>${esc(x.reason)}</div><div class="sub">${fmtT(x.t)} · 잔액 ${fmt(x.balance)}P</div></div><div class="rk-pt" style="color:${x.delta >= 0 ? 'var(--main)' : 'var(--sub)'}">${x.delta >= 0 ? '+' : '−'}${fmt(Math.abs(x.delta))}P</div></div>`).join('') || '<p class="sub">아직 내역이 없습니다.</p>'}</div>${navBar('home')}`);
   bindNav(); $('#bk').onclick = back[1];
