@@ -546,7 +546,7 @@ function renderMore() {
   const f = { hist: renderHistory, stats: renderStats, friends: () => renderFriends(), notice: renderNotices, guide: renderGuide, roster: renderRoster, admin: () => switchTo('admin'), out: logout };
   o.querySelectorAll('.mrow').forEach((b) => b.onclick = () => { closeMore(); f[b.dataset.m](); });
 }
-const subTop = (t, extra) => `<div class="top"><button class="back" id="bk">${IC.back}홈</button>${extra || ''}</div><h1 style="font-size:22px;margin:4px 0 12px">${t}</h1>`;
+const subTop = (t, extra) => `<div class="top"><button class="back" id="bk">${IC.back}사냥</button>${extra || ''}</div><h1 style="font-size:22px;margin:4px 0 12px">${t}</h1>`;
 async function renderStats() {
   const s = await api('stats'), pct = (a, n) => n ? Math.round(100 * a / n) : 0, mx = Math.max(1, ...s.days.map((x) => x.n));
   app(`${subTop('내 통계')}
@@ -799,7 +799,7 @@ function rosterTable(list, now, edit) {
 async function renderRoster() {
   let d;
   try { d = await api('roster'); } catch (e) { alert(e.message); return loadMe(); }
-  app(`<div class="top"><button class="back" id="bk">${IC.back}홈</button><span class="chip">담당 학생 현황</span></div>
+  app(`<div class="top"><button class="back" id="bk">${IC.back}사냥</button><span class="chip">담당 학생 현황</span></div>
   <div class="card"><h2>${esc(d.name)}${esc(me.title || '선생님')} 반</h2>${rosterTable(d.students, d.serverNow, false)}</div>`, true);
   $('#bk').onclick = () => loadMe();
 }
