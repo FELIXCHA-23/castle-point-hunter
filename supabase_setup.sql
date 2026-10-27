@@ -1285,6 +1285,31 @@ begin
                             'extra', p.extra, 'explImage', p.expl_image, 'level', p.level);
 end $$;
 
+-- 체험 모드 예시: 김송현 학생의 캐치유테스트 오답을 그대로 보여 준다 (이름은 내려주지 않음, 그 학생이 틀린 문항만 열림)
+create or replace function castle.guest_sample_sid() returns text language sql stable as $$
+  select s.id from castle.students s join castle.catchu_wrong w on w.sid = s.id where s.name = '김송현' order by w.round_id limit 1 $$;
+
+create or replace function castle.r_guest_catchu(tok text) returns jsonb language plpgsql as $$
+declare v_sid text := castle.guest_sample_sid();
+begin
+  perform castle.auth(tok, 'guest');
+  return (select coalesce(jsonb_agg(jsonb_build_object('id', r.id, 'title', r.title, 'date', r.date, 'grade', r.grade, 'scope', r.scope, 'total', r.total,
+            'wrong', w.wrong, 'retestDate', null, 'stillWrong', null, 'have', to_jsonb(castle.catchu_have(r.id))) order by r.date desc nulls last, r.title), '[]')
+          from castle.catchu_wrong w join castle.catchu_rounds r on r.id = w.round_id where w.sid = v_sid);
+end $$;
+
+create or replace function castle.r_guest_catchu_item(tok text, b jsonb) returns jsonb language plpgsql as $$
+declare v_sid text := castle.guest_sample_sid(); v_no int := (b->>'no')::int; r castle.catchu_items;
+begin
+  perform castle.auth(tok, 'guest');
+  if not exists (select 1 from castle.catchu_wrong w where w.round_id = b->>'roundId' and w.sid = v_sid and w.wrong @> to_jsonb(v_no)) then
+    perform castle.fail(404, '해당 문항이 없습니다.');
+  end if;
+  select * into r from castle.catchu_items where round_id = b->>'roundId' and no = v_no;
+  if not found then return jsonb_build_object('prob', '', 'expl', ''); end if;
+  return jsonb_build_object('prob', r.prob, 'expl', r.expl);
+end $$;
+
 create or replace function castle.dispatch(p_path text, tok text, b jsonb) returns jsonb language plpgsql as $$
 begin
   case p_path
@@ -1294,6 +1319,8 @@ begin
     when 'guest/problem' then return castle.r_guest_problem(tok, b);
     when 'guest/pool' then return castle.r_guest_pool(tok, b);
     when 'guest/check' then return castle.r_guest_check(tok, b);
+    when 'guest/catchu' then return castle.r_guest_catchu(tok);
+    when 'guest/catchu_item' then return castle.r_guest_catchu_item(tok, b);
     when 'reset/request' then return castle.r_reset_request(b);
     when 'admin/resets' then return castle.r_admin_resets(tok);
     when 'logout' then return castle.r_logout(tok);
