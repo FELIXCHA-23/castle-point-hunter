@@ -4,6 +4,7 @@
 <meta charset="utf-8">
 <meta name="color-scheme" content="light">
 <meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="theme-color" content="#0B0C0F">
 <title>캐슬 포인트 헌터스</title>
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/variable/pretendardvariable-dynamic-subset.min.css">
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/KaTeX/0.16.9/katex.min.css">
@@ -753,6 +754,216 @@ body{
 .gd summary::after{content:"";width:9px;height:9px;border-right:2px solid var(--sub);border-bottom:2px solid var(--sub);transform:rotate(45deg);margin:-4px 4px 0 0;transition:transform .18s}
 .gd[open] summary::after{transform:rotate(-135deg);margin-top:4px}
 .gd[open] summary{margin-bottom:6px}
+/* =========================================================
+   KASTLE MATH · MIDNIGHT THEME
+   obsidian canvas / ivory type / signal red / champagne gold
+   ========================================================= */
+:root{
+  --bg:#0B0C0F;
+  --bg2:#0B0C0F;
+  --card:#15171C;
+  --card2:#1B1D24;
+  --ink:#F3F1EC;
+  --sub:#9C9DA6;
+  --line:rgba(255,255,255,.085);
+  --main:#E1262D;
+  --main-ink:#FFFFFF;
+  --tint:rgba(225,38,45,.14);
+  --gold:#CBAA6C;
+  --ok:#4FBF8E;
+  --bad:#FF6168;
+  --fire:#FF6168;
+  --shadow:0 1px 0 rgba(255,255,255,.04) inset,0 14px 34px rgba(0,0,0,.42);
+  --glass:rgba(11,12,15,.86);
+  color-scheme:dark;
+}
+html{color-scheme:dark;background:#0B0C0F}
+body{
+  background:
+    radial-gradient(ellipse 120% 46% at 50% -8%,rgba(225,38,45,.13) 0%,rgba(225,38,45,0) 62%),
+    radial-gradient(ellipse 90% 40% at 100% 38%,rgba(203,170,108,.045) 0%,rgba(203,170,108,0) 60%),
+    #0B0C0F;
+  background-attachment:fixed;
+  color:var(--ink);
+}
+::selection{background:rgba(225,38,45,.4);color:#fff}
+h1,h2,h3{color:var(--ink)}
+.sub{color:var(--sub)}
+.back{color:#A8A9B1!important}
+
+/* ---- surfaces ---- */
+.card{
+  background:linear-gradient(180deg,#181A20 0%,#14161B 100%);
+  border:1px solid rgba(255,255,255,.07);
+  box-shadow:0 1px 0 rgba(255,255,255,.045) inset,0 14px 34px rgba(0,0,0,.40);
+}
+.card.keep{background:linear-gradient(135deg,#181A20,#13151A)}
+.ptc{background:linear-gradient(180deg,#1A1C23 0%,#14161B 100%);border-color:rgba(255,255,255,.08);box-shadow:0 1px 0 rgba(255,255,255,.05) inset,0 16px 38px rgba(0,0,0,.45)}
+.ptc .p1 .big,.card.ptc .p1 .big{color:#fff}
+.ptc .p1 .big em{color:var(--gold)}
+.ptc .p1 .ch{color:#5E6069}
+.ptc .p2{border-top-color:rgba(255,255,255,.08)}
+.ptc .p2>div+div{border-left-color:rgba(255,255,255,.08)}
+.ptc .p2 svg{color:var(--gold)}
+.ptc .p2 .v{color:#fff}
+.card.ptc .p1 .lb{color:#B3B4BC}
+.card.ptc .p2 .t{color:#9C9DA6}
+.card.ptc .p2 .enc{color:#9C9DA6}
+.ptc .p2 .v u,.card.ptc .p2 .v u{color:#8E8F98}
+.ptc .coin{filter:drop-shadow(0 3px 8px rgba(225,38,45,.35))}
+
+/* hero */
+.hero{
+  background:linear-gradient(118deg,#1D1F26 0%,#121317 62%,#1A1B20 100%);
+  border:1px solid rgba(255,255,255,.075);
+  box-shadow:0 1px 0 rgba(255,255,255,.06) inset,0 22px 48px rgba(0,0,0,.55);
+}
+.hero:before{background:radial-gradient(ellipse at 96% 6%,rgba(225,38,45,.30),transparent 46%),radial-gradient(ellipse at 4% 110%,rgba(203,170,108,.12),transparent 50%)}
+.hero:after{background:linear-gradient(132deg,transparent 0 26%,rgba(225,38,45,.95) 26% 37%,transparent 37% 47%,rgba(203,170,108,.22) 47% 59%,transparent 59%)}
+.hero .hi{color:var(--gold);letter-spacing:.04em}
+.hero h1{color:#fff}
+.hero .go{color:rgba(255,255,255,.6)}
+
+/* section heading / grades */
+.sec h2:before{box-shadow:0 0 10px rgba(225,38,45,.55)}
+.sec .sub{color:#8B8C95}
+.hsec{color:var(--ink);letter-spacing:-.04em}
+.grades button{background:#1B1D24;border-color:rgba(255,255,255,.07);color:#C9CAD1}
+.grades button.on{background:linear-gradient(180deg,rgba(225,38,45,.22),rgba(225,38,45,.12));border-color:rgba(225,38,45,.75);color:#fff;box-shadow:0 0 0 1px rgba(225,38,45,.25),0 6px 18px rgba(225,38,45,.18)}
+.learn .bar,.bar{background:rgba(255,255,255,.09)}
+.bar>div{background:linear-gradient(90deg,#B30F17,#F0434A);box-shadow:0 0 10px rgba(225,38,45,.45)}
+.ring b{color:#fff}
+.ring b small{color:#8E8F98}
+.learn .r2 .l1{color:#E6E4DF}
+.learn .r2 .l1 span:last-child{color:var(--gold)}
+.ring circle:first-child{stroke:rgba(255,255,255,.09)}
+
+/* buttons */
+button{background:#1B1D24;border-color:rgba(255,255,255,.09);color:var(--ink)}
+button:hover{background:#21232B}
+button.primary,.btn-big.primary{background:linear-gradient(180deg,#E8303A,#C21A22);border-color:#C21A22;color:#fff;box-shadow:0 8px 20px rgba(225,38,45,.25),0 1px 0 rgba(255,255,255,.22) inset}
+.primary:not(.cta){background:linear-gradient(180deg,#E8303A,#C21A22);border-color:#C21A22;color:#fff;box-shadow:0 6px 16px rgba(225,38,45,.22)}
+.primary:not(.cta):hover{background:linear-gradient(180deg,#F0383F,#CE1D25)}
+.cta,.primary.cta{background:linear-gradient(180deg,#EB323A 0%,#BD1820 100%);border-color:#C21A22;box-shadow:0 12px 28px rgba(225,38,45,.30),0 1px 0 rgba(255,255,255,.25) inset}
+.cta:hover,.primary:hover{background:linear-gradient(180deg,#F23B42 0%,#C91C24 100%)}
+button.soft{background:var(--tint);color:#FF7F85}
+button.danger{color:#FF6D73;background:rgba(255,97,104,.07);border-color:rgba(255,97,104,.28)}
+button:disabled{opacity:.4}
+.tquit{background:none;color:var(--sub)}
+.btnlink{background:#1B1D24;border-color:rgba(255,255,255,.09);color:var(--ink)}
+.btnlink.kk{background:#FEE500;border-color:#FEE500}
+.btnlink.ico svg{stroke:#F0434A}
+
+/* nav */
+.nav{background:rgba(12,13,16,.88);border-top:1px solid rgba(255,255,255,.07);box-shadow:0 -12px 34px rgba(0,0,0,.5);backdrop-filter:blur(22px) saturate(1.2);-webkit-backdrop-filter:blur(22px) saturate(1.2)}
+.nav button{background:none;border:0;color:#7E7F89}
+.nav button.on{color:#fff;box-shadow:inset 0 2px 0 var(--main)}
+.nav button.on svg{stroke:#FF5158;filter:drop-shadow(0 0 8px rgba(225,38,45,.55))}
+
+/* keep / chips / segments / tabs */
+.keep .ic{background:var(--tint);border-color:rgba(225,38,45,.25);color:#FF6168}
+.keep .tx b{color:var(--ink)}
+.keep .tx span{color:var(--sub)}
+.keep button{background:#1B1D24;border-color:rgba(255,255,255,.1);color:#CFD0D6}
+.chip,.gchip{background:rgba(255,255,255,.075);color:#B5B6BE}
+.tabs button,.seg button{background:#16181D;border-color:rgba(255,255,255,.08);color:#A9AAB2}
+.tabs button.on,.seg button.on{background:rgba(225,38,45,.18);border-color:rgba(225,38,45,.7);color:#fff;box-shadow:none}
+.banner,.pbox{background:rgba(225,38,45,.12);border:1px solid rgba(225,38,45,.28);color:#FF8A8F}
+.stat3>div{background:#1A1C22;border-color:rgba(255,255,255,.07)}
+.stat3 span{color:var(--sub)}
+.tile{background:#1A1C22;border-color:rgba(255,255,255,.08)}
+.tile svg{stroke:#FF5158}
+.pnote{background:rgba(255,255,255,.05);border-color:rgba(255,255,255,.08);color:#B5B6BE}
+.expl{background:rgba(255,255,255,.04);border-left-color:var(--main);color:#E4E2DD}
+.prob{color:#ECEAE5}
+.prob img,.eimg{background:#fff;border:1px solid rgba(255,255,255,.14);box-shadow:0 10px 28px rgba(0,0,0,.45)}
+.rk-row:nth-child(-n+3){background:linear-gradient(90deg,rgba(203,170,108,.13),rgba(203,170,108,.02));border-color:rgba(203,170,108,.18)}
+.rk-row.me{background:rgba(225,38,45,.13);border-color:rgba(225,38,45,.32);color:#FF8A8F}
+.rk-pt{color:var(--ink)}
+.rk-no{color:#8E8F98}
+.mode{box-shadow:0 12px 30px rgba(0,0,0,.45)}
+.mode.season{background:linear-gradient(135deg,#2A2C33,#16171B)}
+.mode.roster{background:linear-gradient(135deg,#3A3C44,#24252A)}
+.mode.adm{background:linear-gradient(135deg,#4A4C54,#30313A)}
+
+/* form */
+input,textarea,select{background:#101216;border-color:rgba(255,255,255,.1);color:var(--ink)}
+input::placeholder,textarea::placeholder{color:#6B6C75}
+input:focus,textarea:focus,select:focus{border-color:var(--main);box-shadow:0 0 0 3px rgba(225,38,45,.18);background:#13151A}
+input:-webkit-autofill{-webkit-box-shadow:0 0 0 40px #101216 inset;-webkit-text-fill-color:#F3F1EC}
+label{color:#A4A5AD}
+table th{color:#9C9DA6}
+th,td{border-bottom-color:rgba(255,255,255,.07)}
+.rules{color:#A4A5AD}
+.err{color:var(--bad)}
+hr{border-color:var(--line)}
+code{background:rgba(255,255,255,.07);color:#E8E6E1}
+
+/* overlays */
+.ovl{background:rgba(0,0,0,.66);backdrop-filter:blur(6px);-webkit-backdrop-filter:blur(6px)}
+.ovl .box{background:#17191F;border-color:rgba(255,255,255,.1);box-shadow:0 30px 80px rgba(0,0,0,.7);color:var(--ink)}
+.ovl p{color:#A9AAB2}
+.guestbar{background:rgba(203,170,108,.1);border:1px solid rgba(203,170,108,.3);color:#E2C791}
+.mpop{background:#17191F;border-color:rgba(255,255,255,.1)}
+
+/* my / emoji / menus */
+.av{background:rgba(255,255,255,.08);color:#fff}
+.av.emo{background:linear-gradient(145deg,rgba(255,255,255,.12),rgba(255,255,255,.05));border:1px solid rgba(255,255,255,.1)}
+.mychip{color:var(--ink)}
+.emogrid button{background:#1A1C22;border-color:rgba(255,255,255,.08)}
+.emogrid button.on{background:rgba(225,38,45,.18);border-color:var(--main);box-shadow:0 0 0 1px var(--main) inset}
+.hmenu button{border-top-color:rgba(255,255,255,.07);background:none}
+.hmenu button:hover{background:none}
+.myhead b{color:#fff}
+.dtot{background:rgba(255,255,255,.06)}
+.gbar .t{background:rgba(255,255,255,.08)}
+.dcol em{color:var(--ink)}
+.chead .car{color:var(--sub)}
+
+/* login */
+.logo{filter:invert(1) hue-rotate(180deg) brightness(1.05)}
+
+/* ---- champagne gold, a little more ---- */
+:root{--gold:#D4B278;--gold2:#E9D2A1;--gold3:#9C7F48}
+.card{border-top-color:rgba(212,178,120,.22);background:linear-gradient(180deg,#1A1B20 0%,#14161B 100%)}
+.ptc{border-top-color:rgba(212,178,120,.32)}
+.ptc .p1 .big,.card.ptc .p1 .big{background:linear-gradient(180deg,#FFFFFF 0%,#F1DEB2 100%);-webkit-background-clip:text;background-clip:text;-webkit-text-fill-color:transparent;color:transparent}
+.ptc .p1 .big em{-webkit-text-fill-color:var(--gold);color:var(--gold)}
+.ptc .p2 .v{color:var(--gold2)}
+.ptc .p2 .v u{color:var(--gold3)!important}
+.sec h2:before{background:linear-gradient(180deg,var(--gold2),var(--gold3));box-shadow:0 0 10px rgba(212,178,120,.5)}
+.hsec{display:flex;align-items:center;gap:9px}
+.hsec:before{content:"";width:3px;height:15px;border-radius:2px;background:linear-gradient(180deg,var(--gold2),var(--gold3))}
+.hero .hi{color:var(--gold2)}
+.hero .go{color:rgba(233,210,161,.7)}
+.hero{border-color:rgba(212,178,120,.22)}
+.hero h1{background:linear-gradient(180deg,#fff 30%,#F1DEB2 100%);-webkit-background-clip:text;background-clip:text;-webkit-text-fill-color:transparent}
+.grades button.on{background:linear-gradient(180deg,rgba(212,178,120,.22),rgba(212,178,120,.08));border-color:var(--gold);color:var(--gold2);box-shadow:0 0 0 1px rgba(212,178,120,.25),0 6px 18px rgba(212,178,120,.14)}
+.tabs button.on,.seg button.on{background:rgba(212,178,120,.14);border-color:var(--gold);color:var(--gold2)}
+.bar>div{background:linear-gradient(90deg,var(--gold3),var(--gold2));box-shadow:0 0 10px rgba(212,178,120,.4)}
+.ring circle:nth-child(2){stroke:var(--gold)}
+.learn .r2 .l1 span:last-child{color:var(--gold2)}
+.nav{border-top-color:rgba(212,178,120,.22)}
+.nav button.on{box-shadow:inset 0 2px 0 var(--gold)}
+.nav button.on svg{stroke:var(--gold2);filter:drop-shadow(0 0 8px rgba(212,178,120,.5))}
+.nav button.on{color:var(--gold2)}
+.keep .ic{background:rgba(212,178,120,.12);border-color:rgba(212,178,120,.3);color:var(--gold2)}
+.chip,.gchip{background:rgba(212,178,120,.1);color:var(--gold2)}
+.rk-row:nth-child(-n+3){background:linear-gradient(90deg,rgba(212,178,120,.18),rgba(212,178,120,.03));border-color:rgba(212,178,120,.28)}
+.rk-pt{color:var(--gold2)}
+.rk-row.me{background:rgba(212,178,120,.12);border-color:rgba(212,178,120,.4);color:var(--gold2)}
+.tile svg{stroke:var(--gold2)}
+input:focus,textarea:focus,select:focus{border-color:var(--gold);box-shadow:0 0 0 3px rgba(212,178,120,.16)}
+.av.emo{border-color:rgba(212,178,120,.35)}
+.emogrid button.on{background:rgba(212,178,120,.16);border-color:var(--gold);box-shadow:0 0 0 1px var(--gold) inset}
+.expl{border-left-color:var(--gold)}
+.gd summary::after{border-color:var(--gold)}
+.mychip i{color:var(--gold)}
+.logo{filter:invert(1) hue-rotate(180deg) brightness(1.05)}
+/* top-3 highlight only for ranked rows (trophy), not for every list that reuses .rk-row */
+.rk-row:nth-child(-n+3){background:none;border-color:transparent}
+.rk-row:has(.rk-no svg){background:linear-gradient(90deg,rgba(212,178,120,.18),rgba(212,178,120,.03));border-color:rgba(212,178,120,.28)}
+.rk-row.me{background:rgba(212,178,120,.12);border-color:rgba(212,178,120,.4);color:var(--gold2)}
 </style>
 </head>
 <body>
