@@ -728,6 +728,13 @@ body{
 .hmenu b{font-weight:650}
 .hmenu span{flex:1;font-size:12.5px;color:var(--sub);font-weight:500}
 .hmenu i{font-style:normal;color:var(--sub);font-size:18px}
+.mychip{display:flex;align-items:center;gap:7px;background:none;border:0;box-shadow:none;padding:2px 0 2px 2px;font-size:13.5px;font-weight:650;color:inherit}
+.mychip .av{width:30px;height:30px;font-size:14px}
+.mychip i{font-style:normal;color:var(--sub);font-size:13px}
+.hsec{font-size:17px;margin:22px 2px 8px}
+.myhead{display:flex;align-items:center;gap:14px}
+.myhead b{font-size:18px}
+.myhead .av.big{width:52px;height:52px;font-size:22px}
 </style>
 </head>
 <body>
@@ -971,15 +978,14 @@ function head() {
   <div class="card pcard"><div><div class="sub">총 포인트</div><div class="pts">${fmt(me.points)}<span style="font-size:16px;font-weight:700;color:var(--sub);margin-left:3px">P</span></div></div></div>
   ${fire}`;
 }
-function bindHead() { $('#out').onclick = logout; if ($('#toadm')) $('#toadm').onclick = () => switchTo('admin'); bindNav(); }
-// 홈: 인사, 내 현황, 바로가기
-function renderHome() {
+function bindHead() { $('#my').onclick = () => renderMy(); bindNav(); }
+// 홈: 인사, 내 현황, 이용 안내, 공지사항
+const myChip = () => `<button id="my" class="mychip" aria-label="마이페이지"><span class="av">${esc((me.name || '?').slice(0, 1))}</span>${esc(me.name)}<i>⌄</i></button>`;
+async function renderHome() {
   const c = me.cfg, tn = me.todayN || 0, rate = tn ? Math.round(100 * me.todayCount / tn) : null, st = me.streak || 0;
   const m = me.mult, fire = m.value > 1 ? `<div class="banner">🔥 포인트 2배 적용 중${m.morning ? ' · 주말·공휴일 아침 타임' : ''}${m.daily ? ` · 오늘 ${c.DAILY_BONUS_COUNT}문제 맞힘` : ''}</div>` : '';
-  const rows = [['hist', '내 기록', '최근 푼 문제 30개'], ['stats', '내 통계', '정답률과 약한 단원'], ['notice', '공지사항', '학원 소식과 이벤트'], ['guide', '이용 안내', '포인트와 시즌 규칙']];
-  if (me.isTeacher) rows.push(['roster', '담당 학생 현황', '내 반 학생의 학습 현황']);
-  if (me.isAdmin) rows.push(['admin', '관리자 화면', '학생, 문제, 시즌 관리']);
-  app(`<div class="top"><img class="logo" src="logo.png" alt="캐슬수학"><span style="display:flex;gap:4px;align-items:center"><button id="out" class="back" style="margin-right:-4px">${IC.out}${guest ? '나가기' : '로그아웃'}</button></span></div>
+  const list = await api('notices').catch(() => []);
+  app(`<div class="top"><img class="logo" src="logo.png" alt="캐슬수학"><span style="display:flex;gap:4px;align-items:center">${myChip()}</span></div>
   <div class="hero"><div class="deco"><i></i><i></i><i></i></div>
     <div class="hi">오늘도 수학과 함께,</div><h1>안녕하세요!<br>${esc(me.name)}${esc(me.title || '님')}</h1><div class="go">더 높은 곳을 향해, 오늘도 한 걸음 나아가세요.</div></div>
   ${fire}
@@ -987,13 +993,24 @@ function renderHome() {
     <div class="p2"><div><div><div class="t">오늘의 정답률</div><div class="v">${rate === null ? '-' : rate + '<u>%</u>'}</div></div></div>
       <div><div><div class="t">연속 학습일</div><div class="v">${st ? st + '<u>일</u>' : '-'}</div></div></div>
       <div><div class="enc">${st >= 2 ? '지금의 꾸준함이<br>더 큰 성과를 만듭니다.' : '오늘 한 문제부터<br>시작해 보십시오.'}</div></div></div></div>
-  <div class="card"><button class="primary cta" id="gohunt"><span>▶</span> 사냥 시작하기 <span>→</span></button></div>
+  <h2 class="hsec">이용 안내</h2>${guideCards()}
+  <h2 class="hsec">공지사항</h2>${noticeCards(list)}
+  ${navBar('home')}`);
+  $('#my').onclick = () => renderMy(); bindNav();
+  $('#ptgo').onclick = () => renderHistory();
+}
+// 마이페이지: 내 기록·통계 등 개인 메뉴와 로그아웃
+function renderMy() {
+  const rows = [['hist', '내 기록', '최근 푼 문제 30개'], ['stats', '내 통계', '정답률과 약한 단원']];
+  if (me.isTeacher) rows.push(['roster', '담당 학생 현황', '내 반 학생의 학습 현황']);
+  if (me.isAdmin) rows.push(['admin', '관리자 화면', '학생, 문제, 시즌 관리']);
+  rows.push(['out', guest ? '나가기' : '로그아웃', '']);
+  app(`${subTop('마이페이지')}
+  <div class="card myhead"><span class="av big">${esc((me.name || '?').slice(0, 1))}</span><div><b>${esc(me.name)}${esc(me.title || '님')}</b><div class="sub">${me.grade ? esc(me.grade) + ' · ' : ''}${fmt(me.points)} P</div></div></div>
   <div class="card hmenu">${rows.map(([k, n, d]) => `<button data-m="${k}"><b>${n}</b><span>${d}</span><i>›</i></button>`).join('')}</div>
   ${navBar('home')}`);
-  $('#out').onclick = logout; bindNav();
-  $('#gohunt').onclick = () => renderHunt();
-  $('#ptgo').onclick = () => renderHistory();
-  const f = { hist: renderHistory, stats: renderStats, notice: renderNotices, guide: renderGuide, roster: renderRoster, admin: () => switchTo('admin') };
+  bindNav(); $('#bk').onclick = () => loadMe();
+  const f = { hist: renderHistory, stats: renderStats, roster: renderRoster, admin: () => switchTo('admin'), out: logout };
   document.querySelectorAll('.hmenu button').forEach((b) => b.onclick = () => f[b.dataset.m]());
 }
 // 학습 화면(사냥): 학년을 고르고 문제를 시작한다
@@ -1009,7 +1026,7 @@ function renderHunt(notice) {
     cal: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="5.5" width="16" height="14.5" rx="2.5"/><path d="M4 10h16M8.5 3.5v4M15.5 3.5v4"/></svg>',
     crown: '<svg viewBox="0 0 24 24" fill="currentColor"><path d="M4 17.500 3 8l5 4 4-7 4 7 5-4-1 9.500z"/><rect x="5" y="19" width="14" height="2" rx="1"/></svg>'
   };
-  app(`<div class="top"><img class="logo" src="logo.png" alt="캐슬수학"><span style="display:flex;gap:4px;align-items:center">${me.isAdmin ? '<button id="toadm" class="back">관리자 화면</button>' : ''}<button id="out" class="back" style="margin-right:-4px">${IC.out}${guest ? '나가기' : '로그아웃'}</button></span></div>
+  app(`<div class="top"><img class="logo" src="logo.png" alt="캐슬수학"><span style="display:flex;gap:4px;align-items:center">${myChip()}</span></div>
   <h1 style="font-size:22px;margin:4px 0 12px">사냥</h1>
   ${fire}
   <div class="card ptc"><div class="p1" id="ptgo">${ico.coin}<div><div class="lb">총 포인트</div><div class="big">${fmt(me.points)}<em>P</em></div></div><span class="ch">›</span></div>
@@ -1151,27 +1168,27 @@ async function renderRank() {
 }
 
 function closeMore() {}
-const subTop = (t, extra) => `<div class="top"><button class="back" id="bk">${IC.back}홈</button>${extra || ''}</div><h1 style="font-size:22px;margin:4px 0 12px">${t}</h1>`;
+const subTop = (t, extra, back) => `<div class="top"><button class="back" id="bk">${IC.back}${back || '홈'}</button>${extra || ''}</div><h1 style="font-size:22px;margin:4px 0 12px">${t}</h1>`;
 async function renderStats() {
   const s = await api('stats'), pct = (a, n) => n ? Math.round(100 * a / n) : 0, mx = Math.max(1, ...s.days.map((x) => x.n));
-  app(`${subTop('내 통계')}
+  app(`${subTop('내 통계', '', '마이페이지')}
   <div class="card"><div class="stat3"><div><b>${fmt(s.total)}</b><span>푼 문제</span></div><div><b>${fmt(s.ok)}</b><span>맞힌 문제</span></div><div><b>${pct(s.ok, s.total)}%</b><span>정답률</span></div></div>${guest ? '<p class="sub">탐험모드에서는 이번 탐험 중의 기록만 집계됩니다.</p>' : ''}</div>
   <div class="card"><h2>최근 7일</h2><div class="dchart">${s.days.map((x) => `<div class="dcol"><em>${x.n || ''}</em><div class="dtot" style="height:${Math.round(x.n / mx * 80)}%"><i style="height:${x.n ? Math.round(x.ok / x.n * 100) : 0}%"></i></div><span>${esc(x.d)}</span></div>`).join('')}</div><p class="sub" style="margin:6px 0 0">막대 전체는 푼 문제, 색이 진한 부분은 맞힌 문제입니다.</p></div>
   <div class="card"><h2>학년별 정답률</h2>${s.byGrade.length ? s.byGrade.map((g) => `<div class="gbar"><b style="width:34px">${esc(g.grade)}</b><div class="t"><i style="width:${pct(g.ok, g.n)}%"></i></div><span>${pct(g.ok, g.n)}% (${g.ok}/${g.n})</span></div>`).join('') : '<p class="sub">아직 푼 문제가 없습니다.</p>'}</div>
   ${guest ? '' : `<div class="card"><h2>약한 단원</h2>${s.weak.length ? s.weak.map((w) => `<div class="gbar"><b style="flex:1">${esc(w.unit)}</b><span>${pct(w.ok, w.n)}% (${w.ok}/${w.n})</span></div>`).join('') + '<p class="sub" style="margin:6px 0 0">3문제 이상 푼 대단원 중 정답률이 낮은 순서입니다.</p>' : '<p class="sub">3문제 이상 푼 단원이 생기면 표시됩니다.</p>'}</div>`}${navBar('home')}`);
-  bindNav(); $('#bk').onclick = () => loadMe();
+  bindNav(); $('#bk').onclick = () => renderMy();
 }
+const noticeCards = (list) => list.map((n) => `<div class="card"><div class="sub">${n.pinned ? '<span class="chip">고정</span> ' : ''}<span style="white-space:nowrap">${ymd(n.t)}</span></div><h2 style="margin:6px 0">${esc(n.title)}</h2><div style="white-space:pre-wrap;line-height:1.65">${esc(n.body)}</div></div>`).join('') || '<div class="card sub">등록된 공지가 없습니다.</div>';
 async function renderNotices() {
   const list = await api('notices');
   app(`${subTop('공지사항')}
-  ${list.map((n) => `<div class="card"><div class="sub">${n.pinned ? '<span class="chip">고정</span> ' : ''}<span style="white-space:nowrap">${ymd(n.t)}</span></div><h2 style="margin:6px 0">${esc(n.title)}</h2><div style="white-space:pre-wrap;line-height:1.65">${esc(n.body)}</div></div>`).join('') || '<div class="card sub">등록된 공지가 없습니다.</div>'}${navBar('home')}`);
+  ${noticeCards(list)}${navBar('home')}`);
   bindNav(); $('#bk').onclick = () => loadMe();
 }
-function renderGuide() {
+const guideCards = () => {
   const c = me.cfg;
-  app(`${subTop('이용 안내')}
-  <div class="card"><h2>포인트 사냥</h2><ul class="rules">
-  <li>홈에서 학년을 고르고 학습을 시작합니다. 본인 학년 이상의 문제만 풀 수 있습니다.</li>
+  return `  <div class="card"><h2>포인트 사냥</h2><ul class="rules">
+  <li>사냥 탭에서 학년을 고르고 학습을 시작합니다. 본인 학년 이상의 문제만 풀 수 있습니다.</li>
   <li>미리보기 ${c.PREVIEW_SEC}초(-${c.PREVIEW_COST}P) 뒤에 풀기를 고르면 ${c.ACCEPT_COST}P가 차감됩니다. 제한시간은 ${c.TIME_LIMIT_SEC / 60}분입니다.</li>
   <li>정답이면 +${c.REWARD}P를 받습니다. 하루에 ${c.DAILY_BONUS_COUNT}문제를 맞히면 이후 포인트가 2배입니다.</li>
   <li>주말·공휴일 오전 ${c.MORNING_FROM}시~${c.MORNING_TO}시에는 포인트가 2배입니다.</li>
@@ -1184,17 +1201,21 @@ function renderGuide() {
   <li>맞히면 난이도×10점, 오답을 제출하면 난이도×5점이 감점됩니다. 시간 초과는 감점이 없습니다.</li>
   <li>랭킹전은 포인트 대신 순위만 있습니다.</li>
   <li>시즌이 끝나면 상위 학생에게 상품 이벤트가 있습니다.</li></ul></div>
-  <div class="card"><h2>오답노트</h2><ul class="rules"><li>결과 화면이나 내 기록에서 “오답노트에 담기”를 누르면 모아 두고, 분류 이름과 메모를 적을 수 있습니다.</li><li>학원에서 본 <b>캐치유테스트에서 틀린 문제</b>도 오답노트에 함께 들어 있습니다. 회차별로 접어서 보고, 문제와 해설을 확인할 수 있습니다.</li></ul></div>${navBar('home')}`);
+  <div class="card"><h2>오답노트</h2><ul class="rules"><li>결과 화면이나 내 기록에서 “오답노트에 담기”를 누르면 모아 두고, 분류 이름과 메모를 적을 수 있습니다.</li><li>학원에서 본 <b>캐치유테스트에서 틀린 문제</b>도 오답노트에 함께 들어 있습니다. 회차별로 접어서 보고, 문제와 해설을 확인할 수 있습니다.</li></ul></div>`;
+};
+function renderGuide() {
+  app(`${subTop('이용 안내')}
+  ${guideCards()}${navBar('home')}`);
   bindNav(); $('#bk').onclick = () => loadMe();
 }
 async function renderHistory() {
   const h = await api('history');
-  app(`${subTop('내 기록 <span class="sub">최근 30개</span>')}
+  app(`${subTop('내 기록 <span class="sub">최근 30개</span>', '', '마이페이지')}
   ${h.map((x) => `<div class="card"><div class="sub">${esc(x.grade)} · ${new Date(x.t).toLocaleString('ko-KR')} · <b class="${x.correct ? 'ok' : 'bad'}">${x.correct ? '정답 +' + x.reward : x.timeout ? '시간초과' : '오답'}</b></div>
   ${probHtml(x)}
   <p>내 답: ${esc(x.myAnswer || '-')} / 정답: <b>${esc(fa(x.answer))}</b></p>
   ${x.explImage ? `<div class="wm"><img class="eimg" src="${esc(x.explImage)}" alt=""></div>` : ''}${x.explanation ? `<div class="expl">${esc(dm(x.explanation))}</div>` : ''}${x.extra ? `<div class="expl">${esc(dm(x.extra))}</div>` : ''}${x.pid ? `<button class="nbh" data-p="${esc(x.pid)}">오답노트에 담기</button>` : ''}</div>`).join('') || '<div class="card sub">아직 푼 문제가 없습니다.</div>'}${navBar('home')}`);
-  bindNav(); $('#bk').onclick = () => loadMe();
+  bindNav(); $('#bk').onclick = () => renderMy();
   document.querySelectorAll('.nbh').forEach((b) => b.onclick = async () => { try { await api('note/add', { pid: b.dataset.p }); b.textContent = '담았습니다'; b.disabled = true; } catch (e) { alert(e.message); } });
 }
 // 오답노트: 학생마다 따로 메모를 적고, 단원별·시기별로 찾는다
@@ -1403,9 +1424,9 @@ function rosterTable(list, now, edit) {
 async function renderRoster() {
   let d;
   try { d = await api('roster'); } catch (e) { alert(e.message); return loadMe(); }
-  app(`<div class="top"><button class="back" id="bk">${IC.back}사냥</button><span class="chip">담당 학생 현황</span></div>
+  app(`<div class="top"><button class="back" id="bk">${IC.back}마이페이지</button><span class="chip">담당 학생 현황</span></div>
   <div class="card"><h2>${esc(d.name)}${esc(me.title || '선생님')} 반</h2>${rosterTable(d.students, d.serverNow, false)}</div>`, true);
-  $('#bk').onclick = () => loadMe();
+  $('#bk').onclick = () => renderMy();
 }
 
 // ---------- 관리자 ----------
