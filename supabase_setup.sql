@@ -1061,6 +1061,15 @@ create table if not exists castle.team_members (
   state text not null default 'invited' check (state in ('invited', 'joined')),
   created_at timestamptz not null default now(), primary key (team_id, sid));
 create unique index if not exists team_members_one_team on castle.team_members (sid) where state = 'joined';
+create table if not exists castle.team_stints (
+  id serial primary key, team_id int not null references castle.teams(id) on delete cascade,
+  sid text not null references castle.students(id) on delete cascade,
+  from_at timestamptz not null default now(), to_at timestamptz);
+create index if not exists team_stints_team on castle.team_stints (team_id);
+insert into castle.team_stints (team_id, sid, from_at)
+  select m.team_id, m.sid, m.created_at from castle.team_members m
+  where m.state = 'joined' and not exists (select 1 from castle.team_stints z where z.team_id = m.team_id and z.sid = m.sid and z.to_at is null);
+alter table castle.team_stints enable row level security;
 alter table castle.teams enable row level security;
 alter table castle.team_members enable row level security;
 
@@ -1073,19 +1082,21 @@ begin
   return s;
 end $$;
 
--- 시즌이 진행 중인 동안에는 팀원 구성을 바꿀 수 없다 (점수를 보고 팀을 옮기는 일을 막기 위해)
-create or replace function castle.team_locked() returns boolean language sql stable as $$
-  select exists (select 1 from castle.seasons where now() >= starts_at and now() < ends_at) $$;
+-- 시즌 중에도 팀 구성은 자유롭게 바꿀 수 있다. 팀 점수는 그 팀의 팀원이던 동안 얻은 점수만 센다.
+create or replace function castle.team_member_score(p_team int, p_sid text, p_season int) returns int language sql stable as $$
+  select coalesce(sum(a.score), 0)::int from castle.team_stints z
+  join castle.attempts a on a.sid = z.sid and a.season_id = p_season and a.state = 'done'
+       and a.end_at >= z.from_at and (z.to_at is null or a.end_at < z.to_at)
+  where z.team_id = p_team and z.sid = p_sid $$;
 
 -- 팀 순위: 팀원 2명 이상인 팀만, 팀원 시즌 점수의 합이 높은 순 (같으면 먼저 만든 팀)
 create or replace function castle.team_board(p_id int)
 returns table (team_id int, name text, score int, n int, r bigint) language sql stable as $$
   with t as (
-    select t.id, t.name, coalesce(sum(b.score), 0)::int as score, count(m.sid)::int as n
-    from castle.teams t join castle.team_members m on m.team_id = t.id and m.state = 'joined'
-    left join castle.season_board(p_id) b on b.sid = m.sid
-    group by t.id, t.name having count(m.sid) >= 2)
-  select t.id, t.name, t.score, t.n, row_number() over (order by t.score desc, t.id) from t $$;
+    select t.id, t.name, (select coalesce(sum(castle.team_member_score(t.id, z.sid, p_id)), 0) from (select distinct sid from castle.team_stints where team_id = t.id) z)::int as score,
+           (select count(*) from castle.team_members m where m.team_id = t.id and m.state = 'joined')::int as n
+    from castle.teams t)
+  select t.id, t.name, t.score, t.n, row_number() over (order by t.score desc, t.id) from t where t.n >= 2 $$;
 
 create or replace function castle.is_friend(x text, y text) returns boolean language sql stable as $$
   select exists (select 1 from castle.friends where state = 'accepted' and ((a = x and b = y) or (a = y and b = x))) $$;
@@ -1145,13 +1156,13 @@ begin
   return jsonb_build_object(
     'season', case when s.id is null then null else jsonb_build_object('id', s.id, 'name', s.name, 'startsAt', castle.ms(s.starts_at), 'endsAt', castle.ms(s.ends_at),
                 'status', case when now() < s.starts_at then 'upcoming' when now() >= s.ends_at then 'ended' else 'active' end) end,
-    'locked', castle.team_locked(), 'canPlay', not st.is_teacher and not st.is_admin,
+    'canPlay', not st.is_teacher and not st.is_admin,
     'team', case when v_t.id is null then null else jsonb_build_object('id', v_t.id, 'name', v_t.name, 'leader', v_t.leader = st.id,
-      'score', (select coalesce(sum(b.score), 0)::int from castle.team_members m left join castle.season_board(v_sid) b on b.sid = m.sid where m.team_id = v_t.id and m.state = 'joined'),
+      'score', (select coalesce(sum(castle.team_member_score(v_t.id, z.sid, v_sid)), 0)::int from (select distinct sid from castle.team_stints where team_id = v_t.id) z),
       'rank', (select tb.r from castle.team_board(v_sid) tb where tb.team_id = v_t.id),
       'members', (select coalesce(jsonb_agg(jsonb_build_object('name', x.name, 'grade', x.grade, 'state', m.state, 'leader', x.id = v_t.leader, 'me', x.id = st.id,
-                    'score', coalesce(b.score, 0), 'id', x.id) order by (x.id = v_t.leader) desc, m.created_at), '[]')
-                  from castle.team_members m join castle.students x on x.id = m.sid left join castle.season_board(v_sid) b on b.sid = m.sid where m.team_id = v_t.id)) end,
+                    'score', castle.team_member_score(v_t.id, x.id, v_sid), 'id', x.id) order by (x.id = v_t.leader) desc, m.created_at), '[]')
+                  from castle.team_members m join castle.students x on x.id = m.sid where m.team_id = v_t.id)) end,
     'invites', (select coalesce(jsonb_agg(jsonb_build_object('teamId', t.id, 'teamName', t.name, 'from', lx.name,
                   'size', (select count(*) from castle.team_members z where z.team_id = t.id and z.state = 'joined')) order by m.created_at), '[]')
                 from castle.team_members m join castle.teams t on t.id = m.team_id join castle.students lx on lx.id = t.leader
@@ -1166,13 +1177,13 @@ end $$;
 create or replace function castle.r_team_create(tok text, b jsonb) returns jsonb language plpgsql as $$
 declare st castle.students := castle.stu(tok); v_name text := btrim(coalesce(b->>'name', '')); v_id int;
 begin
-  if castle.team_locked() then perform castle.fail(400, '시즌이 진행 중인 동안에는 팀을 만들 수 없습니다.'); end if;
   if st.is_teacher or st.is_admin then perform castle.fail(403, '학생만 팀을 만들 수 있습니다.'); end if;
   if char_length(v_name) < 2 or char_length(v_name) > 12 then perform castle.fail(400, '팀 이름은 2~12자로 입력하십시오.'); end if;
   if exists (select 1 from castle.team_members where sid = st.id and state = 'joined') then perform castle.fail(400, '이미 팀에 속해 있습니다.'); end if;
   if exists (select 1 from castle.teams where name = v_name) then perform castle.fail(400, '이미 사용 중인 팀 이름입니다.'); end if;
   insert into castle.teams (name, leader) values (v_name, st.id) returning id into v_id;
   insert into castle.team_members (team_id, sid, state) values (v_id, st.id, 'joined');
+  insert into castle.team_stints (team_id, sid) values (v_id, st.id);
   delete from castle.team_members where sid = st.id and state = 'invited';
   return jsonb_build_object('ok', true);
 end $$;
@@ -1180,7 +1191,6 @@ end $$;
 create or replace function castle.r_team_invite(tok text, b jsonb) returns jsonb language plpgsql as $$
 declare st castle.students := castle.stu(tok); v_t castle.teams; v_to text := btrim(coalesce(b->>'id', ''));
 begin
-  if castle.team_locked() then perform castle.fail(400, '시즌이 진행 중인 동안에는 팀원을 바꿀 수 없습니다.'); end if;
   select t.* into v_t from castle.teams t where t.leader = st.id;
   if v_t.id is null then perform castle.fail(403, '팀장만 초대할 수 있습니다.'); end if;
   if not exists (select 1 from castle.students x where x.id = v_to and not x.is_teacher and not x.is_admin) then perform castle.fail(404, '해당 아이디의 학생을 찾을 수 없습니다.'); end if;
@@ -1198,9 +1208,9 @@ begin
   if not exists (select 1 from castle.team_members where team_id = v_tid and sid = st.id and state = 'invited') then
     perform castle.fail(404, '초대가 없거나 이미 취소되었습니다.'); end if;
   if coalesce((b->>'accept')::boolean, false) then
-    if castle.team_locked() then perform castle.fail(400, '시즌이 진행 중인 동안에는 팀에 들어갈 수 없습니다.'); end if;
     if exists (select 1 from castle.team_members where sid = st.id and state = 'joined') then perform castle.fail(400, '이미 팀에 속해 있습니다.'); end if;
     update castle.team_members set state = 'joined' where team_id = v_tid and sid = st.id;
+    insert into castle.team_stints (team_id, sid) values (v_tid, st.id);
     delete from castle.team_members where sid = st.id and state = 'invited';
   else
     delete from castle.team_members where team_id = v_tid and sid = st.id and state = 'invited';
@@ -1212,11 +1222,13 @@ end $$;
 create or replace function castle.r_team_leave(tok text) returns jsonb language plpgsql as $$
 declare st castle.students := castle.stu(tok); v_t castle.teams;
 begin
-  if castle.team_locked() then perform castle.fail(400, '시즌이 진행 중인 동안에는 팀을 바꿀 수 없습니다.'); end if;
   select t.* into v_t from castle.teams t join castle.team_members m on m.team_id = t.id where m.sid = st.id and m.state = 'joined';
   if v_t.id is null then perform castle.fail(404, '속한 팀이 없습니다.'); end if;
   if v_t.leader = st.id then delete from castle.teams where id = v_t.id;
-  else delete from castle.team_members where team_id = v_t.id and sid = st.id; end if;
+  else
+    update castle.team_stints set to_at = now() where team_id = v_t.id and sid = st.id and to_at is null;
+    delete from castle.team_members where team_id = v_t.id and sid = st.id;
+  end if;
   return jsonb_build_object('ok', true);
 end $$;
 

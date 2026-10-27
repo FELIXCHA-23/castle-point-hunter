@@ -649,20 +649,20 @@ async function renderTeam(notice) {
   if (guest) { app(`${head}<div class="card"><h2>팀</h2><p class="sub">체험 모드에서는 팀과 친구 기능을 사용할 수 없습니다. 로그인하면 팀을 만들고 친구를 초대할 수 있습니다.</p></div>${navBar('team')}`); bindNav(); return; }
   let t, f;
   try { [t, f] = await Promise.all([api('team/info'), api('friend/list')]); } catch (e) { return renderHome(e.message); }
-  const tm = t.team, s = t.season, locked = t.locked;
+  const tm = t.team, s = t.season;
   const memberIds = tm ? tm.members.map((m) => m.id) : [];
-  const canInvite = tm && tm.leader && !locked && tm.members.length < 4;
+  const canInvite = tm && tm.leader && tm.members.length < 4;
   let mine = '';
   if (tm) {
     mine = `<div class="card"><h2 style="margin-bottom:4px">${esc(tm.name)}</h2>
     <div class="sub" style="margin-bottom:8px">${tm.members.filter((m) => m.state === 'joined').length >= 2 ? (s ? `팀 점수 <b>${fmt(tm.score)}점</b> · 팀 순위 ${tm.rank}위` : '시즌이 등록되면 팀 순위가 시작됩니다.') : '팀원이 2명 이상 모이면 팀 순위에 오릅니다.'}</div>
     ${tm.members.map((m) => `<div class="rk-row${m.me ? ' me' : ''}"><div class="rk-nm">${esc(m.name)}${m.grade ? `<span class="gchip">${esc(m.grade)}</span>` : ''}${m.leader ? ' <span class="chip">팀장</span>' : ''}${m.state === 'invited' ? ' <span class="sub">수락 대기</span>' : ''}</div>${m.state === 'invited' ? (tm.leader ? `<button class="tcancel" data-id="${esc(m.id)}" style="padding:4px 10px">취소</button>` : '') : `<div class="rk-pt">${fmt(m.score)}점</div>`}</div>`).join('')}
-    ${tm.leader && tm.members.length < 4 && !locked ? '<label style="margin-top:12px">팀원 초대 (상대의 아이디)</label><div class="row" style="flex-wrap:nowrap"><input id="tinvid" placeholder="예: 해원고홍길동" autocomplete="off" autocapitalize="none"><button class="primary" id="tinvgo" style="flex:0 0 auto;width:auto;padding:0 18px">초대</button></div><p class="sub" style="margin:6px 0 0">친구 목록에서 "팀 초대"를 눌러도 됩니다.</p>' : ''}
-    ${locked ? '<p class="sub" style="margin:10px 0 0">시즌이 진행 중이라 팀원을 바꿀 수 없습니다.</p>' : `<button id="tleave" style="margin-top:12px">${tm.leader ? '팀 해체' : '팀 탈퇴'}</button>`}</div>`;
+    ${tm.leader && tm.members.length < 4 ? '<label style="margin-top:12px">팀원 초대 (상대의 아이디)</label><div class="row" style="flex-wrap:nowrap"><input id="tinvid" placeholder="예: 해원고홍길동" autocomplete="off" autocapitalize="none"><button class="primary" id="tinvgo" style="flex:0 0 auto;width:auto;padding:0 18px">초대</button></div><p class="sub" style="margin:6px 0 0">친구 목록에서 "팀 초대"를 눌러도 됩니다.</p>' : ''}
+    <button id="tleave" style="margin-top:12px">${tm.leader ? '팀 해체' : '팀 탈퇴'}</button></div>`;
   } else if (t.canPlay) {
     mine = `<div class="card"><h2 style="margin-bottom:4px">내 팀</h2>
     ${t.invites.map((i) => `<div class="pbox" style="margin:8px 0"><b>${esc(i.teamName)}</b> 팀에서 초대했습니다.<br><span class="sub">팀장 ${esc(i.from)} · 현재 ${i.size}명</span><div class="row" style="margin-top:8px"><button class="primary tacc" data-t="${i.teamId}" style="flex:1">수락</button><button class="tdec" data-t="${i.teamId}" style="flex:1">거절</button></div></div>`).join('')}
-    ${locked ? '<p class="sub">시즌이 진행 중이라 팀을 만들거나 들어갈 수 없습니다.</p>' : `<label>팀 만들기 (팀장이 됩니다)</label><div class="row" style="flex-wrap:nowrap"><input id="tname" maxlength="12" placeholder="팀 이름 (2~12자)" autocomplete="off"><button class="primary" id="tmake" style="flex:0 0 auto;width:auto;padding:0 18px">만들기</button></div>`}</div>`;
+    <label>팀 만들기 (팀장이 됩니다)</label><div class="row" style="flex-wrap:nowrap"><input id="tname" maxlength="12" placeholder="팀 이름 (2~12자)" autocomplete="off"><button class="primary" id="tmake" style="flex:0 0 auto;width:auto;padding:0 18px">만들기</button></div></div>`;
   }
   const fr = f.friends, inc = f.incoming, out = f.outgoing;
   const friendsCard = t.canPlay ? `<div class="card"><h2 style="margin-bottom:6px">친구 <span class="sub" style="font-weight:600">${fr.length}명</span></h2>
@@ -670,10 +670,10 @@ async function renderTeam(notice) {
     ${fr.length ? fr.map((x) => `<div class="rk-row"><div class="rk-nm">${esc(x.name)}${x.grade ? `<span class="gchip">${esc(x.grade)}</span>` : ''}</div>${canInvite && !memberIds.includes(x.id) ? `<button class="tinv" data-id="${esc(x.id)}" style="padding:4px 12px">팀 초대</button>` : ''}<button class="frm" data-id="${esc(x.id)}" style="padding:4px 10px">삭제</button></div>`).join('') : '<p class="sub" style="margin:0 0 8px">아직 등록한 친구가 없습니다.</p>'}
     ${out.length ? `<p class="sub" style="margin:10px 0 4px">보낸 신청 (상대가 수락하면 친구가 됩니다)</p>${out.map((x) => `<div class="row" style="flex-wrap:nowrap;margin-bottom:4px"><span style="flex:1">${esc(x.name)}</span><button class="frm" data-id="${esc(x.id)}" style="padding:4px 10px">취소</button></div>`).join('')}` : ''}
     <label style="margin-top:12px">친구 신청 (상대의 아이디)</label><div class="row" style="flex-wrap:nowrap"><input id="fid" placeholder="예: 해원고홍길동" autocomplete="off" autocapitalize="none"><button class="primary" id="fadd" style="flex:0 0 auto;width:auto;padding:0 18px">신청</button></div></div>` : '';
-  const state = !s ? '' : s.status === 'active' ? '진행 중 · 팀원 변경 불가' : s.status === 'upcoming' ? `${fmtDay(s.startsAt)}에 시작합니다. 시작 전까지 팀을 꾸릴 수 있습니다.` : '시즌이 끝났습니다';
+  const state = !s ? '' : s.status === 'active' ? '진행 중' : s.status === 'upcoming' ? `${fmtDay(s.startsAt)}에 시작합니다. 시작 전에 미리 팀을 꾸릴 수 있습니다.` : '시즌이 끝났습니다';
   const board = `<div class="card"><h2 style="display:flex;align-items:center;gap:8px;margin-bottom:4px">${trophy('#f5b82e')}${s ? esc(s.name) + ' ' : ''}팀랭킹전 <span class="sub" style="font-weight:600">${t.total}팀</span></h2>
     ${state ? `<div class="sub" style="margin-bottom:6px">${state}</div>` : ''}
-    <ul class="rules"><li>팀장이 팀을 만들고 친구를 초대하면, 초대받은 학생이 수락해 같은 팀이 됩니다.</li><li>팀은 <b>2명부터 4명까지</b>이며, 한 팀에만 속할 수 있습니다.</li><li>팀 점수는 팀원의 개인랭킹전 점수를 모두 더한 값입니다.</li><li>팀은 시즌 시작 전에 미리 꾸릴 수 있고, 시즌이 시작되면 팀원을 바꿀 수 없습니다.</li></ul>
+    <ul class="rules"><li>팀장이 팀을 만들고 친구를 초대하면, 초대받은 학생이 수락해 같은 팀이 됩니다.</li><li>팀은 <b>2명부터 4명까지</b>이며, 한 팀에만 속할 수 있습니다.</li><li>팀은 시즌 시작 전에도, 시즌 중에도 자유롭게 꾸리거나 탈퇴할 수 있습니다.</li><li>팀 점수는 그 팀에 속해 있는 동안 팀원이 얻은 개인랭킹전 점수를 모두 더한 값입니다. 가입 전이나 탈퇴 후의 점수는 포함되지 않습니다.</li></ul>
     ${t.top.length ? teamRows(t.top) : '<p class="sub">아직 순위에 오른 팀이 없습니다.</p>'}</div>`;
   app(`${head}<div class="err" id="terr">${esc(notice || '')}</div>${mine}${friendsCard}${board}${navBar('team')}`);
   bindNav();
