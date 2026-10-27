@@ -552,7 +552,7 @@ h2{font-weight:650}
 .ptc .p1 .lb{font-size:11.5px;color:#77777D;font-weight:500;letter-spacing:.01em}
 .ptc .p1 .big{font-size:37px;line-height:1.08;font-weight:700;letter-spacing:-.06em;color:#17181C}
 .ptc .p1 .big em{font-size:13px;font-style:normal;font-weight:600;color:var(--main);margin-left:3px}
-.ptc .coin{color:var(--main);filter:drop-shadow(0 3px 5px rgba(200,22,29,.12))}
+.ptc .coin{filter:drop-shadow(0 4px 10px rgba(212,178,120,.35))}
 .ptc .p1 .ch{color:#B5B2AF;font-size:23px}
 .ptc .p2{border-top:1px solid #F0EEEB;margin:0 19px}
 .ptc .p2>div{padding:13px 0 15px}
@@ -810,7 +810,7 @@ h1,h2,h3{color:var(--ink)}
 .card.ptc .p2 .t{color:#9C9DA6}
 .card.ptc .p2 .enc{color:#9C9DA6}
 .ptc .p2 .v u,.card.ptc .p2 .v u{color:#8E8F98}
-.ptc .coin{filter:drop-shadow(0 3px 8px rgba(225,38,45,.35))}
+.ptc .coin{filter:drop-shadow(0 4px 10px rgba(212,178,120,.35))}
 
 /* hero */
 .hero{
@@ -1262,7 +1262,7 @@ function renderHunt(notice) {
   const tn = me.todayN || 0, rate = tn ? Math.round(100 * me.todayCount / tn) : null, st = me.streak || 0;
   const R = 33, C = 2 * Math.PI * R, off = C * (1 - cnt / c.DAILY_BONUS_COUNT);
   const ico = {
-    coin: '<svg class="coin" viewBox="0 0 48 48" fill="none"><ellipse cx="24" cy="12" rx="14" ry="6" fill="currentColor"/><path d="M10 12v8c0 3.3 6.3 6 14 6s14-2.7 14-6v-8c0 3.3-6.3 6-14 6S10 15.300 10 12z" fill="currentColor" opacity=".85"/><path d="M10 22v8c0 3.3 6.3 6 14 6s14-2.7 14-6v-8c0 3.3-6.3 6-14 6s-14-2.700-14-6z" fill="currentColor" opacity=".7"/></svg>',
+    coin: '<svg class="coin" viewBox="0 0 48 48" fill="none"><defs><linearGradient id="cg1" x1="8" y1="6" x2="40" y2="44" gradientUnits="userSpaceOnUse"><stop offset="0" stop-color="#F6E7BF"/><stop offset=".5" stop-color="#D4B278"/><stop offset="1" stop-color="#8F7440"/></linearGradient><linearGradient id="cg2" x1="14" y1="12" x2="34" y2="38" gradientUnits="userSpaceOnUse"><stop offset="0" stop-color="#B8975A"/><stop offset="1" stop-color="#F0DDB0"/></linearGradient></defs><circle cx="24" cy="24" r="20" fill="url(#cg1)"/><circle cx="24" cy="24" r="20" stroke="#F8EDCB" stroke-opacity=".55" stroke-width="1.2"/><circle cx="24" cy="24" r="15.2" fill="#1B1D23" fill-opacity=".14" stroke="url(#cg2)" stroke-width="1.6"/><path d="M19.500 33V15.500h6.300a5.200 5.200 0 0 1 0 10.400h-6.300" stroke="#6F5A2F" stroke-width="2.800" stroke-linecap="round" stroke-linejoin="round"/><path d="M19.500 33V15.500h6.300a5.200 5.200 0 0 1 0 10.400h-6.300" stroke="#FFF4D4" stroke-opacity=".6" stroke-width="1" stroke-linecap="round" stroke-linejoin="round" transform="translate(-.4 -.4)"/></svg>',
     target: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><circle cx="12" cy="12" r="8.5"/><circle cx="12" cy="12" r="4.5"/><circle cx="12" cy="12" r="1" fill="currentColor"/></svg>',
     cal: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="5.5" width="16" height="14.5" rx="2.5"/><path d="M4 10h16M8.5 3.5v4M15.5 3.5v4"/></svg>',
     crown: '<svg viewBox="0 0 24 24" fill="currentColor"><path d="M4 17.500 3 8l5 4 4-7 4 7 5-4-1 9.500z"/><rect x="5" y="19" width="14" height="2" rx="1"/></svg>'
