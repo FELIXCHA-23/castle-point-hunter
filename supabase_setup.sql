@@ -1131,9 +1131,8 @@ end $$;
 create or replace function castle.r_friend_add(tok text, p jsonb) returns jsonb language plpgsql as $$
 declare st castle.students := castle.stu(tok); v_to castle.students; v_f castle.friends;
 begin
-  if st.is_teacher or st.is_admin then perform castle.fail(403, '학생만 친구를 등록할 수 있습니다.'); end if;
   select * into v_to from castle.students where id = btrim(coalesce(p->>'id', ''));
-  if v_to.id is null or v_to.is_teacher or v_to.is_admin then perform castle.fail(404, '해당 아이디의 학생을 찾을 수 없습니다.'); end if;
+  if v_to.id is null then perform castle.fail(404, '해당 아이디를 찾을 수 없습니다.'); end if;
   if v_to.id = st.id then perform castle.fail(400, '본인은 친구로 등록할 수 없습니다.'); end if;
   select * into v_f from castle.friends where (a = st.id and b = v_to.id) or (a = v_to.id and b = st.id);
   if v_f.a is not null then
@@ -1170,7 +1169,7 @@ begin
   return jsonb_build_object(
     'season', case when s.id is null then null else jsonb_build_object('id', s.id, 'name', s.name, 'startsAt', castle.ms(s.starts_at), 'endsAt', castle.ms(s.ends_at),
                 'status', case when now() < s.starts_at then 'upcoming' when now() >= s.ends_at then 'ended' else 'active' end) end,
-    'canPlay', not st.is_teacher and not st.is_admin,
+    'canPlay', true,
     'team', case when v_t.id is null then null else jsonb_build_object('id', v_t.id, 'name', v_t.name, 'leader', v_t.leader = st.id,
       'score', (select coalesce(sum(castle.team_member_score(v_t.id, z.sid, v_sid)), 0)::int from (select distinct sid from castle.team_stints where team_id = v_t.id) z),
       'rank', (select tb.r from castle.team_board(v_sid) tb where tb.team_id = v_t.id),
@@ -1191,7 +1190,6 @@ end $$;
 create or replace function castle.r_team_create(tok text, b jsonb) returns jsonb language plpgsql as $$
 declare st castle.students := castle.stu(tok); v_name text := btrim(coalesce(b->>'name', '')); v_id int;
 begin
-  if st.is_teacher or st.is_admin then perform castle.fail(403, '학생만 팀을 만들 수 있습니다.'); end if;
   if char_length(v_name) < 2 or char_length(v_name) > 12 then perform castle.fail(400, '팀 이름은 2~12자로 입력하십시오.'); end if;
   if exists (select 1 from castle.team_members where sid = st.id and state = 'joined') then perform castle.fail(400, '이미 팀에 속해 있습니다.'); end if;
   if exists (select 1 from castle.teams where name = v_name) then perform castle.fail(400, '이미 사용 중인 팀 이름입니다.'); end if;
@@ -1207,7 +1205,7 @@ declare st castle.students := castle.stu(tok); v_t castle.teams; v_to text := bt
 begin
   select t.* into v_t from castle.teams t where t.leader = st.id;
   if v_t.id is null then perform castle.fail(403, '팀장만 초대할 수 있습니다.'); end if;
-  if not exists (select 1 from castle.students x where x.id = v_to and not x.is_teacher and not x.is_admin) then perform castle.fail(404, '해당 아이디의 학생을 찾을 수 없습니다.'); end if;
+  if not exists (select 1 from castle.students x where x.id = v_to) then perform castle.fail(404, '해당 아이디를 찾을 수 없습니다.'); end if;
   if v_to = st.id then perform castle.fail(400, '본인은 이미 팀에 속해 있습니다.'); end if;
   if exists (select 1 from castle.team_members where sid = v_to and state = 'joined') then perform castle.fail(400, '이미 다른 팀에 속한 학생입니다.'); end if;
   if exists (select 1 from castle.team_members where team_id = v_t.id and sid = v_to) then perform castle.fail(400, '이미 초대한 학생입니다.'); end if;

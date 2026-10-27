@@ -757,7 +757,7 @@ async function api(path, body) {
 
 // ---------- 로그인 없이 탐험하기 (탐험 모드: 문제는 실제 문제, 포인트·기록은 이 화면 안에서만 쓰고 나가면 사라짐) ----------
 let guest = false;
-const G = { tok: null, cur: null, seen: [], sseen: [], score: 0, ok: 0, n: 0, points: 500, today: 0, hist: [] };
+const G = { tok: null, cur: null, seen: [], sseen: [], score: 0, ok: 0, n: 0, points: 500, today: 0, hist: [], fr: [], team: null };
 const gfill = (p) => (p < 50 ? 110 : p);  // 풀이 포인트보다 모자라면 110P로 맞춤 (실제와 같은 규칙)
 const guestMe = () => ({ id: 'guest', name: '탐험가', title: '님', grade: '', points: G.points, mustChange: false, isAdmin: false, isTeacher: false,
   grades: ['중1', '중2', '중3', '고1', '고2', '고3'], cfg: { START_POINTS: 500, PREVIEW_COST: 10, PREVIEW_SEC: 10, ACCEPT_COST: 50, TIME_LIMIT_SEC: 300, REWARD: 100, DAILY_BONUS_COUNT: 15, MORNING_FROM: 7, MORNING_TO: 9 },
@@ -806,6 +806,16 @@ async function guestApi(path, b) {
     case 'notes': case 'history': return [];
     case 'catchu': return api('guest/catchu');
     case 'catchu/item': return api('guest/catchu_item', b);
+    case 'friend/list': return { friends: G.fr.filter((x) => x.st === 'ok'), incoming: [], outgoing: G.fr.filter((x) => x.st === 'wait') };
+    case 'friend/add': { const id = String((b && b.id) || '').trim(); if (!id) throw new Error('아이디를 입력하십시오.'); if (G.fr.some((x) => x.id === id)) throw new Error('이미 신청했습니다.'); G.fr.push({ id, name: id, grade: '', st: 'wait' }); return { ok: true }; }
+    case 'friend/respond': return {};
+    case 'friend/remove': G.fr = G.fr.filter((x) => x.id !== b.id); return {};
+    case 'team/info': { const t = G.team; return { season: null, canPlay: true, invites: [], total: 0, top: [],
+      team: t ? { id: 0, name: t.name, leader: true, score: 0, rank: null, members: [{ id: 'guest', name: '탐험가', grade: '', state: 'joined', leader: true, me: true, score: 0 }].concat(t.inv.map((id) => ({ id, name: id, grade: '', state: 'invited', leader: false, me: false, score: 0 }))) } : null }; }
+    case 'team/create': { const n = String((b && b.name) || '').trim(); if (n.length < 2 || n.length > 12) throw new Error('팀 이름은 2~12자로 입력하십시오.'); G.team = { name: n, inv: [] }; return { ok: true }; }
+    case 'team/invite': { const id = String((b && b.id) || '').trim(); if (!id) throw new Error('아이디를 입력하십시오.'); if (G.team.inv.length >= 3) throw new Error('팀은 최대 4명까지입니다.'); if (!G.team.inv.includes(id)) G.team.inv.push(id); return { ok: true }; }
+    case 'team/cancel': G.team.inv = G.team.inv.filter((x) => x !== b.id); return {};
+    case 'team/leave': G.team = null; return {};
     case 'note/add': throw new Error('탐험모드에서는 저장되지 않습니다.');
   }
   throw new Error('탐험모드에서는 사용할 수 없는 기능입니다.');
@@ -871,7 +881,7 @@ const trophy = (c) => `<svg viewBox="0 0 24 24" width="22" height="22" aria-hidd
 const MEDAL = ['#f5b82e', '#9aa6b8', '#cd7f4a'];
 const rankRows = (top) => top.map((x) => `<div class="rk-row${x.me ? ' me' : ''}"><div class="rk-no">${x.rank <= 3 ? trophy(MEDAL[x.rank - 1]) : x.rank}</div><div class="rk-nm">${esc(x.name)}${x.grade ? `<span class="gchip">${esc(x.grade)}</span>` : ''}${x.me ? ' <span class="chip">나</span>' : ''}</div><div class="rk-pt">${fmt(x.points)} P</div></div>`).join('');
 function navBar(cur) {
-  const it = [['home', '사냥', IC.hunt], ['nt', '오답노트', IC.note], ['rk', '순위', IC.rank], ['season', '시즌', IC.season], ['team', '팀', IC.team], ['more', '더보기', IC.more]];
+  const it = [['home', me && (me.isTeacher || me.isAdmin) ? '홈' : '사냥', IC.hunt], ['nt', '오답노트', IC.note], ['rk', '순위', IC.rank], ['season', '시즌', IC.season], ['team', '팀', IC.team], ['more', '더보기', IC.more]];
   return `<div class="nav"><div>${it.map(([k, n, ic]) => `<button data-n="${k}" class="${k === cur ? 'on' : ''}">${ic}${n}</button>`).join('')}</div></div>`;
 }
 function bindNav() {
@@ -1113,7 +1123,6 @@ function closeMore() { const o = $('#mpop'); if (o) o.remove(); }
 function renderMore() {
   if ($('#mpop')) return closeMore();
   const rows = [['hist', '내 기록', '최근 푼 문제 30개'], ['stats', '내 통계', '정답률과 약한 단원'], ['friends', '내 친구', '친구 신청과 목록'], ['notice', '공지사항', '학원 소식과 이벤트'], ['guide', '이용 안내', '포인트와 시즌 규칙']];
-  if (me.isTeacher || me.isAdmin) rows.splice(rows.findIndex((r) => r[0] === 'friends'), 1);
   if (me.isTeacher) rows.push(['roster', '담당 학생 현황', '내 반 학생의 학습 현황']);
   if (me.isAdmin) rows.push(['admin', '관리자 화면', '학생, 문제, 시즌 관리']);
   rows.push(['out', guest ? '나가기' : '로그아웃', '']);
@@ -1250,7 +1259,6 @@ const seasonRows = (top) => top.map((x) => `<div class="rk-row${x.me ? ' me' : '
 const avatar = (name, cls) => `<span class="av ${cls || ''}">${esc((name || '?').slice(0, 1))}</span>`;
 async function renderTeam(notice) {
   const head = '<div class="top"><img class="logo" src="logo.png" alt="캐슬수학"></div>';
-  if (guest) { app(`${head}<div class="card"><h2>팀</h2><p class="sub">탐험 모드에서는 팀과 친구 기능을 사용할 수 없습니다. 로그인하면 팀을 만들고 친구를 초대할 수 있습니다.</p></div>${navBar('team')}`); bindNav(); return; }
   let t, f;
   try { [t, f] = await Promise.all([api('team/info'), api('friend/list')]); } catch (e) { return renderHome(e.message); }
   const tm = t.team, s = t.season;
@@ -1298,7 +1306,6 @@ async function renderTeam(notice) {
 
 // ---------- 내 친구 (더보기) ----------
 async function renderFriends(notice) {
-  if (guest) { app(`${subTop('내 친구')}<div class="card"><p class="sub">탐험 모드에서는 친구 기능을 사용할 수 없습니다. 로그인하면 친구를 등록하고 팀에 초대할 수 있습니다.</p></div>${navBar('more')}`); bindNav(); $('#bk').onclick = () => loadMe(); return; }
   let f;
   try { f = await api('friend/list'); } catch (e) { return renderHome(e.message); }
   const fr = f.friends, inc = f.incoming, out = f.outgoing;
