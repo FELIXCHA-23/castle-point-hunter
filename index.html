@@ -1049,6 +1049,8 @@ input,textarea{-webkit-user-select:text;user-select:text;-webkit-touch-callout:d
 .seg.tg,.seg.rec{display:grid;grid-auto-flow:column;grid-auto-columns:1fr;gap:6px}
 .seg.tg button,.seg.rec button{padding:11px 6px;font-size:15px;font-weight:700}
 .rk-row .av.emo{width:34px;height:34px;font-size:18px}
+/* 문제·해설 이미지: 흰 바탕은 앱 배경색(#0B0C0F)으로, 글씨는 흰색으로 */
+.prob img,.eimg{background:#fff;border:1px solid rgba(255,255,255,.08);box-shadow:none;filter:invert(1) hue-rotate(180deg) contrast(.91)}
 </style>
 </head>
 <body>
@@ -1435,7 +1437,7 @@ function renderPreview(a) {
     const left = a.previewEndsAt - nowS();
     if (left <= 0) {
       clearInterval(tick); $('#t').textContent = '0초'; $('#b').style.width = '0%';
-      $('#pv').innerHTML = '<div style="height:220px;background:#fff;display:flex;align-items:center;justify-content:center;color:var(--sub);font-weight:600">미리보기 시간이 끝났습니다</div>';
+      $('#pv').innerHTML = '<div style="height:220px;background:#0B0C0F;display:flex;align-items:center;justify-content:center;color:var(--sub);font-weight:600">미리보기 시간이 끝났습니다</div>';
       return;
     }
     $('#t').textContent = Math.ceil(left / 1000) + '초'; $('#b').style.width = (left / total * 100) + '%';
