@@ -1334,7 +1334,7 @@ async function renderHome() {
   <button class="primary cta" id="hgo" style="margin:0 0 12px"><span>▶</span> 사냥터 바로 입장 · ${esc(homeGrade())} <span>→</span></button>
   <div class="card hmenu"><button id="hg"><b>이용 안내</b><span>포인트·랭킹전·오답노트 규칙</span><i>›</i></button>
     <button id="hn"><b>공지사항</b><span>${top ? esc(top.title) : '등록된 공지가 없습니다'}</span>${list.length ? `<em class="cnt">${list.length}</em>` : ''}<i>›</i></button></div>
-  ${guest ? '<button id="gout" class="primary btn-big gout">탐험 종료하기</button>' : ''}
+  ${guest ? '<button id="gout" class="btn-big soft gout">탐험 종료하기</button>' : ''}
   ${navBar('home')}`);
   $('#my').onclick = () => renderMy(); bindNav();
   if ($('#gout')) $('#gout').onclick = logout;
