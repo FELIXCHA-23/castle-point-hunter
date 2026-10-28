@@ -1369,7 +1369,7 @@ function renderHunt(notice) {
   ${ptcCard(true, 'cmp')}
   <div class="card hsel"><div class="sec"><h2>학년 선택</h2><span class="sub">학년을 고르고 시작하십시오.</span></div>
     <div class="grades">${me.grades.map((g) => `<button data-g="${g}" class="${g === pickedGrade ? 'on' : ''}">${g}</button>`).join('')}</div>
-    <button class="primary cta" id="pv" ${pickedGrade ? '' : 'disabled'}>${pickedGrade ? `<span>▶</span> 학습 시작하기 · ${pickedGrade} <span>→</span>` : '학년을 먼저 골라 주십시오'}</button>
+    <button class="primary cta" id="pv" ${pickedGrade ? '' : 'disabled'}>${pickedGrade ? `<span>▶</span> 사냥터 입장 · ${pickedGrade} <span>→</span>` : '학년을 먼저 골라 주십시오'}</button>
     <div class="err" id="err">${esc(notice || '')}</div></div>
   <div class="card"><div class="sec"><h2>오늘의 학습</h2></div>
     <div class="learn"><div class="ring"><svg viewBox="0 0 76 76"><circle cx="38" cy="38" r="${R}" fill="none" stroke="var(--line)" stroke-width="7"/><circle cx="38" cy="38" r="${R}" fill="none" stroke="var(--main)" stroke-width="7" stroke-linecap="round" stroke-dasharray="${C.toFixed(1)}" stroke-dashoffset="${off.toFixed(1)}"/></svg><b>${me.todayCount}<small>/ ${c.DAILY_BONUS_COUNT}</small></b></div>
@@ -1384,7 +1384,7 @@ function renderHunt(notice) {
   document.querySelectorAll('.grades button').forEach((b) => b.onclick = () => {
     pickedGrade = b.dataset.g;
     document.querySelectorAll('.grades button').forEach((x) => x.classList.toggle('on', x === b));
-    const pv = $('#pv'); pv.disabled = false; pv.innerHTML = `<span>▶</span> 학습 시작하기 · ${pickedGrade} <span>→</span>`;
+    const pv = $('#pv'); pv.disabled = false; pv.innerHTML = `<span>▶</span> 사냥터 입장 · ${pickedGrade} <span>→</span>`;
   });
   $('#pv').onclick = async () => {
     try { const r = await api('preview', { grade: pickedGrade }); skew = r.serverNow - Date.now(); me.points = r.points; renderPreview(r.active); }
