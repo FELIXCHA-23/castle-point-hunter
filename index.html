@@ -1029,6 +1029,10 @@ body{overflow-x:clip;overflow-y:visible}
 .gout{display:block;width:100%;margin:12px 0 0}
 input,textarea{-webkit-user-select:text;user-select:text;-webkit-touch-callout:default;touch-action:manipulation}
 #ans{font-size:18px}
+/* 뒤로 가기: 버튼 모양 */
+.back#bk,.back#hm{height:40px;padding:0 16px 0 10px!important;gap:4px;border:1px solid rgba(255,255,255,.14);background:#1A1C22;color:#E9E7E2!important;border-radius:12px;font-size:15px!important;font-weight:700;letter-spacing:-.01em}
+.back#bk svg,.back#hm svg{width:20px;height:20px}
+.back#bk:active,.back#hm:active{background:#23262E}
 </style>
 </head>
 <body>
@@ -1406,7 +1410,7 @@ async function nextPreview(g) {
 const dm = (s) => String(s ?? '').replace(/\$([^$]*\\begin\{cases\}[^$]*)\$/g, (m, f) => '$$' + f + '$$');
 const probHtml = (p) => `<div class="prob wm">${p.image && p.text ? `<div class="pnote">${esc(dm(p.text))}</div>` : esc(dm(p.text))}${p.image ? `<img src="${esc(p.image)}" alt="">` : ''}</div>`;
 function renderPreview(a) {
-  app(`<div class="top"><button class="back" id="hm">${IC.back}${esc(a.problem.grade)} 미리보기</button><div class="timer" id="t"></div></div>
+  app(`<div class="top"><button class="back" id="hm">${IC.back}뒤로 가기</button><div class="timer" id="t"></div></div>
   <div class="bar"><div id="b"></div></div>
   <div class="card" style="margin-top:12px" id="pv">${probHtml(a.problem)}</div>
   <div class="stick"><div class="err" id="err"></div><button class="primary btn-big" id="ac">이 문제 풀기 (-${me.cfg.ACCEPT_COST}P)</button>
@@ -1515,7 +1519,7 @@ function openSheet(title, html) {
   o.querySelector('#shx').onclick = closeMore;
   math(o);
 }
-const subTop = (t, extra, back) => `<div class="top"><button class="back" id="bk">${IC.back}${back || '홈'}</button>${extra || ''}</div><h1 style="font-size:22px;margin:4px 0 12px">${t}</h1>`;
+const subTop = (t, extra, back) => `<div class="top"><button class="back" id="bk">${IC.back}${back || '뒤로 가기'}</button>${extra || ''}</div><h1 style="font-size:22px;margin:4px 0 12px">${t}</h1>`;
 async function renderStats() {
   const s = await api('stats'), pct = (a, n) => n ? Math.round(100 * a / n) : 0, mx = Math.max(1, ...s.days.map((x) => x.n));
   app(`${subTop('내 통계', '', '마이페이지')}
