@@ -1057,6 +1057,15 @@ input,textarea{-webkit-user-select:text;user-select:text;-webkit-touch-callout:d
 <div id="app"></div>
 <script src="config.js?v=20261027"></script>
 <script>
+// 홈 화면 앱이 예전 화면을 붙잡고 있지 않도록: 열 때마다 새 버전이 있는지 확인해서 있으면 새로 불러옵니다
+const BUILD = '20261028-a';
+(async () => {
+  try {
+    const t = await fetch('./index.html?nc=' + Date.now(), { cache: 'no-store' }).then((r) => r.text());
+    const m = t.match(/const BUILD = '([^']+)'/);
+    if (m && m[1] !== BUILD && sessionStorage.getItem('rl') !== m[1]) { sessionStorage.setItem('rl', m[1]); location.replace('./?v=' + m[1]); }
+  } catch (e) {}
+})();
 const $ = (s) => document.querySelector(s);
 const esc = (s) => String(s ?? '').replace(/[&<>"']/g, (c) => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 let token = localStorage.getItem('tk'), role = localStorage.getItem('role'), skew = 0, tick = null, me = null, pickedGrade = null;
