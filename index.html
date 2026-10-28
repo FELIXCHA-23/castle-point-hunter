@@ -1410,7 +1410,7 @@ async function nextPreview(g) {
 const dm = (s) => String(s ?? '').replace(/\$([^$]*\\begin\{cases\}[^$]*)\$/g, (m, f) => '$$' + f + '$$');
 const probHtml = (p) => `<div class="prob wm">${p.image && p.text ? `<div class="pnote">${esc(dm(p.text))}</div>` : esc(dm(p.text))}${p.image ? `<img src="${esc(p.image)}" alt="">` : ''}</div>`;
 function renderPreview(a) {
-  app(`<div class="top"><button class="back" id="hm">${IC.back}뒤로 가기</button><div class="timer" id="t"></div></div>
+  app(`<div class="top"><button class="back" id="hm">${IC.back}나가기</button><div class="timer" id="t"></div></div>
   <div class="bar"><div id="b"></div></div>
   <div class="card" style="margin-top:12px" id="pv">${probHtml(a.problem)}</div>
   <div class="stick"><div class="err" id="err"></div><button class="primary btn-big" id="ac">이 문제 풀기 (-${me.cfg.ACCEPT_COST}P)</button>
