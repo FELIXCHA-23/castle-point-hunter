@@ -1050,7 +1050,7 @@ input,textarea,select{-webkit-user-select:text;user-select:text;-webkit-touch-ca
 .seg.tg button,.seg.rec button{padding:11px 6px;font-size:15px;font-weight:700}
 .rk-row .av.emo{width:34px;height:34px;font-size:18px}
 /* 문제·해설 이미지: 흰 바탕은 카드 색(약 #17181D)으로, 글씨는 흰색으로 */
-.prob img,.eimg{background:#fff;border:0;box-shadow:none;filter:invert(1) hue-rotate(180deg) contrast(.82)}
+.prob img,.eimg{background:#fff;border:0;box-shadow:none;filter:brightness(1.07) invert(1) hue-rotate(180deg) contrast(.82)}
 .card:has(.prob img),.card:has(.eimg),.wm{background:#171717}
 </style>
 </head>
@@ -1059,7 +1059,7 @@ input,textarea,select{-webkit-user-select:text;user-select:text;-webkit-touch-ca
 <script src="config.js?v=20261027"></script>
 <script>
 // 홈 화면 앱이 예전 화면을 붙잡고 있지 않도록: 열 때마다 새 버전이 있는지 확인해서 있으면 새로 불러옵니다
-const BUILD = '20261028-d';
+const BUILD = '20261028-e';
 (async () => {
   try {
     const t = await fetch('./index.html?nc=' + Date.now(), { cache: 'no-store' }).then((r) => r.text());
