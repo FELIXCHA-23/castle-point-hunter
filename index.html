@@ -1051,8 +1051,12 @@ input,textarea,select{-webkit-user-select:text;user-select:text;-webkit-touch-ca
 .rk-row .av.emo{width:34px;height:34px;font-size:18px}
 /* 문제·해설 이미지: 흰 바탕은 카드 색(약 #17181D)으로, 글씨는 흰색으로 */
 .prob img,.eimg{background:#fff;border:0;box-shadow:none;filter:brightness(1.07) invert(1) hue-rotate(180deg) contrast(.82)}
-.card:has(.prob img),.card:has(.eimg),.wm{background:#171717}
+.card:has(.prob img),.card:has(.eimg),.wm:has(img){background:#171717}
 .rk3 button{font-size:14px!important;padding:11px 2px!important;white-space:nowrap;letter-spacing:-.03em}
+/* 수식은 중간에서 줄이 바뀌지 않게 한 덩어리로, 긴 수식은 가운데 정렬 별도 줄(옆으로 스크롤) */
+.prob .katex,.expl .katex,.pnote .katex{display:inline-block;white-space:nowrap}
+.prob .katex-display,.expl .katex-display{display:block;margin:.55em 0;overflow-x:auto;overflow-y:hidden;padding:2px 0}
+.prob .katex-display>.katex,.expl .katex-display>.katex{display:block;white-space:nowrap;text-align:center}
 </style>
 </head>
 <body>
@@ -1060,7 +1064,7 @@ input,textarea,select{-webkit-user-select:text;user-select:text;-webkit-touch-ca
 <script src="config.js?v=20261027"></script>
 <script>
 // 홈 화면 앱이 예전 화면을 붙잡고 있지 않도록: 열 때마다 새 버전이 있는지 확인해서 있으면 새로 불러옵니다
-const BUILD = '20261028-k';
+const BUILD = '20261028-m';
 (async () => {
   try {
     const t = await fetch('./index.html?nc=' + Date.now(), { cache: 'no-store' }).then((r) => r.text());
