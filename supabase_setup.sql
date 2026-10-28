@@ -300,18 +300,11 @@ declare v_id text := regexp_replace(normalize(coalesce(b->>'id', ''), NFC), '\s'
         v_ip text := coalesce((nullif(current_setting('request.headers', true), '')::jsonb)->>'x-forwarded-for', '');
         v_key text; t castle.tries; v_adm boolean := lower(v_id) = 'admin'; v_hash text; v_must boolean := false; v_tok text; v_staff boolean := false; v_name text := ''; v_title text := '';
 begin
-  v_key := v_id || '|' || v_ip;
-  select * into t from castle.tries where key = v_key;
-  if found and t.until_at is not null and t.until_at > now() then
-    return jsonb_build_object('error', '로그인 시도가 너무 많습니다. 5분 뒤에 다시 해 주십시오.');
-  end if;
+  v_key := v_id || '|' || v_ip;  -- 로그인 시도 횟수 제한(5회 틀리면 5분 잠금)은 두지 않는다
   if v_adm then select hash into v_hash from castle.admin where id = 1;
   else select pw_hash, must_change, is_admin, name, title into v_hash, v_must, v_staff, v_name, v_title from castle.students where id = v_id; end if;
   v_staff := coalesce(v_staff, false);
   if v_hash is null or v_hash <> extensions.crypt(v_pw, v_hash) then
-    insert into castle.tries as x (key, n) values (v_key, 1)
-      on conflict (key) do update set n = case when x.n + 1 >= 5 then 0 else x.n + 1 end,
-                                      until_at = case when x.n + 1 >= 5 then now() + interval '5 minutes' else x.until_at end;
     return jsonb_build_object('error', '아이디 또는 비밀번호가 맞지 않습니다.');
   end if;
   delete from castle.tries where key = v_key;
