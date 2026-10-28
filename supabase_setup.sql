@@ -390,12 +390,12 @@ declare st castle.students := castle.stu(tok); v_ok boolean := (not st.is_teache
 begin
   -- 순위는 학생만, 500P를 넘는 학생만 보인다, 상위 20명 (전체 순위 + 내 학년 순위)
   return jsonb_build_object('grade', st.grade,
-    'top', (select coalesce(jsonb_agg(jsonb_build_object('rank', rk, 'name', castle.mask_name(name), 'grade', grade, 'points', points, 'me', id = st.id) order by rk), '[]')
+    'top', (select coalesce(jsonb_agg(jsonb_build_object('rank', rk, 'name', castle.mask_name(name), 'grade', grade, 'points', points, 'me', id = st.id, 'avatar', (select z.avatar from castle.students z where z.id = q.id)) order by rk), '[]')
             from (select id, name, grade, points, row_number() over (order by points desc, created_at) as rk
                   from castle.students where points > 500 and not is_teacher and not is_admin) q where rk <= 20),
     'myRank', case when v_ok and st.points > 500 then 1 + (select count(*) from castle.students where points > st.points and not is_teacher and not is_admin) end,
     'total', (select count(*) from castle.students where points > 500 and not is_teacher and not is_admin),
-    'gradeTop', (select coalesce(jsonb_agg(jsonb_build_object('rank', rk, 'name', castle.mask_name(name), 'grade', grade, 'points', points, 'me', id = st.id) order by rk), '[]')
+    'gradeTop', (select coalesce(jsonb_agg(jsonb_build_object('rank', rk, 'name', castle.mask_name(name), 'grade', grade, 'points', points, 'me', id = st.id, 'avatar', (select z.avatar from castle.students z where z.id = q.id)) order by rk), '[]')
             from (select id, name, grade, points, row_number() over (order by points desc, created_at) as rk
                   from castle.students where points > 500 and not is_teacher and not is_admin and grade = st.grade and st.grade <> '') q where rk <= 20),
     'myGradeRank', case when v_ok and st.grade <> '' and st.points > 500
@@ -923,9 +923,9 @@ begin
     'me', coalesce(v_me, jsonb_build_object('score', 0, 'rank', null, 'gradeRank', null, 'ok', 0, 'n', 0)), 'poolLeft', v_pool,
     'pickGrades', case when v_pick then to_jsonb(v_al) end, 'selGrade', v_sel, 'lockedGrade', case when v_pick and v_lock = any (v_al) then v_lock end,
     'total', (select count(*) from castle.season_board(s.id)),
-    'top', (select coalesce(jsonb_agg(jsonb_build_object('rank', b.r, 'name', castle.mask_name(b.name), 'grade', b.grade, 'score', b.score, 'ok', b.ok, 'me', b.sid = st.id) order by b.r), '[]')
+    'top', (select coalesce(jsonb_agg(jsonb_build_object('rank', b.r, 'name', castle.mask_name(b.name), 'grade', b.grade, 'score', b.score, 'ok', b.ok, 'me', b.sid = st.id, 'avatar', (select z.avatar from castle.students z where z.id = b.sid)) order by b.r), '[]')
             from castle.season_board(s.id) b where b.r <= 20),
-    'gradeTop', (select coalesce(jsonb_agg(jsonb_build_object('rank', b.gr, 'name', castle.mask_name(b.name), 'grade', b.grade, 'score', b.score, 'ok', b.ok, 'me', b.sid = st.id) order by b.gr), '[]')
+    'gradeTop', (select coalesce(jsonb_agg(jsonb_build_object('rank', b.gr, 'name', castle.mask_name(b.name), 'grade', b.grade, 'score', b.score, 'ok', b.ok, 'me', b.sid = st.id, 'avatar', (select z.avatar from castle.students z where z.id = b.sid)) order by b.gr), '[]')
             from castle.season_board(s.id) b where st.grade <> '' and b.grade = st.grade and b.gr <= 10));
 end $$;
 
@@ -1124,12 +1124,12 @@ create or replace function castle.r_friend_list(tok text) returns jsonb language
 declare st castle.students := castle.stu(tok);
 begin
   return jsonb_build_object(
-    'friends', (select coalesce(jsonb_agg(jsonb_build_object('id', x.id, 'name', x.name, 'grade', x.grade) order by x.name), '[]')
+    'friends', (select coalesce(jsonb_agg(jsonb_build_object('id', x.id, 'name', x.name, 'grade', x.grade, 'avatar', x.avatar) order by x.name), '[]')
                 from castle.friends f join castle.students x on x.id = case when f.a = st.id then f.b else f.a end
                 where f.state = 'accepted' and st.id in (f.a, f.b)),
-    'incoming', (select coalesce(jsonb_agg(jsonb_build_object('id', x.id, 'name', x.name, 'grade', x.grade) order by f.created_at), '[]')
+    'incoming', (select coalesce(jsonb_agg(jsonb_build_object('id', x.id, 'name', x.name, 'grade', x.grade, 'avatar', x.avatar) order by f.created_at), '[]')
                 from castle.friends f join castle.students x on x.id = f.a where f.state = 'pending' and f.b = st.id),
-    'outgoing', (select coalesce(jsonb_agg(jsonb_build_object('id', x.id, 'name', x.name, 'grade', x.grade) order by f.created_at), '[]')
+    'outgoing', (select coalesce(jsonb_agg(jsonb_build_object('id', x.id, 'name', x.name, 'grade', x.grade, 'avatar', x.avatar) order by f.created_at), '[]')
                 from castle.friends f join castle.students x on x.id = f.b where f.state = 'pending' and f.a = st.id));
 end $$;
 
@@ -1179,7 +1179,7 @@ begin
       'score', (select coalesce(sum(castle.team_member_score(v_t.id, z.sid, v_sid)), 0)::int from (select distinct sid from castle.team_stints where team_id = v_t.id) z),
       'rank', (select tb.r from castle.team_board(v_sid) tb where tb.team_id = v_t.id),
       'members', (select coalesce(jsonb_agg(jsonb_build_object('name', x.name, 'grade', x.grade, 'state', m.state, 'leader', x.id = v_t.leader, 'me', x.id = st.id,
-                    'score', castle.team_member_score(v_t.id, x.id, v_sid), 'id', x.id) order by (x.id = v_t.leader) desc, m.created_at), '[]')
+                    'score', castle.team_member_score(v_t.id, x.id, v_sid), 'id', x.id, 'avatar', x.avatar) order by (x.id = v_t.leader) desc, m.created_at), '[]')
                   from castle.team_members m join castle.students x on x.id = m.sid where m.team_id = v_t.id)) end,
     'invites', (select coalesce(jsonb_agg(jsonb_build_object('teamId', t.id, 'teamName', t.name, 'from', lx.name,
                   'size', (select count(*) from castle.team_members z where z.team_id = t.id and z.state = 'joined')) order by m.created_at), '[]')
