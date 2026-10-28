@@ -1064,7 +1064,7 @@ input,textarea,select{-webkit-user-select:text;user-select:text;-webkit-touch-ca
 <script src="config.js?v=20261027"></script>
 <script>
 // 홈 화면 앱이 예전 화면을 붙잡고 있지 않도록: 열 때마다 새 버전이 있는지 확인해서 있으면 새로 불러옵니다
-const BUILD = '20261028-n';
+const BUILD = '20261028-o';
 (async () => {
   try {
     const t = await fetch('./index.html?nc=' + Date.now(), { cache: 'no-store' }).then((r) => r.text());
@@ -1259,7 +1259,7 @@ function renderLogin(msg, signup) {
   <div class="err" id="err">${esc(msg || '')}</div>
   <button class="primary btn-big" id="go" style="margin-top:6px">${signup ? '가입하고 시작하기' : '로그인'}</button>${signup ? '' : '<button class="btn-big" id="gst" style="margin-top:8px">로그인 없이 탐험해 보기</button>'}</div>
   ${signup ? '' : installHint()}
-  ${signup ? '' : '<p class="sub" style="text-align:center;margin:14px 8px 8px">비밀번호를 잊은 경우<br><b>차성빈 원장</b>에게 초기화를 요청하십시오.</p><div class="row" style="flex-wrap:nowrap;justify-content:center"><a class="btnlink ico" id="sms" aria-label="문자 보내기" title="문자 보내기" href="' + smsHref('') + '">' + IC.sms + '</a><a class="btnlink ico kk" aria-label="카카오톡 오픈채팅" title="카카오톡 오픈채팅" href="' + KAKAO_URL + '" target="_blank" rel="noopener">' + IC.kakao + '</a></div>'}`, true);
+  ${signup ? '' : '<p class="sub" style="text-align:center;margin:14px 8px 8px">비밀번호를 잊은 경우<br><b>관리자</b>에게 초기화를 요청하십시오.</p><div class="row" style="flex-wrap:nowrap;justify-content:center"><a class="btnlink ico" id="sms" aria-label="문자 보내기" title="문자 보내기" href="' + smsHref('') + '">' + IC.sms + '</a><a class="btnlink ico kk" aria-label="카카오톡 오픈채팅" title="카카오톡 오픈채팅" href="' + KAKAO_URL + '" target="_blank" rel="noopener">' + IC.kakao + '</a></div>'}`, true);
   const go = async () => {
     try {
       const r = await api(signup ? 'register' : 'login', { id: $('#id').value, pw: $('#pw').value });
