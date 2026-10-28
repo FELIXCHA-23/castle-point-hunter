@@ -1319,6 +1319,8 @@ const EMOJIS = ['🙂', '😎', '🤓', '😄', '🥳', '🤩', '😺', '🐶', 
   '🔥', '⚡', '🌟', '🌈', '🚀', '🎯', '🏆', '👑', '💎', '📚', '✏️', '🧠', '🎮', '⚽', '🏀', '🎵', '🍀', '🌸', '🍎', '🍕', '🍩', '🍉', '☀️', '🌙', '❄️', '🌊', '🛡️', '⚔️', '🏹', '🧩'];
 const avOf = () => (me && me.avatar) || '🙂';
 const myChip = () => `<button id="my" class="mychip" aria-label="마이페이지"><span class="av emo">${avOf()}</span>${esc(me.name)}<i>⌄</i></button>`;
+// 홈의 '사냥터 바로 입장'이 들어갈 학년: 탐험은 고1, 학생은 자기 학년
+const homeGrade = () => guest ? '고1' : (me.grades.includes(me.grade) ? me.grade : (me.grades.includes(pickedGrade) ? pickedGrade : me.grades[0]));
 async function renderHome() {
   const c = me.cfg;
   const m = me.mult, fire = m.value > 1 ? `<div class="banner">🔥 포인트 2배 적용 중${m.morning ? ' · 주말·공휴일 아침 타임' : ''}${m.daily ? ` · 오늘 ${c.DAILY_BONUS_COUNT}문제 맞힘` : ''}</div>` : '';
@@ -1329,6 +1331,7 @@ async function renderHome() {
     <div class="hi">오늘도 캐슬수학과 함께</div><h1>안녕하세요!<br>${esc(me.name)}${esc(me.title || '님')}</h1></div>
   ${fire}
   ${ptcCard(true, 'cmp')}
+  <button class="primary cta" id="hgo" style="margin:0 0 12px"><span>▶</span> 사냥터 바로 입장 · ${esc(homeGrade())} <span>→</span></button>
   <div class="card hmenu"><button id="hg"><b>이용 안내</b><span>포인트·랭킹전·오답노트 규칙</span><i>›</i></button>
     <button id="hn"><b>공지사항</b><span>${top ? esc(top.title) : '등록된 공지가 없습니다'}</span>${list.length ? `<em class="cnt">${list.length}</em>` : ''}<i>›</i></button></div>
   ${guest ? '<button id="gout" class="primary btn-big gout">탐험 종료하기</button>' : ''}
@@ -1336,6 +1339,7 @@ async function renderHome() {
   $('#my').onclick = () => renderMy(); bindNav();
   if ($('#gout')) $('#gout').onclick = logout;
   $('#ptgo').onclick = () => renderPoints('home');
+  $('#hgo').onclick = () => nextPreview(homeGrade());
   $('#hg').onclick = () => openSheet('이용 안내', foldCards(guideCards()));
   $('#hn').onclick = () => openSheet('공지사항', noticeCards(list));
 }
