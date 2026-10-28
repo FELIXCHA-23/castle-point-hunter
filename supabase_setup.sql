@@ -31,6 +31,7 @@ alter table castle.students add column if not exists title text not null default
 alter table castle.students add column if not exists avatar text not null default '';             -- 프로필 이모티콘 (학생이 직접 고름)
 alter table castle.students add column if not exists grade text not null default '';             -- 학생 학년: 중1 … 고3 (학년별 순위용)
 alter table castle.problems add column if not exists book text not null default '';              -- 문제 출처 설명 (예: 미래엔 교과서 문제 변형). 나중에 분류할 때 써요
+alter table castle.problems add column if not exists guest boolean not null default false;   -- 탐험 모드 전용 문제 (active=false 로 두어 실제 학생 문제와 섞이지 않게 함)
 alter table castle.problems add column if not exists level int not null default 0;               -- 난이도 1하 2중하 3중 4상 5최상 (0=미정)
 create table if not exists castle.roster (
   teacher text not null references castle.students(id) on delete cascade,
@@ -1275,11 +1276,11 @@ declare p castle.problems; v_g text := nullif(b->>'grade', ''); v_min int := coa
         v_ex text[] := coalesce(array(select jsonb_array_elements_text(coalesce(b->'exclude', '[]'::jsonb))), '{}');
 begin
   perform castle.auth(tok, 'guest');
-  select * into p from castle.problems q where q.active and q.level >= v_min and (v_g is null or q.grade = v_g)
-    and (v_g is null or castle.unit_ok(v_g, q.subject, q.unit_large, q.unit)) and not (q.id = any (v_ex)) order by random() limit 1;
+  -- 탐험 모드는 탐험 전용 문제(guest)에서만 고른다
+  select * into p from castle.problems q where q.guest and q.level >= v_min and (v_g is null or q.grade = v_g)
+    and not (q.id = any (v_ex)) order by random() limit 1;
   if not found then
-    select * into p from castle.problems q where q.active and q.level >= v_min and (v_g is null or q.grade = v_g)
-      and (v_g is null or castle.unit_ok(v_g, q.subject, q.unit_large, q.unit)) order by random() limit 1;
+    select * into p from castle.problems q where q.guest and q.level >= v_min and (v_g is null or q.grade = v_g) order by random() limit 1;
   end if;
   if not found then perform castle.fail(400, '지금은 이 학년에 풀 수 있는 문제가 없습니다. 다른 학년을 선택해 주십시오.'); end if;
   return jsonb_build_object('id', p.id, 'grade', p.grade, 'text', p.text, 'image', p.image, 'level', p.level,
@@ -1289,7 +1290,7 @@ end $$;
 create or replace function castle.r_guest_pool(tok text, b jsonb) returns jsonb language plpgsql as $$
 begin
   perform castle.auth(tok, 'guest');
-  return jsonb_build_object('n', (select count(*) from castle.problems where active and level >= coalesce((b->>'minLevel')::int, 0)));
+  return jsonb_build_object('n', (select count(*) from castle.problems where guest and level >= coalesce((b->>'minLevel')::int, 0)));
 end $$;
 
 create or replace function castle.r_guest_check(tok text, b jsonb) returns jsonb language plpgsql as $$
