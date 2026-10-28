@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="color-scheme" content="dark">
-<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, interactive-widget=resizes-content">
 <link rel="manifest" href="manifest.webmanifest">
 <link rel="icon" type="image/png" sizes="32x32" href="icons/favicon-32.png">
 <link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
@@ -1027,7 +1027,7 @@ body{overflow-x:clip;overflow-y:visible}
 .brand b{font-size:15px;font-weight:800;letter-spacing:-.2px;color:#f1ece0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .mark-big{display:block;width:104px;height:104px;object-fit:contain}
 .gout{display:block;width:100%;margin:12px 0 0}
-input,textarea{-webkit-user-select:text;user-select:text;-webkit-touch-callout:default;touch-action:manipulation}
+input,textarea,select{-webkit-user-select:text;user-select:text;-webkit-touch-callout:default;touch-action:auto}
 #ans{font-size:18px}
 /* 뒤로 가기: 버튼 모양 */
 .back#bk,.back#hm{height:40px;padding:0 16px 0 10px!important;gap:4px;border:1px solid rgba(255,255,255,.14);background:#1A1C22;color:#E9E7E2!important;border-radius:12px;font-size:15px!important;font-weight:700;letter-spacing:-.01em}
@@ -1058,7 +1058,7 @@ input,textarea{-webkit-user-select:text;user-select:text;-webkit-touch-callout:d
 <script src="config.js?v=20261027"></script>
 <script>
 // 홈 화면 앱이 예전 화면을 붙잡고 있지 않도록: 열 때마다 새 버전이 있는지 확인해서 있으면 새로 불러옵니다
-const BUILD = '20261028-b';
+const BUILD = '20261028-c';
 (async () => {
   try {
     const t = await fetch('./index.html?nc=' + Date.now(), { cache: 'no-store' }).then((r) => r.text());
