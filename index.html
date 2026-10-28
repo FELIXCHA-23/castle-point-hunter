@@ -1064,7 +1064,7 @@ input,textarea,select{-webkit-user-select:text;user-select:text;-webkit-touch-ca
 <script src="config.js?v=20261027"></script>
 <script>
 // 홈 화면 앱이 예전 화면을 붙잡고 있지 않도록: 열 때마다 새 버전이 있는지 확인해서 있으면 새로 불러옵니다
-const BUILD = '20261028-m';
+const BUILD = '20261028-n';
 (async () => {
   try {
     const t = await fetch('./index.html?nc=' + Date.now(), { cache: 'no-store' }).then((r) => r.text());
@@ -1357,6 +1357,15 @@ const avOf = () => (me && me.avatar) || '🙂';
 const myChip = () => `<button id="my" class="mychip" aria-label="마이페이지"><span class="av emo">${avOf()}</span>${esc(me.name)}<i>⌄</i></button>`;
 // 홈의 '사냥터 바로 입장'이 들어갈 학년: 탐험은 고1, 학생은 자기 학년
 const homeGrade = () => guest ? '고1' : (me.grades.includes(me.grade) ? me.grade : (me.grades.includes(pickedGrade) ? pickedGrade : me.grades[0]));
+// 홈의 오늘의 목표: 2배 포인트까지 남은 문제 수
+function homeGoal() {
+  const c = me.cfg, cnt = Math.min(me.todayCount, c.DAILY_BONUS_COUNT), left = Math.max(0, c.DAILY_BONUS_COUNT - me.todayCount);
+  const R = 33, C = 2 * Math.PI * R, off = C * (1 - cnt / c.DAILY_BONUS_COUNT);
+  return `<div class="card"><div class="sec"><h2>오늘의 목표</h2></div>
+    <div class="learn"><div class="ring"><svg viewBox="0 0 76 76"><circle cx="38" cy="38" r="${R}" fill="none" stroke="var(--line)" stroke-width="7"/><circle cx="38" cy="38" r="${R}" fill="none" stroke="var(--main)" stroke-width="7" stroke-linecap="round" stroke-dasharray="${C.toFixed(1)}" stroke-dashoffset="${off.toFixed(1)}"/></svg><b>${me.todayCount}<small>/ ${c.DAILY_BONUS_COUNT}</small></b></div>
+      <div class="r2"><div class="l1"><span>오늘 맞힌 문제</span></div><div class="bar"><div style="width:${Math.round(cnt / c.DAILY_BONUS_COUNT * 100)}%"></div></div>
+        <p class="sub" style="margin:8px 0 0">${left > 0 ? `${left}문제 더 맞히면 🔥 포인트 2배` : '🔥 오늘은 포인트 2배 적용 중'}</p></div></div></div>`;
+}
 async function renderHome() {
   const c = me.cfg;
   const m = me.mult, fire = m.value > 1 ? `<div class="banner">🔥 포인트 2배 적용 중${m.morning ? ' · 주말·공휴일 아침 타임' : ''}${m.daily ? ` · 오늘 ${c.DAILY_BONUS_COUNT}문제 맞힘` : ''}</div>` : '';
@@ -1368,6 +1377,7 @@ async function renderHome() {
   ${fire}
   ${ptcCard(true, 'cmp')}
   <button class="primary cta" id="hgo" style="margin:0 0 12px"><span>▶</span> 사냥터 바로 입장 · ${esc(homeGrade())} <span>→</span></button>
+  ${homeGoal()}
   <div class="card hmenu"><button id="hg"><b>이용 안내</b><span>포인트·랭킹전·오답노트 규칙</span><i>›</i></button>
     <button id="hn"><b>공지사항</b><span>${top ? esc(top.title) : '등록된 공지가 없습니다'}</span>${list.length ? `<em class="cnt">${list.length}</em>` : ''}<i>›</i></button></div>
   ${guest ? '<button id="gout" class="btn-big soft gout">탐험 종료하기</button>' : ''}
