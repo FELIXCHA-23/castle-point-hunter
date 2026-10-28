@@ -1034,7 +1034,7 @@ input,textarea,select{-webkit-user-select:text;user-select:text;-webkit-touch-ca
 .back#bk svg,.back#hm svg{width:20px;height:20px}
 .back#bk:active,.back#hm:active{background:#23262E}
 /* 5탭 · 보조 글씨 보강 · 접기 · 팀/친구 전환 */
-.nav button{font-size:12px!important;letter-spacing:-.01em;min-height:58px}
+.nav button{font-size:11.5px!important;letter-spacing:-.02em;min-height:58px}
 .nav button svg{width:24px;height:24px}
 .sub,.sec .sub,.rules,.rules li,.mrow .sub{color:#BDBFC8}
 .sub{font-size:14px}
@@ -1059,7 +1059,7 @@ input,textarea,select{-webkit-user-select:text;user-select:text;-webkit-touch-ca
 <script src="config.js?v=20261027"></script>
 <script>
 // 홈 화면 앱이 예전 화면을 붙잡고 있지 않도록: 열 때마다 새 버전이 있는지 확인해서 있으면 새로 불러옵니다
-const BUILD = '20261028-e';
+const BUILD = '20261028-f';
 (async () => {
   try {
     const t = await fetch('./index.html?nc=' + Date.now(), { cache: 'no-store' }).then((r) => r.text());
@@ -1238,11 +1238,11 @@ const trophy = (c) => `<svg viewBox="0 0 24 24" width="22" height="22" aria-hidd
 const MEDAL = ['#f5b82e', '#9aa6b8', '#cd7f4a'];
 const rankRows = (top) => top.map((x) => `<div class="rk-row${x.me ? ' me' : ''}"><div class="rk-no">${x.rank <= 3 ? trophy(MEDAL[x.rank - 1]) : x.rank}</div>${avatar(x.name, '', x.avatar)}<div class="rk-nm">${esc(x.name)}${x.grade ? `<span class="gchip">${esc(x.grade)}</span>` : ''}${x.me ? ' <span class="chip">나</span>' : ''}</div><div class="rk-pt">${fmt(x.points)} P</div></div>`).join('');
 function navBar(cur) {
-  const it = [['home', '홈', IC.home], ['hunt', '사냥', IC.hunt], ['rk', '순위', IC.rank], ['team', '함께', IC.team], ['nt', '오답노트', IC.note]];
+  const it = [['home', '홈', IC.home], ['hunt', '사냥', IC.hunt], ['season', '랭킹전', IC.season], ['rk', '순위', IC.rank], ['team', '함께', IC.team], ['nt', '오답노트', IC.note]];
   return `<div class="nav"><div>${it.map(([k, n, ic]) => `<button data-n="${k}" class="${k === cur ? 'on' : ''}">${ic}${n}</button>`).join('')}</div></div>`;
 }
 function bindNav() {
-  const f = { home: () => loadMe(), hunt: () => loadMe('', 'hunt'), team: () => renderTeam(), nt: renderNotes, rk: () => renderRank() };
+  const f = { home: () => loadMe(), hunt: () => loadMe('', 'hunt'), season: () => renderSeason(), team: () => renderTeam(), nt: renderNotes, rk: () => renderRank() };
   document.querySelectorAll('.nav button').forEach((b) => b.onclick = () => Promise.resolve(f[b.dataset.n]()).catch(() => {}));
 }
 
@@ -1509,8 +1509,8 @@ let rkKind = 'all';
 async function renderRank() {
   let r, s = null;
   let tm = null;
-  try { r = await api('rank'); s = await api('season/info').catch(() => null); if (!guest) tm = await api('team/info').catch(() => null); } catch (e) { return renderHunt(e.message); }
-  app(`  <div class="card"><div class="seg"><button data-k="all">포인트 전체</button><button data-k="grade">내 학년${r.grade ? ' · ' + esc(r.grade) : ''}</button><button data-k="season">개인랭킹전</button>${tm ? '<button data-k="team">팀랭킹전</button>' : ''}</div><div id="rkb"></div></div>${navBar('rk')}`);
+  try { r = await api('rank'); if (!guest) tm = await api('team/info').catch(() => null); } catch (e) { return renderHunt(e.message); }
+  app(`  <div class="card"><div class="seg"><button data-k="all">포인트 전체</button><button data-k="grade">내 학년${r.grade ? ' · ' + esc(r.grade) : ''}</button>${tm ? '<button data-k="team">팀랭킹전</button>' : ''}</div><div id="rkb"></div></div>${navBar('rk')}`);
   bindNav();
   const draw = (k) => {
     rkKind = k;
@@ -1519,17 +1519,12 @@ async function renderRank() {
     if (k === 'team') {
       sum = tm.team && tm.team.rank ? `우리 팀 ${tm.team.rank}위 / ${tm.total}팀 · ${fmt(tm.team.score)}점` : '팀원 2명 이상인 팀이 순위에 오릅니다';
       rows = tm.top.length ? teamRows(tm.top) : '';
-    } else if (k === 'season') {
-      if (!s || !s.season) { $('#rkb').innerHTML = '<p class="sub">현재 진행중인 시즌이 없습니다.</p>'; return; }
-      sum = s.me.rank ? `내 순위 ${s.me.rank}위 / ${s.total}명 · ${fmt(s.me.score)}점` : '아직 점수가 없습니다';
-      rows = s.top.length ? seasonRows(s.top) : '';
     } else {
       const grade = k === 'grade', list = grade ? r.gradeTop : r.top;
       sum = grade ? (r.myGradeRank ? `내 학년 순위 ${r.myGradeRank}위 / ${r.gradeTotal}명` : '500P를 넘으면 순위에 오릅니다') : (r.myRank ? `내 순위 ${r.myRank}위 / ${r.total}명` : '500P를 넘으면 순위에 오릅니다');
       rows = list.length ? rankRows(list) : '';
     }
-    $('#rkb').innerHTML = `<div class="sub" style="font-weight:600;margin-bottom:6px">${sum}</div>${rows || '<p class="sub">아직 순위에 오른 학생이 없습니다.</p>'}${k === 'season' ? '<button class="primary btn-big" id="goseason" style="margin-top:12px">개인랭킹전 도전하기 · 규칙 보기</button>' : ''}`;
-    if ($('#goseason')) $('#goseason').onclick = () => renderSeason();
+    $('#rkb').innerHTML = `<div class="sub" style="font-weight:600;margin-bottom:6px">${sum}</div>${rows || '<p class="sub">아직 순위에 오른 학생이 없습니다.</p>'}`;
   };
   document.querySelectorAll('.seg button').forEach((b) => b.onclick = () => draw(b.dataset.k));
   draw(rkKind);
@@ -1765,8 +1760,8 @@ async function renderSeason(notice) {
   const s = d.season;
   const head2 = `<div class="top"><span class="brand"><img src="logo_mark.png?v=6" alt="캐슬"><b>캐슬 포인트 헌터스</b></span><span class="chip">시즌 랭킹전</span></div>`;
   if (!s) {
-    app(`<button class="back" id="bk" style="margin:0 0 12px">${IC.back}순위로</button><div class="card"><h2>시즌 랭킹전</h2><p class="sub">현재 진행중인 시즌이 없습니다.</p></div>${navBar('rk')}`);
-    bindNav(); $('#bk').onclick = () => renderRank(); return;
+    app(`<div class="card"><h2>시즌 랭킹전</h2><p class="sub">현재 진행중인 시즌이 없습니다.</p></div>${navBar('season')}`);
+    bindNav(); return;
   }
   const active = s.status === 'active', upcoming = s.status === 'upcoming';
   const left = Math.max(0, s.endsAt - d.serverNow), days = Math.floor(left / 86400000), hrs = Math.floor(left / 3600000) % 24;
@@ -1774,7 +1769,7 @@ async function renderSeason(notice) {
   const draw = () => {
     $('#sl').innerHTML = d.top.length ? seasonRows(d.top) : '<p class="sub">아직 점수를 낸 학생이 없습니다.</p>';
   };
-  app(`<button class="back" id="bk" style="margin:0 0 12px">${IC.back}순위로</button>
+  app(`
   <div class="card"><h2 style="margin-bottom:4px">${esc(s.name)} 개인랭킹전</h2>
     <div class="sub">${fmtDay(s.startsAt)} ~ ${fmtDay(s.endsAt)} · ${state}</div>
     ${s.prize ? `<div class="pbox">시즌 종료 후 상품 이벤트<br><span style="font-weight:600">${esc(s.prize)}</span></div>` : '<div class="pbox">시즌이 끝나면 상위 학생에게 상품 이벤트가 있습니다.</div>'}
@@ -1784,8 +1779,8 @@ async function renderSeason(notice) {
     ${d.lockedGrade ? `<div class="pbox">도전 학년 <b>${esc(d.lockedGrade)}</b> · 이번 시즌 동안 고정되어 바꿀 수 없습니다.</div>` : d.pickGrades ? `<label style="margin-top:12px">도전할 학년 (한 번 고르면 이번 시즌 동안 바꿀 수 없습니다)</label><div class="seg" id="sg">${d.pickGrades.map((g) => `<button data-g="${g}" class="${g === d.selGrade ? 'on' : ''}">${g}</button>`).join('')}</div>` : ''}
     ${active && d.canPlay ? (d.poolLeft > 0 ? `<button class="primary btn-big" id="go">도전하기 (남은 문제 ${d.poolLeft}개)</button>` : '<p class="sub" style="margin-top:12px">이번 시즌의 문제를 모두 풀었습니다.</p>') : (!d.canPlay ? '<p class="sub" style="margin-top:12px">선생님·관리자는 순위만 볼 수 있습니다.</p>' : '')}
   </div>
-  <div class="card"><h2 style="display:flex;align-items:center;gap:8px">${trophy('#f5b82e')}시즌 순위 <span class="sub" style="font-weight:600">${d.total}명 참가</span></h2><div id="sl"></div></div>${navBar('rk')}`);
-  draw(); bindNav(); $('#bk').onclick = () => { rkKind = 'season'; renderRank(); };
+  <div class="card"><h2 style="display:flex;align-items:center;gap:8px">${trophy('#f5b82e')}시즌 순위 <span class="sub" style="font-weight:600">${d.total}명 참가</span></h2><div id="sl"></div></div>${navBar('season')}`);
+  draw(); bindNav();
   if ($('#go')) $('#go').onclick = () => { if (d.pickGrades && !d.lockedGrade && !confirm(d.selGrade + ' 문제로 도전합니다. 이번 시즌 동안 학년을 바꿀 수 없습니다. 시작하시겠습니까?')) return; startSeason(); };
   document.querySelectorAll('#sg button').forEach((b) => b.onclick = () => { seasonGrade = b.dataset.g; renderSeason(); });
 }
