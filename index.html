@@ -1059,7 +1059,7 @@ input,textarea,select{-webkit-user-select:text;user-select:text;-webkit-touch-ca
 <script src="config.js?v=20261027"></script>
 <script>
 // 홈 화면 앱이 예전 화면을 붙잡고 있지 않도록: 열 때마다 새 버전이 있는지 확인해서 있으면 새로 불러옵니다
-const BUILD = '20261028-i';
+const BUILD = '20261028-j';
 (async () => {
   try {
     const t = await fetch('./index.html?nc=' + Date.now(), { cache: 'no-store' }).then((r) => r.text());
@@ -1771,9 +1771,6 @@ async function renderSeason(notice) {
   const active = s.status === 'active', upcoming = s.status === 'upcoming';
   const left = Math.max(0, s.endsAt - d.serverNow), days = Math.floor(left / 86400000), hrs = Math.floor(left / 3600000) % 24;
   const state = active ? `진행 중 · 종료까지 ${days > 0 ? days + '일 ' : ''}${hrs}시간` : upcoming ? `${fmtDay(s.startsAt)}에 시작합니다` : '시즌이 끝났습니다';
-  const draw = () => {
-    $('#sl').innerHTML = d.top.length ? seasonRows(d.top) : '<p class="sub">아직 점수를 낸 학생이 없습니다.</p>';
-  };
   app(`${rkSeg('solo')}
   <div class="card"><h2 style="margin-bottom:4px">${esc(s.name)} 개인랭킹전</h2>
     <div class="sub">${fmtDay(s.startsAt)} ~ ${fmtDay(s.endsAt)} · ${state}</div>
@@ -1782,8 +1779,8 @@ async function renderSeason(notice) {
     <details class="fold"><summary>규칙 보기</summary><ul class="rules"><li>순위는 <b>학년 구분 없이 모두 함께</b> 겨룹니다.</li><li>문제는 <b>본인 학년의 문제</b>만 나옵니다.</li><li>랭킹전은 포인트의 적립 및 사용과 무관하며, 오직 점수제로만 운영됩니다.</li><li>랭킹전은 포인트 대신 순위만 있습니다.</li><li>포인트 사냥보다 어려운 문제(난이도 <b>${LV[s.minLevel]}</b> 이상)만 나옵니다.</li><li>점수는 문항의 난이도별로 다르고, 오답을 제출하면 감점이 됩니다. 맞히면 <b>난이도×10점</b>, 오답을 제출하면 <b>난이도×5점</b>이 감점됩니다. 시간 초과는 감점이 없습니다.</li><li>한 번 푼 문제는 이번 시즌에 다시 나오지 않습니다.</li><li>문제당 제한시간 ${Math.round(s.timeLimitSec / 60)}분입니다.</li></ul></details>
     ${seasonStart(d, active, notice)}
   </div>
-  <div class="card"><h2 style="display:flex;align-items:center;gap:8px">${trophy('#f5b82e')}시즌 순위 <span class="sub" style="font-weight:600">${d.total}명 참가</span></h2><div id="sl"></div></div>${navBar('season')}`);
-  draw(); bindNav(); bindRk(); bindSeasonStart(d, renderSeason);
+  <button class="btn-big soft" id="allrk" style="margin-top:2px">전체 랭킹전 순위 보기</button>${navBar('season')}`);
+  bindNav(); bindRk(); bindSeasonStart(d, renderSeason); $('#allrk').onclick = () => { rkKind = 'season'; renderRank(); };
 }
 // 랭킹전 시작 영역 (개인·팀 화면이 같이 씁니다: 팀 점수는 팀원의 개인랭킹전 점수를 더한 값)
 const seasonStart = (d, active, notice) => `<div class="err" id="err">${esc(notice || '')}</div>
@@ -1803,11 +1800,13 @@ async function renderTeamBoard() {
   <div class="card"><h2 style="display:flex;align-items:center;gap:8px;margin-bottom:4px">${trophy('#f5b82e')}${s ? esc(s.name) + ' ' : ''}팀랭킹전 <span class="sub" style="font-weight:600">${t.total}팀</span></h2>
     ${state ? `<div class="sub" style="margin-bottom:6px">${state}</div>` : ''}${mine}
     <p class="sub" style="margin:10px 0 0">팀랭킹전은 별도 게임이 아니라, 팀원이 <b>개인랭킹전</b>에서 얻은 점수를 합산하는 순위입니다.</p>
-    <button class="btn-big soft" id="gotm" style="margin-top:10px">${tm ? '내 팀 보기' : '팀 만들러 가기'}</button>
-    <div style="margin-top:14px">${t.top.length ? teamRows(t.top) : '<p class="sub" style="margin:8px 0 12px">아직 순위에 오른 팀이 없습니다.</p>'}</div>
+    <button class="btn-big soft" id="gotm" style="margin-top:12px">${tm ? '내 팀 보기' : '팀 만들러 가기'}</button>
+    <button class="btn-big soft" id="allrk" style="margin-top:8px">전체 팀 순위 보기</button>
+    ${tm ? `<div style="margin-top:14px"><div class="sub" style="font-weight:600;margin-bottom:6px">팀원별 점수</div>${tm.members.filter((m) => m.state === 'joined').map((m) => `<div class="rk-row${m.me ? ' me' : ''}">${avatar(m.name, m.leader ? 'lead' : '', m.avatar)}<div class="rk-nm">${esc(m.name)}${m.leader ? ' <span class="chip">팀장</span>' : ''}</div><div class="rk-pt">${fmt(m.score)}점</div></div>`).join('')}</div>` : ''}
     <details class="fold"><summary>규칙 보기</summary><ul class="rules"><li>팀장이 팀을 만들고 초대하면, 초대받은 학생이 수락해 같은 팀이 됩니다.</li><li>팀은 <b>2명부터 4명까지</b>이며, 한 팀에만 속할 수 있습니다.</li><li>팀은 시즌 시작 전에도, 시즌 중에도 자유롭게 꾸리거나 탈퇴할 수 있습니다.</li><li>팀 점수는 그 팀에 속해 있는 동안 팀원이 얻은 개인랭킹전 점수를 모두 더한 값입니다. 가입 전이나 탈퇴 후의 점수는 포함되지 않습니다.</li></ul></details></div>${navBar('season')}`);
   bindNav(); bindRk();
   $('#gotm').onclick = () => renderTeam();
+  $('#allrk').onclick = () => { rkKind = 'team'; renderRank(); };
 }
 async function startSeason() {
   try { const r = await api('season/start', seasonGrade ? { grade: seasonGrade } : {}); skew = r.serverNow - Date.now(); renderSolve(r.active); }
