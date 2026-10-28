@@ -1033,6 +1033,22 @@ input,textarea{-webkit-user-select:text;user-select:text;-webkit-touch-callout:d
 .back#bk,.back#hm{height:40px;padding:0 16px 0 10px!important;gap:4px;border:1px solid rgba(255,255,255,.14);background:#1A1C22;color:#E9E7E2!important;border-radius:12px;font-size:15px!important;font-weight:700;letter-spacing:-.01em}
 .back#bk svg,.back#hm svg{width:20px;height:20px}
 .back#bk:active,.back#hm:active{background:#23262E}
+/* 5탭 · 보조 글씨 보강 · 접기 · 팀/친구 전환 */
+.nav button{font-size:12px!important;letter-spacing:-.01em;min-height:58px}
+.nav button svg{width:24px;height:24px}
+.sub,.sec .sub,.rules,.rules li,.mrow .sub{color:#BDBFC8}
+.sub{font-size:14px}
+.rules,.rules li{font-size:14px}
+.sec .sub{font-size:13px}
+.pnote{color:#ECEAE5}
+.fold{margin-top:12px;border-top:1px solid rgba(255,255,255,.08);padding-top:10px}
+.fold summary{cursor:pointer;color:#D9BF8A;font-weight:700;font-size:14.5px;list-style:none;display:flex;align-items:center;justify-content:space-between}
+.fold summary::-webkit-details-marker{display:none}
+.fold summary::after{content:"▾";font-size:14px;transition:transform .15s}
+.fold[open] summary::after{transform:rotate(180deg)}
+.seg.tg,.seg.rec{display:grid;grid-auto-flow:column;grid-auto-columns:1fr;gap:6px}
+.seg.tg button,.seg.rec button{padding:11px 6px;font-size:15px;font-weight:700}
+.rk-row .av.emo{width:34px;height:34px;font-size:18px}
 </style>
 </head>
 <body>
@@ -1082,7 +1098,7 @@ async function guestApi(path, b) {
   switch (path) {
     case 'me': return guestMe();
     case 'logout': return {};
-    case 'rank': { const on = G.points > 500, row = [{ rank: 1, name: '탐*가', grade: '', points: G.points, me: true }]; return { grade: '', top: on ? row : [], myRank: on ? 1 : null, total: on ? 1 : 0, gradeTop: [], myGradeRank: null, gradeTotal: 0 }; }
+    case 'rank': { const on = G.points > 500, row = [{ rank: 1, name: '탐*가', grade: '', points: G.points, me: true, avatar: G.avatar }]; return { grade: '', top: on ? row : [], myRank: on ? 1 : null, total: on ? 1 : 0, gradeTop: [], myGradeRank: null, gradeTotal: 0 }; }
     case 'season/info': { const pool = await api('guest/pool', { minLevel: 3 });
       return { serverNow: now, grade: '', canPlay: true, poolLeft: pool.n, total: 0, top: [], gradeTop: [], me: { score: G.score, rank: null, gradeRank: null, ok: G.ok, n: G.n },
         season: { id: 0, name: '탐험 시즌', status: 'active', startsAt: now - 864e5, endsAt: now + 7 * 864e5, prize: '', minLevel: 3, timeLimitSec: 300 } }; }
@@ -1127,7 +1143,7 @@ async function guestApi(path, b) {
     case 'friend/respond': return {};
     case 'friend/remove': G.fr = G.fr.filter((x) => x.id !== b.id); return {};
     case 'team/info': { const t = G.team; return { season: null, canPlay: true, invites: [], total: 0, top: [],
-      team: t ? { id: 0, name: t.name, leader: true, score: 0, rank: null, members: [{ id: 'guest', name: '탐험가', grade: '', state: 'joined', leader: true, me: true, score: 0 }].concat(t.inv.map((id) => ({ id, name: id, grade: '', state: 'invited', leader: false, me: false, score: 0 }))) } : null }; }
+      team: t ? { id: 0, name: t.name, leader: true, score: 0, rank: null, members: [{ id: 'guest', name: '탐험가', grade: '', state: 'joined', leader: true, me: true, score: 0, avatar: G.avatar }].concat(t.inv.map((id) => ({ id, name: id, grade: '', state: 'invited', leader: false, me: false, score: 0 }))) } : null }; }
     case 'team/create': { const n = String((b && b.name) || '').trim(); if (n.length < 2 || n.length > 12) throw new Error('팀 이름은 2~12자로 입력하십시오.'); G.team = { name: n, inv: [] }; return { ok: true }; }
     case 'team/invite': { const id = String((b && b.id) || '').trim(); if (!id) throw new Error('아이디를 입력하십시오.'); if (G.team.inv.length >= 3) throw new Error('팀은 최대 4명까지입니다.'); if (!G.team.inv.includes(id)) G.team.inv.push(id); return { ok: true }; }
     case 'team/cancel': G.team.inv = G.team.inv.filter((x) => x !== b.id); return {};
@@ -1170,7 +1186,7 @@ function siteHeader() {
   if (gb) gb.after(h); else a.prepend(h);
   h.querySelector('#my').onclick = () => renderMy();
 }
-const app = (html, nonav) => { clearInterval(tick); closeMore(); $('#app').className = nonav ? 'nonav' : ''; $('#app').innerHTML = (guest ? '<div class="guestbar"><span>탐험모드이므로 포인트는 사라집니다.</span></div>' : '') + html; math($('#app')); siteHeader(); window.scrollTo(0, 0); };
+const app = (html, nonav) => { clearInterval(tick); closeMore(); $('#app').className = nonav ? 'nonav' : ''; $('#app').innerHTML = html; math($('#app')); siteHeader(); window.scrollTo(0, 0); };
 
 // ---- 문제 화면 보호 (복사·저장·인쇄를 어렵게 해요) ----
 const guard = (e) => { if (e.target.closest && e.target.closest('.prob,.eimg,.wm')) e.preventDefault(); };
@@ -1208,13 +1224,13 @@ const IC = {
 };
 const trophy = (c) => `<svg viewBox="0 0 24 24" width="22" height="22" aria-hidden="true"><path d="M7 4h10v5.2A5 5 0 0 1 12 14a5 5 0 0 1-5-4.8z" fill="${c}"/><path d="M7 5.5H4.2v1.3A3.4 3.4 0 0 0 7.6 10.2M17 5.5h2.8v1.3a3.4 3.4 0 0 1-3.4 3.4" fill="none" stroke="${c}" stroke-width="1.6" stroke-linecap="round"/><path d="M12 14v3.3M8.2 20h7.6M9.5 17.3h5" fill="none" stroke="${c}" stroke-width="1.8" stroke-linecap="round"/></svg>`;
 const MEDAL = ['#f5b82e', '#9aa6b8', '#cd7f4a'];
-const rankRows = (top) => top.map((x) => `<div class="rk-row${x.me ? ' me' : ''}"><div class="rk-no">${x.rank <= 3 ? trophy(MEDAL[x.rank - 1]) : x.rank}</div><div class="rk-nm">${esc(x.name)}${x.grade ? `<span class="gchip">${esc(x.grade)}</span>` : ''}${x.me ? ' <span class="chip">나</span>' : ''}</div><div class="rk-pt">${fmt(x.points)} P</div></div>`).join('');
+const rankRows = (top) => top.map((x) => `<div class="rk-row${x.me ? ' me' : ''}"><div class="rk-no">${x.rank <= 3 ? trophy(MEDAL[x.rank - 1]) : x.rank}</div>${avatar(x.name, '', x.avatar)}<div class="rk-nm">${esc(x.name)}${x.grade ? `<span class="gchip">${esc(x.grade)}</span>` : ''}${x.me ? ' <span class="chip">나</span>' : ''}</div><div class="rk-pt">${fmt(x.points)} P</div></div>`).join('');
 function navBar(cur) {
-  const it = [['home', '홈', IC.home], ['hunt', '사냥', IC.hunt], ['rk', '헌터순위', IC.rank], ['season', '랭킹전', IC.season], ['fr', '친구', IC.friend], ['team', '팀', IC.team], ['nt', '오답노트', IC.note]];
+  const it = [['home', '홈', IC.home], ['hunt', '사냥', IC.hunt], ['rk', '순위', IC.rank], ['team', '함께', IC.team], ['nt', '오답노트', IC.note]];
   return `<div class="nav"><div>${it.map(([k, n, ic]) => `<button data-n="${k}" class="${k === cur ? 'on' : ''}">${ic}${n}</button>`).join('')}</div></div>`;
 }
 function bindNav() {
-  const f = { home: () => loadMe(), hunt: () => loadMe('', 'hunt'), season: () => renderSeason(), team: () => renderTeam(), fr: () => renderFriends(), nt: renderNotes, rk: () => renderRank() };
+  const f = { home: () => loadMe(), hunt: () => loadMe('', 'hunt'), team: () => renderTeam(), nt: renderNotes, rk: () => renderRank() };
   document.querySelectorAll('.nav button').forEach((b) => b.onclick = () => Promise.resolve(f[b.dataset.n]()).catch(() => {}));
 }
 
@@ -1348,7 +1364,7 @@ async function renderHome() {
 }
 // 마이페이지: 내 기록·통계 등 개인 메뉴와 로그아웃
 function renderMy() {
-  const rows = [['hist', '내 기록', '최근 푼 문제 30개'], ['stats', '내 통계', '정답률과 약한 단원']];
+  const rows = [['hist', '내 기록', '푼 문제 · 통계 · 포인트 내역']];
   if (me.isTeacher) rows.push(['roster', '담당 학생 현황', '내 반 학생의 학습 현황']);
   if (me.isAdmin) rows.push(['admin', '관리자 화면', '학생, 문제, 시즌 관리']);
   rows.push(['out', guest ? '나가기' : '로그아웃', '']);
@@ -1362,7 +1378,7 @@ function renderMy() {
   document.querySelectorAll('.emogrid button').forEach((b) => b.onclick = async () => {
     try { await api('avatar/set', { avatar: b.dataset.e }); me.avatar = b.dataset.e; renderMy(); } catch (e) { alert(e.message); }
   });
-  const f = { hist: () => renderHistory(), stats: renderStats, roster: renderRoster, admin: () => switchTo('admin'), out: logout };
+  const f = { hist: () => renderHistory(), roster: renderRoster, admin: () => switchTo('admin'), out: logout };
   document.querySelectorAll('.hmenu button').forEach((b) => b.onclick = () => f[b.dataset.m]());
 }
 // 학습 화면(사냥): 학년을 고르고 문제를 시작한다
@@ -1375,7 +1391,6 @@ function renderHunt(notice) {
   const ico = HICO;
   app(`<div class="top"><span class="brand"><img src="logo_mark.png?v=6" alt="캐슬"><b>캐슬 포인트 헌터스</b></span><span style="display:flex;gap:4px;align-items:center">${myChip()}</span></div>
   ${fire}
-  ${ptcCard(true, 'cmp')}
   <div class="card hsel"><div class="sec"><h2>학년 선택</h2><span class="sub">학년을 고르고 시작하십시오.</span></div>
     <div class="grades">${me.grades.map((g) => `<button data-g="${g}" class="${g === pickedGrade ? 'on' : ''}">${g}</button>`).join('')}</div>
     <button class="primary cta" id="pv" ${pickedGrade ? '' : 'disabled'}>${pickedGrade ? `<span>▶</span> 사냥터 입장 · ${pickedGrade} <span>→</span>` : '학년을 먼저 골라 주십시오'}</button>
@@ -1388,7 +1403,6 @@ function renderHunt(notice) {
   ${navBar('hunt')}`);
   bindHead();
   $('#hist').onclick = () => renderHistory('hunt');
-  $('#ptgo').onclick = () => renderPoints('hunt');
   // 학년을 눌러도 화면을 다시 그리지 않고 그 자리에서 표시만 바꾼다 (스크롤 위치가 움직이지 않도록)
   document.querySelectorAll('.grades button').forEach((b) => b.onclick = () => {
     pickedGrade = b.dataset.g;
@@ -1502,7 +1516,8 @@ async function renderRank() {
       sum = grade ? (r.myGradeRank ? `내 학년 순위 ${r.myGradeRank}위 / ${r.gradeTotal}명` : '500P를 넘으면 순위에 오릅니다') : (r.myRank ? `내 순위 ${r.myRank}위 / ${r.total}명` : '500P를 넘으면 순위에 오릅니다');
       rows = list.length ? rankRows(list) : '';
     }
-    $('#rkb').innerHTML = `<div class="sub" style="font-weight:600;margin-bottom:6px">${sum}</div>${rows || '<p class="sub">아직 순위에 오른 학생이 없습니다.</p>'}`;
+    $('#rkb').innerHTML = `<div class="sub" style="font-weight:600;margin-bottom:6px">${sum}</div>${rows || '<p class="sub">아직 순위에 오른 학생이 없습니다.</p>'}${k === 'season' ? '<button class="primary btn-big" id="goseason" style="margin-top:12px">개인랭킹전 도전하기 · 규칙 보기</button>' : ''}`;
+    if ($('#goseason')) $('#goseason').onclick = () => renderSeason();
   };
   document.querySelectorAll('.seg button').forEach((b) => b.onclick = () => draw(b.dataset.k));
   draw(rkKind);
@@ -1519,15 +1534,17 @@ function openSheet(title, html) {
   o.querySelector('#shx').onclick = closeMore;
   math(o);
 }
-const subTop = (t, extra, back) => `<div class="top"><button class="back" id="bk">${IC.back}${back || '뒤로 가기'}</button>${extra || ''}</div><h1 style="font-size:22px;margin:4px 0 12px">${t}</h1>`;
-async function renderStats() {
+const subTop = (t, extra, back) => `<div class="top"><button class="back" id="bk">${IC.back}${back || '뒤로 가기'}</button>${extra || ''}</div>${t ? `<h1 style="font-size:22px;margin:4px 0 12px">${t}</h1>` : ''}`;
+const recSeg = (cur, from) => `<div class="seg rec"><button data-r="hist" class="${cur === 'hist' ? 'on' : ''}">기록</button><button data-r="stats" class="${cur === 'stats' ? 'on' : ''}">통계</button><button data-r="pts" class="${cur === 'pts' ? 'on' : ''}">포인트</button></div>`;
+const bindRec = (from) => document.querySelectorAll('.rec button').forEach((b) => b.onclick = () => ({ hist: () => renderHistory(from), stats: () => renderStats(from), pts: () => renderPoints(from) })[b.dataset.r]());
+async function renderStats(from) {
   const s = await api('stats'), pct = (a, n) => n ? Math.round(100 * a / n) : 0, mx = Math.max(1, ...s.days.map((x) => x.n));
-  app(`${subTop('내 통계', '', '마이페이지')}
+  app(`${subTop('', '', from === 'home' ? '홈' : from === 'hunt' ? '사냥' : '마이페이지')}${recSeg('stats')}
   <div class="card"><div class="stat3"><div><b>${fmt(s.total)}</b><span>푼 문제</span></div><div><b>${fmt(s.ok)}</b><span>맞힌 문제</span></div><div><b>${pct(s.ok, s.total)}%</b><span>정답률</span></div></div>${guest ? '<p class="sub">탐험모드에서는 이번 탐험 중의 기록만 집계됩니다.</p>' : ''}</div>
   <div class="card"><h2>최근 7일</h2><div class="dchart">${s.days.map((x) => `<div class="dcol"><em>${x.n || ''}</em><div class="dtot" style="height:${Math.round(x.n / mx * 80)}%"><i style="height:${x.n ? Math.round(x.ok / x.n * 100) : 0}%"></i></div><span>${esc(x.d)}</span></div>`).join('')}</div><p class="sub" style="margin:6px 0 0">막대 전체는 푼 문제, 색이 진한 부분은 맞힌 문제입니다.</p></div>
   <div class="card"><h2>학년별 정답률</h2>${s.byGrade.length ? s.byGrade.map((g) => `<div class="gbar"><b style="width:34px">${esc(g.grade)}</b><div class="t"><i style="width:${pct(g.ok, g.n)}%"></i></div><span>${pct(g.ok, g.n)}% (${g.ok}/${g.n})</span></div>`).join('') : '<p class="sub">아직 푼 문제가 없습니다.</p>'}</div>
   ${guest ? '' : `<div class="card"><h2>약한 단원</h2>${s.weak.length ? s.weak.map((w) => `<div class="gbar"><b style="flex:1">${esc(w.unit)}</b><span>${pct(w.ok, w.n)}% (${w.ok}/${w.n})</span></div>`).join('') + '<p class="sub" style="margin:6px 0 0">3문제 이상 푼 대단원 중 정답률이 낮은 순서입니다.</p>' : '<p class="sub">3문제 이상 푼 단원이 생기면 표시됩니다.</p>'}</div>`}${navBar('home')}`);
-  bindNav(); $('#bk').onclick = () => renderMy();
+  bindNav(); bindRec(from); $('#bk').onclick = from === 'home' ? () => loadMe() : from === 'hunt' ? () => loadMe('', 'hunt') : () => renderMy();
 }
 const noticeCards = (list) => list.map((n) => `<div class="card"><div class="sub">${n.pinned ? '<span class="chip">고정</span> ' : ''}<span style="white-space:nowrap">${ymd(n.t)}</span></div><h2 style="margin:6px 0">${esc(n.title)}</h2><div style="white-space:pre-wrap;line-height:1.65">${esc(n.body)}</div></div>`).join('') || '<div class="card sub">등록된 공지가 없습니다.</div>';
 async function renderNotices() {
@@ -1567,21 +1584,21 @@ async function renderPoints(from) {
   let list;
   try { list = await api('points/log'); } catch (e) { return renderHunt(e.message); }
   const fmtT = (t) => { const d = new Date(t); return `${d.getMonth() + 1}/${d.getDate()} ${String(d.getHours()).padStart(2, '0')}:${String(d.getMinutes()).padStart(2, '0')}`; };
-  app(`${subTop('포인트 내역', '', back[0])}
+  app(`${subTop('', '', back[0])}${recSeg('pts')}
   ${ptcCard(false)}
   <div class="card"><h2 style="margin-bottom:4px">적립·사용 내역 <span class="sub" style="font-weight:600">최근 ${list.length}건</span></h2>
   ${list.map((x) => `<div class="rk-row"><div class="rk-nm" style="flex:1;min-width:0"><div>${esc(x.reason)}</div><div class="sub">${fmtT(x.t)} · 잔액 ${fmt(x.balance)}P</div></div><div class="rk-pt" style="color:${x.delta >= 0 ? 'var(--main)' : 'var(--sub)'}">${x.delta >= 0 ? '+' : '−'}${fmt(Math.abs(x.delta))}P</div></div>`).join('') || '<p class="sub">아직 내역이 없습니다.</p>'}</div>${navBar('home')}`);
-  bindNav(); $('#bk').onclick = back[1];
+  bindNav(); bindRec(from); $('#bk').onclick = back[1];
 }
 async function renderHistory(from) {
   const back = from === 'home' ? ['홈', () => loadMe()] : from === 'hunt' ? ['사냥', () => loadMe('', 'hunt')] : ['마이페이지', () => renderMy()];
   const h = await api('history');
-  app(`${subTop('내 기록 <span class="sub">최근 30개</span>', '', back[0])}
+  app(`${subTop('', '', back[0])}${recSeg('hist')}
   ${h.map((x) => `<div class="card"><div class="sub">${esc(x.grade)} · ${new Date(x.t).toLocaleString('ko-KR')} · <b class="${x.correct ? 'ok' : 'bad'}">${x.correct ? '정답 +' + x.reward : x.timeout ? '시간초과' : '오답'}</b></div>
   ${probHtml(x)}
   <p>내 답: ${esc(x.myAnswer || '-')} / 정답: <b>${esc(fa(x.answer))}</b></p>
   ${x.explImage ? `<div class="wm"><img class="eimg" src="${esc(x.explImage)}" alt=""></div>` : ''}${x.explanation ? `<div class="expl">${esc(dm(x.explanation))}</div>` : ''}${x.extra ? `<div class="expl">${esc(dm(x.extra))}</div>` : ''}${x.pid ? `<button class="nbh" data-p="${esc(x.pid)}">오답노트에 담기</button>` : ''}</div>`).join('') || '<div class="card sub">아직 푼 문제가 없습니다.</div>'}${navBar('home')}`);
-  bindNav(); $('#bk').onclick = back[1];
+  bindNav(); bindRec(from); $('#bk').onclick = back[1];
   document.querySelectorAll('.nbh').forEach((b) => b.onclick = async () => { try { await api('note/add', { pid: b.dataset.p }); b.textContent = '담았습니다'; b.disabled = true; } catch (e) { alert(e.message); } });
 }
 // 오답노트: 학생마다 따로 메모를 적고, 단원별·시기별로 찾는다
@@ -1657,10 +1674,12 @@ const fmtDay = (ms) => new Date(ms).toLocaleDateString('ko-KR', { month: 'numeri
 const ago = (ms, now) => { if (!ms) return '기록 없음'; const m = Math.floor((now - ms) / 60000); if (m < 1) return '방금'; if (m < 60) return m + '분 전'; const hh = Math.floor(m / 60); if (hh < 24) return hh + '시간 전'; return Math.floor(hh / 24) + '일 전'; };
 
 const teamRows = (top) => top.map((x) => `<div class="rk-row${x.me ? ' me' : ''}"><div class="rk-no">${x.rank <= 3 ? trophy(MEDAL[x.rank - 1]) : x.rank}</div><div class="rk-nm">${esc(x.name)} <span class="sub" style="font-weight:500">${esc(x.members || '')}</span>${x.me ? ' <span class="chip">내 팀</span>' : ''}</div><div class="rk-pt">${fmt(x.score)}점</div></div>`).join('');
-const seasonRows = (top) => top.map((x) => `<div class="rk-row${x.me ? ' me' : ''}"><div class="rk-no">${x.rank <= 3 ? trophy(MEDAL[x.rank - 1]) : x.rank}</div><div class="rk-nm">${esc(x.name)}${x.grade ? `<span class="gchip">${esc(x.grade)}</span>` : ''}${x.me ? ' <span class="chip">나</span>' : ''}</div><div class="rk-pt">${fmt(x.score)}점</div></div>`).join('');
+const seasonRows = (top) => top.map((x) => `<div class="rk-row${x.me ? ' me' : ''}"><div class="rk-no">${x.rank <= 3 ? trophy(MEDAL[x.rank - 1]) : x.rank}</div>${avatar(x.name, '', x.avatar)}<div class="rk-nm">${esc(x.name)}${x.grade ? `<span class="gchip">${esc(x.grade)}</span>` : ''}${x.me ? ' <span class="chip">나</span>' : ''}</div><div class="rk-pt">${fmt(x.score)}점</div></div>`).join('');
 
 // ---------- 팀: 내 팀 · 친구 · 팀랭킹전 ----------
-const avatar = (name, cls) => `<span class="av ${cls || ''}">${esc((name || '?').slice(0, 1))}</span>`;
+const togSeg = (cur, n) => `<div class="seg tg"><button data-t="team" class="${cur === 'team' ? 'on' : ''}">팀</button><button data-t="fr" class="${cur === 'fr' ? 'on' : ''}">친구${n ? ' · 신청 ' + n + '건' : ''}</button></div>`;
+const bindTg = () => document.querySelectorAll('.tg button').forEach((b) => b.onclick = () => (b.dataset.t === 'fr' ? renderFriends() : renderTeam()));
+const avatar = (name, cls, emo) => `<span class="av emo ${cls || ''}">${esc(emo || '🙂')}</span>`;
 async function renderTeam(notice) {
   const head = '<div class="top"><span class="brand"><img src="logo_mark.png?v=6" alt="캐슬"><b>캐슬 포인트 헌터스</b></span></div>';
   let t, f;
@@ -1671,13 +1690,13 @@ async function renderTeam(notice) {
   const joined = tm ? tm.members.filter((m) => m.state === 'joined').length : 0;
   let mine = '';
   if (tm) {
-    const slots = [0, 1, 2, 3].map((i) => { const m = tm.members[i]; return m ? `<div class="slot">${avatar(m.name, (m.leader ? 'lead ' : '') + (m.state === 'invited' ? 'wait' : ''))}<span>${esc(m.name)}</span></div>` : '<div class="slot"><span class="av empty">+</span><span>&nbsp;</span></div>'; }).join('');
+    const slots = [0, 1, 2, 3].map((i) => { const m = tm.members[i]; return m ? `<div class="slot">${avatar(m.name, (m.leader ? 'lead ' : '') + (m.state === 'invited' ? 'wait' : ''), m.avatar)}<span>${esc(m.name)}</span></div>` : '<div class="slot"><span class="av empty">+</span><span>&nbsp;</span></div>'; }).join('');
     mine = `<div class="thero"><div class="tn">${esc(tm.name)}</div>
       <div class="tsub">팀원 ${joined}/4${joined >= 2 && s ? ` · ${esc(s.name)} 팀랭킹전 ${tm.rank}위` : joined >= 2 ? '' : ' · 2명 이상 모이면 순위에 오릅니다'}</div>
       <div class="tscore"><b>${fmt(tm.score)}</b><span>점</span></div>
       <div class="slots">${slots}</div></div>
     <div class="card">
-      ${tm.members.map((m) => `<div class="rk-row${m.me ? ' me' : ''}">${avatar(m.name, (m.leader ? 'lead ' : '') + (m.state === 'invited' ? 'wait' : ''))}<div class="rk-nm">${esc(m.name)}${m.grade ? `<span class="gchip">${esc(m.grade)}</span>` : ''}${m.leader ? ' <span class="chip">팀장</span>' : ''}${m.state === 'invited' ? ' <span class="sub">수락 대기</span>' : ''}</div>${m.state === 'invited' ? (tm.leader ? `<button class="tcancel" data-id="${esc(m.id)}" style="padding:4px 10px">취소</button>` : '') : `<div class="rk-pt">${fmt(m.score)}점</div>`}</div>`).join('')}
+      ${tm.members.map((m) => `<div class="rk-row${m.me ? ' me' : ''}">${avatar(m.name, (m.leader ? 'lead ' : '') + (m.state === 'invited' ? 'wait' : ''), m.avatar)}<div class="rk-nm">${esc(m.name)}${m.grade ? `<span class="gchip">${esc(m.grade)}</span>` : ''}${m.leader ? ' <span class="chip">팀장</span>' : ''}${m.state === 'invited' ? ' <span class="sub">수락 대기</span>' : ''}</div>${m.state === 'invited' ? (tm.leader ? `<button class="tcancel" data-id="${esc(m.id)}" style="padding:4px 10px">취소</button>` : '') : `<div class="rk-pt">${fmt(m.score)}점</div>`}</div>`).join('')}
       ${canInvite ? '<label style="margin-top:14px">팀원 초대 (상대의 아이디)</label><div class="row" style="flex-wrap:nowrap"><input id="tinvid" placeholder="예: 신현고김캐슬" autocomplete="off" autocapitalize="none"><button class="primary" id="tinvgo" style="flex:0 0 auto;width:auto;padding:0 18px">초대</button></div>' : ''}
       <button id="tleave" class="tquit">${tm.leader ? '팀 해체' : '팀 탈퇴'}</button></div>`;
   } else if (t.canPlay) {
@@ -1687,20 +1706,18 @@ async function renderTeam(notice) {
   }
   const fr = f.friends, inc = f.incoming;
   const inviteList = canInvite ? fr.filter((x) => !memberIds.includes(x.id)) : [];
-  const friendsCard = t.canPlay ? `<div class="card"><div class="row" style="flex-wrap:nowrap;justify-content:space-between"><h2 style="margin:0">친구 <span class="sub" style="font-weight:600">${fr.length}명</span></h2><button id="gofr" style="padding:6px 14px">${inc.length ? `내 친구 · 신청 ${inc.length}건` : '내 친구'}</button></div>
-    ${inviteList.length ? `<p class="sub" style="margin:10px 0 4px">친구를 팀에 초대합니다.</p>${inviteList.map((x) => `<div class="rk-row">${avatar(x.name)}<div class="rk-nm">${esc(x.name)}${x.grade ? `<span class="gchip">${esc(x.grade)}</span>` : ''}</div><button class="tinv" data-id="${esc(x.id)}" style="padding:4px 12px">팀 초대</button></div>`).join('')}` : ''}</div>` : '';
+  const friendsCard = t.canPlay && inviteList.length ? `<div class="card"><h2 style="margin:0 0 4px">친구를 팀에 초대</h2>${inviteList.map((x) => `<div class="rk-row">${avatar(x.name, '', x.avatar)}<div class="rk-nm">${esc(x.name)}${x.grade ? `<span class="gchip">${esc(x.grade)}</span>` : ''}</div><button class="tinv" data-id="${esc(x.id)}" style="padding:4px 12px">팀 초대</button></div>`).join('')}</div>` : '';
   const state = !s ? '' : s.status === 'active' ? '진행 중' : s.status === 'upcoming' ? `${fmtDay(s.startsAt)}에 시작합니다. 시작 전에 미리 팀을 꾸릴 수 있습니다.` : '시즌이 끝났습니다';
   const board = `<div class="card"><h2 style="display:flex;align-items:center;gap:8px;margin-bottom:4px">${trophy('#f5b82e')}${s ? esc(s.name) + ' ' : ''}팀랭킹전 <span class="sub" style="font-weight:600">${t.total}팀</span></h2>
     ${state ? `<div class="sub" style="margin-bottom:6px">${state}</div>` : ''}
     ${t.top.length ? teamRows(t.top) : '<p class="sub" style="margin:8px 0 12px">아직 순위에 오른 팀이 없습니다.</p>'}
-    <ul class="rules"><li>팀장이 팀을 만들고 초대하면, 초대받은 학생이 수락해 같은 팀이 됩니다.</li><li>팀은 <b>2명부터 4명까지</b>이며, 한 팀에만 속할 수 있습니다.</li><li>팀은 시즌 시작 전에도, 시즌 중에도 자유롭게 꾸리거나 탈퇴할 수 있습니다.</li><li>팀 점수는 그 팀에 속해 있는 동안 팀원이 얻은 개인랭킹전 점수를 모두 더한 값입니다. 가입 전이나 탈퇴 후의 점수는 포함되지 않습니다.</li></ul></div>`;
-  app(`${head}<div class="err" id="terr">${esc(notice || '')}</div>${mine}${friendsCard}${board}${navBar('team')}`);
-  bindNav();
+    <details class="fold"><summary>규칙 보기</summary><ul class="rules"><li>팀장이 팀을 만들고 초대하면, 초대받은 학생이 수락해 같은 팀이 됩니다.</li><li>팀은 <b>2명부터 4명까지</b>이며, 한 팀에만 속할 수 있습니다.</li><li>팀은 시즌 시작 전에도, 시즌 중에도 자유롭게 꾸리거나 탈퇴할 수 있습니다.</li><li>팀 점수는 그 팀에 속해 있는 동안 팀원이 얻은 개인랭킹전 점수를 모두 더한 값입니다. 가입 전이나 탈퇴 후의 점수는 포함되지 않습니다.</li></ul></details></div>`;
+  app(`${togSeg('team', inc.length)}<div class="err" id="terr">${esc(notice || '')}</div>${mine}${friendsCard}${board}${navBar('team')}`);
+  bindNav(); bindTg();
   const go = async (path, body) => { try { await api(path, body || {}); renderTeam(); } catch (e) { renderTeam(e.message); } };
   if ($('#tmake')) $('#tmake').onclick = () => go('team/create', { name: $('#tname').value });
   if ($('#tleave')) $('#tleave').onclick = () => { if (confirm(tm.leader ? '팀을 해체하시겠습니까? 모든 팀원이 팀에서 나가게 됩니다.' : '팀에서 탈퇴하시겠습니까?')) go('team/leave'); };
   if ($('#tinvgo')) $('#tinvgo').onclick = () => go('team/invite', { id: $('#tinvid').value });
-  if ($('#gofr')) $('#gofr').onclick = () => renderFriends();
   const on = (sel, fn) => document.querySelectorAll(sel).forEach((b) => b.onclick = () => fn(b));
   on('.tacc', (b) => go('team/respond', { teamId: Number(b.dataset.t), accept: true }));
   on('.tdec', (b) => go('team/respond', { teamId: Number(b.dataset.t), accept: false }));
@@ -1713,14 +1730,14 @@ async function renderFriends(notice) {
   let f;
   try { f = await api('friend/list'); } catch (e) { return renderHunt(e.message); }
   const fr = f.friends, inc = f.incoming, out = f.outgoing;
-  app(`<div class="top"><span class="brand"><img src="logo_mark.png?v=6" alt="캐슬"><b>캐슬 포인트 헌터스</b></span></div><div class="err" id="ferr">${esc(notice || '')}</div>
-  ${inc.length ? `<div class="card"><h2 style="margin-bottom:6px">받은 친구 신청 <span class="sub" style="font-weight:600">${inc.length}건</span></h2>${inc.map((x) => `<div class="row" style="margin-top:8px;flex-wrap:nowrap">${avatar(x.name)}<span style="flex:1">${esc(x.name)}<span class="gchip">${esc(x.grade || '')}</span></span><button class="primary facc" data-id="${esc(x.id)}" style="padding:6px 14px">수락</button><button class="fdec" data-id="${esc(x.id)}" style="padding:6px 14px">거절</button></div>`).join('')}</div>` : ''}
+  app(`${togSeg('fr', inc.length)}<div class="err" id="ferr">${esc(notice || '')}</div>
+  ${inc.length ? `<div class="card"><h2 style="margin-bottom:6px">받은 친구 신청 <span class="sub" style="font-weight:600">${inc.length}건</span></h2>${inc.map((x) => `<div class="row" style="margin-top:8px;flex-wrap:nowrap">${avatar(x.name, '', x.avatar)}<span style="flex:1">${esc(x.name)}<span class="gchip">${esc(x.grade || '')}</span></span><button class="primary facc" data-id="${esc(x.id)}" style="padding:6px 14px">수락</button><button class="fdec" data-id="${esc(x.id)}" style="padding:6px 14px">거절</button></div>`).join('')}</div>` : ''}
   <div class="card"><h2 style="margin-bottom:6px">내 친구 <span class="sub" style="font-weight:600">${fr.length}명</span></h2>
-    ${fr.length ? fr.map((x) => `<div class="rk-row">${avatar(x.name)}<div class="rk-nm">${esc(x.name)}${x.grade ? `<span class="gchip">${esc(x.grade)}</span>` : ''}</div><button class="frm" data-id="${esc(x.id)}" style="padding:4px 10px">삭제</button></div>`).join('') : '<p class="sub" style="margin:0">아직 등록한 친구가 없습니다.</p>'}
-    ${out.length ? `<p class="sub" style="margin:12px 0 4px">보낸 신청 (상대가 수락하면 친구가 됩니다)</p>${out.map((x) => `<div class="row" style="flex-wrap:nowrap;margin-bottom:4px">${avatar(x.name, 'wait')}<span style="flex:1">${esc(x.name)}</span><button class="frm" data-id="${esc(x.id)}" style="padding:4px 10px">취소</button></div>`).join('')}` : ''}</div>
+    ${fr.length ? fr.map((x) => `<div class="rk-row">${avatar(x.name, '', x.avatar)}<div class="rk-nm">${esc(x.name)}${x.grade ? `<span class="gchip">${esc(x.grade)}</span>` : ''}</div><button class="frm" data-id="${esc(x.id)}" style="padding:4px 10px">삭제</button></div>`).join('') : '<p class="sub" style="margin:0">아직 등록한 친구가 없습니다.</p>'}
+    ${out.length ? `<p class="sub" style="margin:12px 0 4px">보낸 신청 (상대가 수락하면 친구가 됩니다)</p>${out.map((x) => `<div class="row" style="flex-wrap:nowrap;margin-bottom:4px">${avatar(x.name, 'wait', x.avatar)}<span style="flex:1">${esc(x.name)}</span><button class="frm" data-id="${esc(x.id)}" style="padding:4px 10px">취소</button></div>`).join('')}` : ''}</div>
   <div class="card"><label style="margin-top:0">친구 신청 (상대의 아이디)</label><div class="row" style="flex-wrap:nowrap"><input id="fid" placeholder="예: 신현고김캐슬" autocomplete="off" autocapitalize="none"><button class="primary" id="fadd" style="flex:0 0 auto;width:auto;padding:0 18px">신청</button></div>
-    <p class="sub" style="margin:8px 0 0">친구는 팀을 꾸릴 때 바로 초대할 수 있습니다. 팀 초대는 친구가 아니어도 아이디로 보낼 수 있습니다.</p></div>${navBar('fr')}`);
-  bindNav();
+    <p class="sub" style="margin:8px 0 0">등록한 친구는 팀을 만들 때 목록에서 바로 초대할 수 있습니다.</p></div>${navBar('team')}`);
+  bindNav(); bindTg();
   const go = async (path, body) => { try { await api(path, body || {}); renderFriends(); } catch (e) { renderFriends(e.message); } };
   if ($('#fadd')) $('#fadd').onclick = () => go('friend/add', { id: $('#fid').value });
   const on = (sel, fn) => document.querySelectorAll(sel).forEach((b) => b.onclick = () => fn(b));
@@ -1736,8 +1753,8 @@ async function renderSeason(notice) {
   const s = d.season;
   const head2 = `<div class="top"><span class="brand"><img src="logo_mark.png?v=6" alt="캐슬"><b>캐슬 포인트 헌터스</b></span><span class="chip">시즌 랭킹전</span></div>`;
   if (!s) {
-    app(`${head2}<div class="card"><h2>시즌 랭킹전</h2><p class="sub">현재 진행중인 시즌이 없습니다.</p></div>${navBar('season')}`);
-    bindNav(); return;
+    app(`<button class="back" id="bk" style="margin:0 0 12px">${IC.back}순위로</button><div class="card"><h2>시즌 랭킹전</h2><p class="sub">현재 진행중인 시즌이 없습니다.</p></div>${navBar('rk')}`);
+    bindNav(); $('#bk').onclick = () => renderRank(); return;
   }
   const active = s.status === 'active', upcoming = s.status === 'upcoming';
   const left = Math.max(0, s.endsAt - d.serverNow), days = Math.floor(left / 86400000), hrs = Math.floor(left / 3600000) % 24;
@@ -1745,18 +1762,18 @@ async function renderSeason(notice) {
   const draw = () => {
     $('#sl').innerHTML = d.top.length ? seasonRows(d.top) : '<p class="sub">아직 점수를 낸 학생이 없습니다.</p>';
   };
-  app(`${head2}
+  app(`<button class="back" id="bk" style="margin:0 0 12px">${IC.back}순위로</button>
   <div class="card"><h2 style="margin-bottom:4px">${esc(s.name)} 개인랭킹전</h2>
     <div class="sub">${fmtDay(s.startsAt)} ~ ${fmtDay(s.endsAt)} · ${state}</div>
     ${s.prize ? `<div class="pbox">시즌 종료 후 상품 이벤트<br><span style="font-weight:600">${esc(s.prize)}</span></div>` : '<div class="pbox">시즌이 끝나면 상위 학생에게 상품 이벤트가 있습니다.</div>'}
     <div class="stat3"><div><b>${fmt(d.me.score)}</b><span>내 점수</span></div><div><b>${d.me.rank ? d.me.rank + '위' : '-'}</b><span>전체 순위</span></div><div><b>${d.total}명</b><span>참가 인원</span></div></div>
-    <ul class="rules"><li>순위는 <b>학년 구분 없이 모두 함께</b> 겨룹니다.</li><li>문제는 <b>본인 학년의 문제</b>만 나옵니다.</li><li>랭킹전은 포인트의 적립 및 사용과 무관하며, 오직 점수제로만 운영됩니다.</li><li>랭킹전은 포인트 대신 순위만 있습니다.</li><li>포인트 사냥보다 어려운 문제(난이도 <b>${LV[s.minLevel]}</b> 이상)만 나옵니다.</li><li>점수는 문항의 난이도별로 다르고, 오답을 제출하면 감점이 됩니다. 맞히면 <b>난이도×10점</b>, 오답을 제출하면 <b>난이도×5점</b>이 감점됩니다. 시간 초과는 감점이 없습니다.</li><li>한 번 푼 문제는 이번 시즌에 다시 나오지 않습니다.</li><li>문제당 제한시간 ${Math.round(s.timeLimitSec / 60)}분입니다.</li></ul>
+    <details class="fold"><summary>규칙 보기</summary><ul class="rules"><li>순위는 <b>학년 구분 없이 모두 함께</b> 겨룹니다.</li><li>문제는 <b>본인 학년의 문제</b>만 나옵니다.</li><li>랭킹전은 포인트의 적립 및 사용과 무관하며, 오직 점수제로만 운영됩니다.</li><li>랭킹전은 포인트 대신 순위만 있습니다.</li><li>포인트 사냥보다 어려운 문제(난이도 <b>${LV[s.minLevel]}</b> 이상)만 나옵니다.</li><li>점수는 문항의 난이도별로 다르고, 오답을 제출하면 감점이 됩니다. 맞히면 <b>난이도×10점</b>, 오답을 제출하면 <b>난이도×5점</b>이 감점됩니다. 시간 초과는 감점이 없습니다.</li><li>한 번 푼 문제는 이번 시즌에 다시 나오지 않습니다.</li><li>문제당 제한시간 ${Math.round(s.timeLimitSec / 60)}분입니다.</li></ul></details>
     <div class="err" id="err">${esc(notice || '')}</div>
     ${d.lockedGrade ? `<div class="pbox">도전 학년 <b>${esc(d.lockedGrade)}</b> · 이번 시즌 동안 고정되어 바꿀 수 없습니다.</div>` : d.pickGrades ? `<label style="margin-top:12px">도전할 학년 (한 번 고르면 이번 시즌 동안 바꿀 수 없습니다)</label><div class="seg" id="sg">${d.pickGrades.map((g) => `<button data-g="${g}" class="${g === d.selGrade ? 'on' : ''}">${g}</button>`).join('')}</div>` : ''}
     ${active && d.canPlay ? (d.poolLeft > 0 ? `<button class="primary btn-big" id="go">도전하기 (남은 문제 ${d.poolLeft}개)</button>` : '<p class="sub" style="margin-top:12px">이번 시즌의 문제를 모두 풀었습니다.</p>') : (!d.canPlay ? '<p class="sub" style="margin-top:12px">선생님·관리자는 순위만 볼 수 있습니다.</p>' : '')}
   </div>
-  <div class="card"><h2 style="display:flex;align-items:center;gap:8px">${trophy('#f5b82e')}시즌 순위 <span class="sub" style="font-weight:600">${d.total}명 참가</span></h2><div id="sl"></div></div>${navBar('season')}`);
-  draw(); bindNav();
+  <div class="card"><h2 style="display:flex;align-items:center;gap:8px">${trophy('#f5b82e')}시즌 순위 <span class="sub" style="font-weight:600">${d.total}명 참가</span></h2><div id="sl"></div></div>${navBar('rk')}`);
+  draw(); bindNav(); $('#bk').onclick = () => { rkKind = 'season'; renderRank(); };
   if ($('#go')) $('#go').onclick = () => { if (d.pickGrades && !d.lockedGrade && !confirm(d.selGrade + ' 문제로 도전합니다. 이번 시즌 동안 학년을 바꿀 수 없습니다. 시작하시겠습니까?')) return; startSeason(); };
   document.querySelectorAll('#sg button').forEach((b) => b.onclick = () => { seasonGrade = b.dataset.g; renderSeason(); });
 }
