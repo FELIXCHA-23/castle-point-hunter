@@ -1,5 +1,5 @@
 name: catchu-sync
-# 캐치유테스트(KMMS) 오답과 문항 이미지를 헌터스로 매일 한 번 가져옵니다.
+# 구글 시트 명단으로 학생 계정을 맞추고, 캐치유테스트(KMMS) 오답과 문항 이미지를 헌터스로 매일 한 번 가져옵니다.
 # 공개 저장소라 실행 기록이 공개됩니다. 스크립트는 숫자만 출력합니다(학생 이름·문항 내용 출력 금지).
 on:
   schedule:
@@ -22,7 +22,15 @@ jobs:
       - uses: actions/setup-python@v5
         with:
           python-version: '3.12'
-      - run: pip install pymupdf==1.24.10 pillow==10.4.0 requests==2.32.3
+      - run: pip install pymupdf==1.24.10 pillow==10.4.0 requests==2.32.3 google-auth==2.35.0
+      - name: Roster (Google Sheet → 헌터스 계정)
+        env:
+          HUNTERS_URL: https://iydtrglylllkljayumxl.supabase.co
+          HUNTERS_SERVICE_KEY: ${{ secrets.HUNTERS_SERVICE_KEY }}
+          GOOGLE_SA_JSON: ${{ secrets.GOOGLE_SA_JSON }}
+          ROSTER_SHEET_ID: ${{ secrets.ROSTER_SHEET_ID }}
+          DRY_RUN: ${{ github.event.inputs.dry_run || '0' }}
+        run: python scripts/roster_sync.py
       - name: Sync
         env:
           KMMS_URL: https://fyutcmvzlardpanxibti.supabase.co

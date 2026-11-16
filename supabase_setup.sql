@@ -44,6 +44,7 @@ create table if not exists castle.reset_requests (
   id serial primary key, student text not null, created_at timestamptz not null default now(), done boolean not null default false);
 alter table castle.students add column if not exists season_grades text[];   -- 시즌 랭킹전에서 고를 수 있는 학년 (예외). 비우면 본인 학년만
 alter table castle.students add column if not exists last_seen timestamptz;   -- 마지막으로 앱을 연 시각 (관리자 화면에서 정렬용)
+alter table castle.students add column if not exists left_at timestamptz;     -- 퇴원 처리된 날 (구글 시트 명단에서 빨간 글씨). 기록은 남기고 로그인만 막음
 alter table castle.reset_requests enable row level security;
 alter table castle.roster enable row level security;
 alter table castle.seasons enable row level security;
@@ -306,6 +307,9 @@ begin
   v_staff := coalesce(v_staff, false);
   if v_hash is null or v_hash <> extensions.crypt(v_pw, v_hash) then
     return jsonb_build_object('error', '아이디 또는 비밀번호가 맞지 않습니다.');
+  end if;
+  if not v_adm and exists (select 1 from castle.students where id = v_id and left_at is not null) then
+    return jsonb_build_object('error', '퇴원 처리된 계정입니다. 학원에 문의해 주세요.');
   end if;
   delete from castle.tries where key = v_key;
   delete from castle.sessions where exp < now();
@@ -612,6 +616,37 @@ begin
   end loop;
   return jsonb_build_object('items', n);
 end $$;
+
+-- 구글 시트 명단 → 헌터스 계정. p = [{id, name, grade, left}]
+--  새 학생(퇴원 아님): 계정 생성 (처음 비밀번호 0000, 첫 로그인 때 변경 — 관리자 화면 학생 추가와 같은 규칙)
+--  퇴원(left=true): left_at 기록 → 로그인만 막고 기록은 그대로. 다시 등원하면 left_at 을 지움
+--  선생님·관리자 계정과 시트에 없는 계정은 건드리지 않는다
+create or replace function public.roster_sync(p jsonb) returns jsonb language plpgsql security definer set search_path = castle, public as $$
+declare x jsonb; v_id text; v_left boolean; v_hash text := extensions.crypt('0000', extensions.gen_salt('bf', 6));
+        n_new int := 0; n_left int := 0; n_back int := 0;
+begin
+  for x in select * from jsonb_array_elements(coalesce(p, '[]')) loop
+    v_id := normalize(x->>'id', NFC); v_left := coalesce((x->>'left')::boolean, false);
+    if v_id is null or v_id = '' or lower(v_id) = 'admin' then continue; end if;
+    if not exists (select 1 from castle.students where id = v_id) then
+      if not v_left then
+        insert into castle.students (id, name, points, must_change, pw_hash, grade)
+          values (v_id, coalesce(nullif(x->>'name', ''), v_id), 0, true, v_hash, coalesce(x->>'grade', ''));
+        n_new := n_new + 1;
+      end if;
+    elsif v_left then
+      update castle.students set left_at = now() where id = v_id and left_at is null and not is_admin and not is_teacher;
+      if found then n_left := n_left + 1; delete from castle.sessions where id = v_id; end if;
+    else
+      update castle.students set left_at = null, grade = case when coalesce(x->>'grade', '') <> '' then x->>'grade' else grade end
+        where id = v_id and left_at is not null;
+      if found then n_back := n_back + 1; end if;
+    end if;
+  end loop;
+  return jsonb_build_object('created', n_new, 'left', n_left, 'returned', n_back);
+end $$;
+revoke all on function public.roster_sync(jsonb) from public, anon, authenticated;
+grant execute on function public.roster_sync(jsonb) to service_role;
 
 revoke all on function public.catchu_sync_import(jsonb) from public, anon, authenticated;
 revoke all on function public.catchu_sync_have() from public, anon, authenticated;
