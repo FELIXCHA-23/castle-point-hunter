@@ -93,8 +93,8 @@ def load_kmms(k):
 
     # 초등 회차(오민경T 반 등)는 헌터스(중·고) 대상이 아니므로 뺀다
     def elementary(d):
-        return str(d.get("grade") or "").startswith("초") or any(
-            ELEM_TEACHER in str(d.get(k) or "") for k in ("teacher", "teacherName", "owner"))
+        return str(d.get("grade") or "").startswith("초") or d.get("elem") is True or any(
+            ELEM_TEACHER in str(d.get(k) or "") for k in ("examBy", "retestBy"))
 
     cand = [d for d in by["rounds"]
             if "주차" in (d.get("title") or "") and "입학" not in (d.get("title") or "")
