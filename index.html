@@ -1105,6 +1105,73 @@ label{font-size:15.5px!important}
 h2{margin-bottom:8px!important}
 .mpop{bottom:calc(86px + env(safe-area-inset-bottom,0px))!important}
 .sh-b{padding-bottom:calc(28px + env(safe-area-inset-bottom,0px))!important}
+
+/* ===== UI 모션 =====
+   규칙: 들어옴 = ease-out, 나감 = ease-in, 길이 0.2~0.4초 (로딩 회전만 계속 도는 예외) */
+:root{--e-out:cubic-bezier(0,0,.2,1);--e-in:cubic-bezier(.4,0,1,1);--e-io:cubic-bezier(.4,0,.2,1);--e-spring:cubic-bezier(.34,1.7,.5,1)}
+@keyframes m-fade-in{from{opacity:0}to{opacity:1}}
+@keyframes m-fade-out{from{opacity:1}to{opacity:0}}
+@keyframes m-scale-in{from{opacity:0;transform:scale(.9)}to{opacity:1;transform:none}}
+@keyframes m-scale-out{from{opacity:1;transform:none}to{opacity:0;transform:scale(.9)}}
+@keyframes m-sheet-in{from{transform:translateY(100%)}to{transform:none}}
+@keyframes m-sheet-out{from{transform:none}to{transform:translateY(100%)}}
+@keyframes m-snack-in{from{transform:translateY(160px)}to{transform:none}}
+@keyframes m-snack-out{from{transform:none}to{transform:translateY(160px)}}
+@keyframes m-rise{from{opacity:0;transform:translateY(12px)}to{opacity:1;transform:none}}
+@keyframes m-pop{0%{transform:scale(.6)}100%{transform:scale(1)}}
+@keyframes m-draw{from{clip-path:inset(0 100% 0 0)}to{clip-path:inset(0 0 0 0)}}
+@keyframes m-spin{to{transform:rotate(360deg)}}
+
+/* 바텀시트: 아래에서 올라옴 + 뒷배경 Fade */
+.sheet-bg{animation:m-fade-in .3s var(--e-out) both}
+.sheet{animation:m-sheet-in .35s var(--e-out) both}
+.sheet-bg.out{animation:m-fade-out .3s var(--e-in) both}
+.sheet-bg.out .sheet{animation:m-sheet-out .3s var(--e-in) both}
+
+/* 팝업(확인창·탐험모드 안내): 뒷배경 어둡게 + Scale 90→100% */
+.ovl{animation:m-fade-in .25s var(--e-out) both}
+.ovl .box{animation:m-scale-in .25s var(--e-out) both}
+.ovl.out{animation:m-fade-out .2s var(--e-in) both}
+.ovl.out .box{animation:m-scale-out .2s var(--e-in) both}
+.ovl .row2{display:flex;gap:8px}
+.ovl .row2 button{flex:1;margin:0;padding:13px 10px}
+
+/* 토스트: 제자리 Fade */
+.toast{position:fixed;left:50%;bottom:calc(96px + env(safe-area-inset-bottom,0px));transform:translateX(-50%);z-index:120;max-width:min(88vw,420px);padding:11px 18px;border-radius:999px;background:rgba(20,22,27,.94);border:1px solid rgba(212,178,120,.3);color:#F3F1EC;font-size:14px;font-weight:600;line-height:1.45;text-align:center;white-space:pre-line;box-shadow:0 10px 30px rgba(0,0,0,.5);pointer-events:none}
+.toast.in{animation:m-fade-in .25s var(--e-out) both}
+.toast.out{animation:m-fade-out .25s var(--e-in) both}
+
+/* 스낵바: 화면 아래에서 Slide in */
+.snack{position:fixed;left:12px;right:12px;bottom:calc(84px + env(safe-area-inset-bottom,0px));margin:0 auto;max-width:480px;z-index:120;display:flex;align-items:center;justify-content:space-between;gap:12px;padding:13px 14px 13px 18px;border-radius:12px;background:#1F232B;border:1px solid rgba(212,178,120,.3);color:#F3F1EC;font-size:14px;font-weight:600;box-shadow:0 12px 34px rgba(0,0,0,.55)}
+.snack button{padding:6px 10px;border:0;background:transparent;color:var(--gold2,#E9D2A1);font-size:14px}
+.snack.in{animation:m-snack-in .3s var(--e-out) both}
+.snack.out{animation:m-snack-out .3s var(--e-in) both}
+
+/* 타이틀·서브타이틀: 한 줄씩 Stagger */
+.stg-i{animation:m-rise .35s var(--e-out) both;animation-delay:calc(var(--i,0) * .08s)}
+
+/* 로딩: Linear 로 일정하게 계속 회전 */
+.spin{display:inline-block;width:16px;height:16px;border:2px solid rgba(255,255,255,.16);border-top-color:var(--gold,#D4B278);border-radius:50%;animation:m-spin .8s linear infinite;vertical-align:-3px;margin-right:8px}
+
+/* 눌렀을 때 톡 튕김(Scale + Spring): 오답노트 담기 등 */
+.pop-on{animation:m-pop .4s var(--e-spring) both}
+
+/* 체크박스: 체크 선이 그려짐(Ease in out) */
+input[type=checkbox]{-webkit-appearance:none;appearance:none;display:inline-grid;place-content:center;flex:none;width:22px!important;height:22px;padding:0!important;margin:0;border-radius:6px;border:2px solid rgba(255,255,255,.28);background:transparent;cursor:pointer;vertical-align:middle;transition:background .3s var(--e-io),border-color .3s var(--e-io)}
+input[type=checkbox]::after{content:"";width:14px;height:14px;background:no-repeat center/contain url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 14 14'%3E%3Cpath d='M2.5 7.5 5.8 10.8 11.5 3.5' fill='none' stroke='%23101216' stroke-width='2.2' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E");clip-path:inset(0 100% 0 0)}
+input[type=checkbox]:checked{background:var(--gold,#D4B278);border-color:var(--gold,#D4B278)}
+input[type=checkbox]:checked::after{animation:m-draw .3s var(--e-io) both}
+input[type=checkbox]:focus-visible{outline:2px solid var(--gold,#D4B278);outline-offset:2px}
+
+.ovl.out,.sheet-bg.out,.snack.out{pointer-events:none}
+
+/* 모션 줄이기 설정을 켠 기기: 이동·확대 없이 페이드만 */
+@media (prefers-reduced-motion:reduce){
+  .sheet,.snack,.ovl .box,.stg-i,.pop-on{animation-name:m-fade-in!important}
+  .sheet-bg.out .sheet,.snack.out,.ovl.out .box{animation-name:m-fade-out!important}
+  .spin{animation-duration:1.6s}
+  input[type=checkbox]:checked::after{animation:none;clip-path:none}
+}
 </style>
 </head>
 <body>
@@ -1112,7 +1179,7 @@ h2{margin-bottom:8px!important}
 <script src="config.js?v=20261027"></script>
 <script>
 // 홈 화면 앱이 예전 화면을 붙잡고 있지 않도록: 열 때마다 새 버전이 있는지 확인해서 있으면 새로 불러옵니다
-const BUILD = '20261028-o';
+const BUILD = '20261111-a';
 (async () => {
   try {
     const t = await fetch('./index.html?nc=' + Date.now(), { cache: 'no-store' }).then((r) => r.text());
@@ -1126,6 +1193,51 @@ let token = localStorage.getItem('tk'), role = localStorage.getItem('role'), ske
 const nowS = () => Date.now() + skew;
 const fmt = (n) => Number(n).toLocaleString('ko-KR');
 const fa = (s) => /^[ㄱ-ㅎ]+$/.test(String(s)) ? String(s).split('').join(', ') : s;
+
+// ── UI 모션 도우미 (CSS 는 맨 끝 'UI 모션' 블록) ──
+// 나가는 애니메이션이 끝나면 요소를 지운다(끝 이벤트가 안 오는 경우를 대비해 타이머도 둔다).
+function leave(el, inner) {
+  if (!el || el.classList.contains('out')) return;
+  el.classList.remove('in'); el.classList.add('out');
+  const rm = () => el.remove();
+  (inner || el).addEventListener('animationend', rm, { once: true });
+  setTimeout(rm, 450);
+}
+// 토스트: 제자리 Fade. 기존 alert 대신 쓴다(화면을 막지 않는다).
+let toastT = null;
+function toast(msg) {
+  document.querySelectorAll('.toast').forEach((x) => x.remove());
+  clearTimeout(toastT);
+  const t = document.createElement('div'); t.className = 'toast in'; t.setAttribute('role', 'status'); t.textContent = String(msg ?? '');
+  document.body.appendChild(t);
+  toastT = setTimeout(() => leave(t), Math.min(5200, 2200 + String(msg ?? '').length * 45));
+}
+// 스낵바: 아래에서 올라오며 동작 버튼이 있다.  snack('담았습니다', '보기', () => ...)
+let snackT = null;
+function snack(msg, label, fn) {
+  document.querySelectorAll('.snack').forEach((x) => x.remove());
+  clearTimeout(snackT);
+  const s = document.createElement('div'); s.className = 'snack in'; s.setAttribute('role', 'status');
+  s.innerHTML = `<span>${esc(msg)}</span>${label ? `<button>${esc(label)}</button>` : ''}`;
+  document.body.appendChild(s);
+  if (label) s.querySelector('button').onclick = () => { leave(s); if (fn) fn(); };
+  snackT = setTimeout(() => leave(s), 4000);
+}
+// 확인 팝업: confirm() 대신. 뒤 배경을 어둡게 하고 Scale in. 사용: if (!(await ask('...', '삭제'))) return;
+function ask(msg, ok, cancel) {
+  return new Promise((res) => {
+    const o = document.createElement('div'); o.className = 'ovl'; o.setAttribute('role', 'dialog'); o.setAttribute('aria-modal', 'true');
+    o.innerHTML = `<div class="box"><p style="color:var(--ink);font-size:16px;font-weight:600;line-height:1.55;margin:0 0 18px;white-space:pre-line">${esc(msg)}</p><div class="row2"><button class="cx">${esc(cancel || '취소')}</button><button class="primary okb">${esc(ok || '확인')}</button></div></div>`;
+    document.body.appendChild(o);
+    const kd = (e) => { if (e.key === 'Escape') end(false); };
+    const end = (v) => { document.removeEventListener('keydown', kd); leave(o, o.querySelector('.box')); res(v); };
+    o.querySelector('.cx').onclick = () => end(false);
+    o.querySelector('.okb').onclick = () => end(true);
+    o.onclick = (e) => { if (e.target === o) end(false); };
+    document.addEventListener('keydown', kd);
+    o.querySelector('.okb').focus();
+  });
+}
 
 // 모든 기능은 Supabase 함수 castle_api 하나로 갑니다 (규칙·정답·비밀번호 검사는 Supabase 안에서 해요).
 async function rawCall(path, body, tok) {
@@ -1229,14 +1341,14 @@ function startGuest() {
       ov.remove(); guest = true; token = null; role = 'student';
       Object.assign(G, { tok: x.j.token, cur: null, seen: [], sseen: [], score: 0, ok: 0, n: 0, points: 500, today: 0, hist: [] });
       me = await api('me'); skew = 0; renderHome();
-    } catch (e) { ov.remove(); alert(e.message); }
+    } catch (e) { ov.remove(); toast(e.message); }
   };
 }
 function exitGuest() { guest = false; token = null; role = null; me = null; G.tok = null; clearInterval(tick); renderLogin(); }
 
 function logout() {
   if (guest) return exitGuest(); if (token) api('logout').catch(() => {}); token = null; role = null; localStorage.removeItem('tk'); localStorage.removeItem('role'); localStorage.removeItem('staff'); localStorage.removeItem('who'); try { sessionStorage.removeItem('mode'); } catch (_) {} clearInterval(tick); renderLogin(); }
-async function switchTo(to) { try { const r = await api('switch', { to }); token = r.token; role = r.role; localStorage.setItem('tk', token); localStorage.setItem('role', role); start(); } catch (e) { alert(e.message); } }
+async function switchTo(to) { try { const r = await api('switch', { to }); token = r.token; role = r.role; localStorage.setItem('tk', token); localStorage.setItem('role', role); start(); } catch (e) { toast(e.message); } }
 function math(el) { if (window.renderMathInElement) try { renderMathInElement(el, { delimiters: [{ left: '$$', right: '$$', display: true }, { left: '$', right: '$', display: false }], throwOnError: false }); } catch (e) {} }
 window.addEventListener('load', () => math(document.body));
 // 모든 탭 화면의 맨 위: CI와 로그인한 이름(마이페이지)은 어느 탭에서나 같은 자리에 둔다
@@ -1251,7 +1363,9 @@ function siteHeader() {
   if (gb) gb.after(h); else a.prepend(h);
   h.querySelector('#my').onclick = () => renderMy();
 }
-const app = (html, nonav) => { clearInterval(tick); closeMore(); $('#app').className = nonav ? 'nonav' : ''; $('#app').innerHTML = html; math($('#app')); siteHeader(); window.scrollTo(0, 0); };
+const app = (html, nonav) => { clearInterval(tick); closeMore(); $('#app').className = nonav ? 'nonav' : ''; $('#app').innerHTML = html; math($('#app')); siteHeader(); window.scrollTo(0, 0);
+  // 홈 인사말(타이틀·서브타이틀)은 한 줄씩 차례로 나타난다
+  document.querySelectorAll('#app .hero > :not(.deco), #app .hello > *').forEach((el, i) => { el.style.setProperty('--i', i); el.classList.add('stg-i'); }); };
 
 // ---- 문제 화면 보호 (복사·저장·인쇄를 어렵게 해요) ----
 const guard = (e) => { if (e.target.closest && e.target.closest('.prob,.eimg,.wm')) e.preventDefault(); };
@@ -1424,7 +1538,7 @@ async function renderHome() {
     <div class="hi">오늘도 캐슬수학과 함께</div><h1>안녕하세요!<br>${esc(me.name)}${esc(me.title || '님')}</h1></div>
   ${fire}
   ${ptcCard(true, 'cmp')}
-  <button class="primary cta" id="hgo" style="margin:0 0 12px"><span>▶</span> 사냥터 바로 입장 · ${esc(homeGrade())} <span>→</span></button>
+  <button class="primary cta" id="hgo" style="margin:0 0 12px"><span>▶</span> 문제풀러가기 · ${esc(homeGrade())} <span>→</span></button>
   ${homeGoal()}
   <div class="card hmenu"><button id="hg"><b>이용 안내</b><span>포인트·랭킹전·오답노트 규칙</span><i>›</i></button>
     <button id="hn"><b>공지사항</b><span>${top ? esc(top.title) : '등록된 공지가 없습니다'}</span>${list.length ? `<em class="cnt">${list.length}</em>` : ''}<i>›</i></button></div>
@@ -1451,7 +1565,7 @@ function renderMy() {
   ${navBar('home')}`);
   bindNav(); $('#bk').onclick = () => loadMe();
   document.querySelectorAll('.emogrid button').forEach((b) => b.onclick = async () => {
-    try { await api('avatar/set', { avatar: b.dataset.e }); me.avatar = b.dataset.e; renderMy(); } catch (e) { alert(e.message); }
+    try { await api('avatar/set', { avatar: b.dataset.e }); me.avatar = b.dataset.e; renderMy(); } catch (e) { toast(e.message); }
   });
   const f = { hist: () => renderHistory(), roster: renderRoster, admin: () => switchTo('admin'), out: logout };
   document.querySelectorAll('.hmenu button').forEach((b) => b.onclick = () => f[b.dataset.m]());
@@ -1468,7 +1582,7 @@ function renderHunt(notice) {
   ${fire}
   <div class="card hsel"><div class="sec"><h2>학년 선택</h2><span class="sub">학년을 고르고 시작하십시오.</span></div>
     <div class="grades">${me.grades.map((g) => `<button data-g="${g}" class="${g === pickedGrade ? 'on' : ''}">${g}</button>`).join('')}</div>
-    <button class="primary cta" id="pv" ${pickedGrade ? '' : 'disabled'}>${pickedGrade ? `<span>▶</span> 사냥터 입장 · ${pickedGrade} <span>→</span>` : '학년을 먼저 골라 주십시오'}</button>
+    <button class="primary cta" id="pv" ${pickedGrade ? '' : 'disabled'}>${pickedGrade ? `<span>▶</span> 문제풀러가기 · ${pickedGrade} <span>→</span>` : '학년을 먼저 골라 주십시오'}</button>
     <div class="err" id="err">${esc(notice || '')}</div></div>
   <div class="card"><div class="sec"><h2>오늘의 학습</h2></div>
     <div class="learn"><div class="ring"><svg viewBox="0 0 76 76"><circle cx="38" cy="38" r="${R}" fill="none" stroke="var(--line)" stroke-width="7"/><circle cx="38" cy="38" r="${R}" fill="none" stroke="var(--main)" stroke-width="7" stroke-linecap="round" stroke-dasharray="${C.toFixed(1)}" stroke-dashoffset="${off.toFixed(1)}"/></svg><b>${me.todayCount}<small>/ ${c.DAILY_BONUS_COUNT}</small></b></div>
@@ -1482,7 +1596,7 @@ function renderHunt(notice) {
   document.querySelectorAll('.grades button').forEach((b) => b.onclick = () => {
     pickedGrade = b.dataset.g;
     document.querySelectorAll('.grades button').forEach((x) => x.classList.toggle('on', x === b));
-    const pv = $('#pv'); pv.disabled = false; pv.innerHTML = `<span>▶</span> 사냥터 입장 · ${pickedGrade} <span>→</span>`;
+    const pv = $('#pv'); pv.disabled = false; pv.innerHTML = `<span>▶</span> 문제풀러가기 · ${pickedGrade} <span>→</span>`;
   });
   $('#pv').onclick = async () => {
     try { const r = await api('preview', { grade: pickedGrade }); skew = r.serverNow - Date.now(); me.points = r.points; renderPreview(r.active); }
@@ -1542,7 +1656,7 @@ function renderSolve(a) {
   upd(); tick = setInterval(upd, 500);
   $('#sub').onclick = () => { if ($('#ans').value.trim()) submit(); else showErr('정답을 입력해 주십시오.'); };
   $('#hm').onclick = async () => {
-    if (!confirm('포기하고 나가시겠습니까? 이 문제는 오답으로 처리됩니다.')) return;
+    if (!(await ask('포기하고 나가시겠습니까?\n이 문제는 오답으로 처리됩니다.', '나가기'))) return;
     done = true; clearInterval(tick);
     try { await api('submit', { answer: '' }); } catch (e) {}
     loadMe('', 'hunt');
@@ -1561,7 +1675,7 @@ function renderResult(r) {
   <button class="btn-big soft" id="nb">오답노트에 담기</button>
   <button class="primary btn-big" id="nx">다음 문제 도전 (-${me.cfg.PREVIEW_COST}P)</button>
   <button class="back" id="hm" style="margin:10px auto 0">${IC.home}홈으로</button>`, true);
-  $('#nb').onclick = async () => { try { await api('note/add', { pid: r.pid }); $('#nb').textContent = '오답노트에 담았습니다'; $('#nb').disabled = true; } catch (e) { alert(e.message); } };
+  $('#nb').onclick = async () => { try { await api('note/add', { pid: r.pid }); $('#nb').textContent = '오답노트에 담았습니다'; $('#nb').disabled = true; $('#nb').classList.add('pop-on'); snack('오답노트에 담았습니다', '보기', () => renderNotes()); } catch (e) { toast(e.message); } };
   if (r.correct) $('#nb').textContent = '오답노트에 담기 (맞힌 문제)';
   $('#nx').onclick = () => nextPreview(pickedGrade);
   $('#hm').onclick = () => loadMe('', 'hunt');
@@ -1599,10 +1713,10 @@ async function renderRank() {
   draw(rkKind);
 }
 
-function closeMore() { const o = document.getElementById('sheet'); if (o) o.remove(); }
+function closeMore(now) { const o = document.getElementById('sheet'); if (!o) return; if (now) o.remove(); else leave(o, o.querySelector('.sheet')); }
 // 아래에서 올라오는 창(이용 안내·공지 등을 한 화면 안에서 보여 줄 때)
 function openSheet(title, html) {
-  closeMore();
+  closeMore(true);
   const o = document.createElement('div'); o.id = 'sheet'; o.className = 'sheet-bg';
   o.innerHTML = `<div class="sheet"><div class="sh-h"><b>${esc(title)}</b><button id="shx">닫기</button></div><div class="sh-b">${html}</div></div>`;
   document.body.appendChild(o);
@@ -1675,7 +1789,7 @@ async function renderHistory(from) {
   <p>내 답: ${esc(x.myAnswer || '-')} / 정답: <b>${esc(fa(x.answer))}</b></p>
   ${x.explImage ? `<div class="wm"><img class="eimg" src="${esc(x.explImage)}" alt=""></div>` : ''}${x.explanation ? `<div class="expl">${esc(dm(x.explanation))}</div>` : ''}${x.extra ? `<div class="expl">${esc(dm(x.extra))}</div>` : ''}${x.pid ? `<button class="nbh" data-p="${esc(x.pid)}">오답노트에 담기</button>` : ''}</div>`).join('') || '<div class="card sub">아직 푼 문제가 없습니다.</div>'}${navBar('home')}`);
   bindNav(); bindRec(from); $('#bk').onclick = back[1];
-  document.querySelectorAll('.nbh').forEach((b) => b.onclick = async () => { try { await api('note/add', { pid: b.dataset.p }); b.textContent = '담았습니다'; b.disabled = true; } catch (e) { alert(e.message); } });
+  document.querySelectorAll('.nbh').forEach((b) => b.onclick = async () => { try { await api('note/add', { pid: b.dataset.p }); b.textContent = '담았습니다'; b.disabled = true; b.classList.add('pop-on'); snack('오답노트에 담았습니다', '보기', () => renderNotes()); } catch (e) { toast(e.message); } });
 }
 // 오답노트: 학생마다 따로 메모를 적고, 단원별·시기별로 찾는다
 let noteUnit = '', notePeriod = '', noteSort = 'new';
@@ -1704,8 +1818,8 @@ async function renderNotes() {
   document.querySelectorAll('.card[data-p]').forEach((c) => {
     const pid = c.dataset.p;
     c.querySelector('.sh').onclick = () => { const w = c.querySelector('.shw'); w.style.display = w.style.display === 'none' ? '' : 'none'; math(w); };
-    c.querySelector('.nsv').onclick = async () => { try { await api('note/update', { pid, memo: c.querySelector('.nmm').value }); renderNotes(); } catch (e) { alert(e.message); } };
-    c.querySelector('.ndl').onclick = async () => { if (confirm('오답노트에서 빼시겠습니까?')) { await api('note/del', { pid }); renderNotes(); } };
+    c.querySelector('.nsv').onclick = async () => { try { await api('note/update', { pid, memo: c.querySelector('.nmm').value }); renderNotes(); } catch (e) { toast(e.message); } };
+    c.querySelector('.ndl').onclick = async () => { if (await ask('오답노트에서 빼시겠습니까?', '빼기')) { await api('note/del', { pid }); renderNotes(); } };
   });
 }
 
@@ -1733,7 +1847,7 @@ async function renderCatchu() {
   document.querySelectorAll('.cn').forEach((b) => b.onclick = async () => {
     const box = b.closest('.card').querySelector('.citem'), key = b.dataset.r + ':' + b.dataset.n;
     if (box.dataset.k === key) { box.innerHTML = ''; box.dataset.k = ''; return; }
-    box.dataset.k = key; box.innerHTML = '<p class="sub">불러오는 중…</p>';
+    box.dataset.k = key; box.innerHTML = '<p class="sub"><i class="spin"></i>불러오는 중…</p>';
     try {
       const x = await api('catchu/item', { roundId: b.dataset.r, no: Number(b.dataset.n) });
       box.innerHTML = `<div class="wm" style="margin-top:8px"><img class="eimg" src="${esc(x.prob)}" alt="${b.dataset.n}번 문제"></div>
@@ -1791,7 +1905,7 @@ async function renderTeam(notice) {
   bindNav(); bindTg(); if ($('#gorb')) $('#gorb').onclick = () => renderTeamBoard();
   const go = async (path, body) => { try { await api(path, body || {}); renderTeam(); } catch (e) { renderTeam(e.message); } };
   if ($('#tmake')) $('#tmake').onclick = () => go('team/create', { name: $('#tname').value });
-  if ($('#tleave')) $('#tleave').onclick = () => { if (confirm(tm.leader ? '팀을 해체하시겠습니까? 모든 팀원이 팀에서 나가게 됩니다.' : '팀에서 탈퇴하시겠습니까?')) go('team/leave'); };
+  if ($('#tleave')) $('#tleave').onclick = async () => { if (await ask(tm.leader ? '팀을 해체하시겠습니까?\n모든 팀원이 팀에서 나가게 됩니다.' : '팀에서 탈퇴하시겠습니까?', tm.leader ? '해체' : '탈퇴')) go('team/leave'); };
   if ($('#tinvgo')) $('#tinvgo').onclick = () => go('team/invite', { id: $('#tinvid').value });
   const on = (sel, fn) => document.querySelectorAll(sel).forEach((b) => b.onclick = () => fn(b));
   on('.tacc', (b) => go('team/respond', { teamId: Number(b.dataset.t), accept: true }));
@@ -1818,7 +1932,7 @@ async function renderFriends(notice) {
   const on = (sel, fn) => document.querySelectorAll(sel).forEach((b) => b.onclick = () => fn(b));
   on('.facc', (b) => go('friend/respond', { id: b.dataset.id, accept: true }));
   on('.fdec', (b) => go('friend/respond', { id: b.dataset.id, accept: false }));
-  on('.frm', (b) => { if (confirm('목록에서 삭제하시겠습니까?')) go('friend/remove', { id: b.dataset.id }); });
+  on('.frm', async (b) => { if (await ask('목록에서 삭제하시겠습니까?', '삭제')) go('friend/remove', { id: b.dataset.id }); });
 }
 
 let seasonGrade = '';
@@ -1850,7 +1964,7 @@ const seasonStart = (d, active, notice) => `<div class="err" id="err">${esc(noti
     ${d.lockedGrade ? `<div class="pbox">도전 학년 <b>${esc(d.lockedGrade)}</b> · 이번 시즌 동안 고정되어 바꿀 수 없습니다.</div>` : d.pickGrades ? `<label style="margin-top:12px">도전할 학년 (한 번 고르면 이번 시즌 동안 바꿀 수 없습니다)</label><div class="seg" id="sg">${d.pickGrades.map((g) => `<button data-g="${g}" class="${g === d.selGrade ? 'on' : ''}">${g}</button>`).join('')}</div>` : ''}
     ${active && d.canPlay ? (d.poolLeft > 0 ? `<button class="primary btn-big" id="go">랭킹전 시작하기 (남은 문제 ${d.poolLeft}개)</button>` : '<p class="sub" style="margin-top:12px">이번 시즌의 문제를 모두 풀었습니다.</p>') : (!d.canPlay ? '<p class="sub" style="margin-top:12px">선생님·관리자는 순위만 볼 수 있습니다.</p>' : '')}`;
 const bindSeasonStart = (d, again) => {
-  if ($('#go')) $('#go').onclick = () => { if (d.pickGrades && !d.lockedGrade && !confirm(d.selGrade + ' 문제로 도전합니다. 이번 시즌 동안 학년을 바꿀 수 없습니다. 시작하시겠습니까?')) return; startSeason(); };
+  if ($('#go')) $('#go').onclick = async () => { if (d.pickGrades && !d.lockedGrade && !(await ask(d.selGrade + ' 문제로 도전합니다.\n이번 시즌 동안 학년을 바꿀 수 없습니다.\n시작하시겠습니까?', '시작'))) return; startSeason(); };
   document.querySelectorAll('#sg button').forEach((b) => b.onclick = () => { seasonGrade = b.dataset.g; again(); });
 };
 async function renderTeamBoard() {
@@ -1884,7 +1998,7 @@ function renderSeasonResult(r) {
   <button class="btn-big soft" id="nb">오답노트에 담기</button>
   <button class="primary btn-big" id="nx">다음 문제 도전</button>
   <button class="back" id="hm" style="margin:10px auto 0">${IC.rank}시즌 순위 보기</button>`, true);
-  $('#nb').onclick = async () => { try { await api('note/add', { pid: r.pid }); $('#nb').textContent = '오답노트에 담았습니다'; $('#nb').disabled = true; } catch (e) { alert(e.message); } };
+  $('#nb').onclick = async () => { try { await api('note/add', { pid: r.pid }); $('#nb').textContent = '오답노트에 담았습니다'; $('#nb').disabled = true; $('#nb').classList.add('pop-on'); snack('오답노트에 담았습니다', '보기', () => renderNotes()); } catch (e) { toast(e.message); } };
   $('#nx').onclick = async () => { try { const x = await api('season/start', seasonGrade ? { grade: seasonGrade } : {}); skew = x.serverNow - Date.now(); renderSolve(x.active); } catch (e) { renderSeason(e.message); } };
   $('#hm').onclick = () => renderSeason();
 }
@@ -1899,7 +2013,7 @@ function rosterTable(list, now, edit) {
 }
 async function renderRoster() {
   let d;
-  try { d = await api('roster'); } catch (e) { alert(e.message); return loadMe(); }
+  try { d = await api('roster'); } catch (e) { toast(e.message); return loadMe(); }
   app(`<div class="top"><button class="back" id="bk">${IC.back}마이페이지</button><span class="chip">담당 학생 현황</span></div>
   <div class="card"><h2>${esc(d.name)}${esc(me.title || '선생님')} 반</h2>${rosterTable(d.students, d.serverNow, false)}</div>`, true);
   $('#bk').onclick = () => renderMy();
@@ -1929,16 +2043,16 @@ async function renderAdmin(tab) {
       <table><tr><th><input type="checkbox" id="all" style="width:auto"></th><th>아이디</th><th>포인트</th><th>오늘</th><th>최근 접속</th><th></th></tr>
       ${list.sort(SORTS[stuSort]).map((s) => `<tr data-id="${esc(s.id)}"><td><input type="checkbox" class="ck" value="${esc(s.id)}" style="width:auto"></td><td>${esc(s.id)}${s.isAdmin ? ' <span class="chip">관리자</span>' : ''}${s.mustChange ? ' <span class="sub">(초기비번)</span>' : ''}</td><td>${fmt(s.points)}</td><td>${s.today}</td><td class="sub">${s.lastSeen ? ago(s.lastSeen, Date.now()) : '접속 기록 없음'}</td><td><button class="rs" data-id="${esc(s.id)}">비번초기화</button> <button class="danger dl" data-id="${esc(s.id)}">삭제</button></td></tr>`).join('')}</table></div>`);
       bindTabs();
-      $('#add').onclick = async () => { try { const r = await api('admin/addstudents', { text: $('#nw').value }); alert(`등록 ${r.added.length}명` + (r.skipped.length ? '\n건너뜀:\n' + r.skipped.join('\n') : '')); renderAdmin(tab); } catch (e) { showErr(e.message); } };
+      $('#add').onclick = async () => { try { const r = await api('admin/addstudents', { text: $('#nw').value }); toast(`등록 ${r.added.length}명` + (r.skipped.length ? '\n건너뜀:\n' + r.skipped.join('\n') : '')); renderAdmin(tab); } catch (e) { showErr(e.message); } };
       $('#srt').onchange = (e) => { stuSort = e.target.value; renderAdmin(tab); };
       $('#all').onchange = (e) => document.querySelectorAll('.ck').forEach((c) => { if (c.closest('tr').style.display !== 'none') c.checked = e.target.checked; });
       $('#q').oninput = (e) => document.querySelectorAll('tr[data-id]').forEach((r) => r.style.display = r.dataset.id.includes(e.target.value.trim()) ? '' : 'none');
       $('#give').onclick = async () => {
         const ids = [...document.querySelectorAll('.ck:checked')].map((c) => c.value);
         if (!ids.length) return ($('#err2').textContent = '학생을 먼저 선택해 주십시오.');
-        try { const r = await api('admin/points', { ids, delta: $('#amt').value, reason: $('#why').value }); alert(r.count + '명에게 적용했습니다.'); renderAdmin(tab); } catch (e) { $('#err2').textContent = e.message; }
+        try { const r = await api('admin/points', { ids, delta: $('#amt').value, reason: $('#why').value }); toast(r.count + '명에게 적용했습니다.'); renderAdmin(tab); } catch (e) { $('#err2').textContent = e.message; }
       };
-      document.querySelectorAll('.rq-do').forEach((b) => b.onclick = async () => { if (confirm(b.dataset.id + ' 비밀번호를 0000으로 초기화하시겠습니까?')) { try { await api('admin/resetpw', { id: b.dataset.id }); renderAdmin(tab); } catch (e) { alert(e.message); } } });
+      document.querySelectorAll('.rq-do').forEach((b) => b.onclick = async () => { if (confirm(b.dataset.id + ' 비밀번호를 0000으로 초기화하시겠습니까?')) { try { await api('admin/resetpw', { id: b.dataset.id }); renderAdmin(tab); } catch (e) { toast(e.message); } } });
       document.querySelectorAll('.rs').forEach((b) => b.onclick = async () => { if (confirm(b.dataset.id + ' 비밀번호를 0000으로 초기화하시겠습니까?')) { await api('admin/resetpw', { id: b.dataset.id }); renderAdmin(tab); } });
       document.querySelectorAll('.dl').forEach((b) => b.onclick = async () => { if (confirm(b.dataset.id + ' 학생을 삭제하시겠습니까? 되돌릴 수 없습니다.')) { await api('admin/deletestudent', { id: b.dataset.id }); renderAdmin(tab); } });
     } else if (tab === 'problems') {
@@ -1951,9 +2065,9 @@ async function renderAdmin(tab) {
       bindTabs();
       document.querySelectorAll('.tg').forEach((b) => b.onclick = async () => {
         const p = list[b.dataset.i];
-        try { await api('admin/problem', { id: p.id, grade: p.grade, answer: p.answer, text: p.text, explanation: p.explanation, extra: p.extra, image: p.image, expl_image: '@keep', active: p.active === false }); renderAdmin(tab); } catch (e) { alert(e.message); }
+        try { await api('admin/problem', { id: p.id, grade: p.grade, answer: p.answer, text: p.text, explanation: p.explanation, extra: p.extra, image: p.image, expl_image: '@keep', active: p.active === false }); renderAdmin(tab); } catch (e) { toast(e.message); }
       });
-      $('#dall').onclick = async () => { if (!confirm(`등록된 문제 ${list.length}개를 전부 삭제하시겠습니까?\n되돌릴 수 없습니다.`)) return; if (prompt('정말 전부 삭제하려면 "삭제"라고 입력하십시오.') !== '삭제') return; try { const r = await api('admin/deleteall'); alert(`${r.deleted}개 삭제했습니다.`); renderAdmin(tab); } catch (e) { alert(e.message); } };
+      $('#dall').onclick = async () => { if (!confirm(`등록된 문제 ${list.length}개를 전부 삭제하시겠습니까?\n되돌릴 수 없습니다.`)) return; if (prompt('정말 전부 삭제하려면 "삭제"라고 입력하십시오.') !== '삭제') return; try { const r = await api('admin/deleteall'); toast(`${r.deleted}개 삭제했습니다.`); renderAdmin(tab); } catch (e) { toast(e.message); } };
       document.querySelectorAll('.dp').forEach((b) => b.onclick = async () => { if (confirm('이 문제를 삭제하시겠습니까?')) { await api('admin/deleteproblem', { id: b.dataset.id }); renderAdmin(tab); } });
     } else if (tab === 'units') {
       const G = ['중1', '중2', '중3', '고1', '고2', '고3'], d = await api('admin/units');
@@ -2007,7 +2121,7 @@ async function renderAdmin(tab) {
         document.querySelectorAll('.gk').forEach((cb) => cb.onchange = () => { let n = cb.closest('label').nextElementSibling; while (n && n.querySelector('.un')) { n.querySelector('.un').checked = cb.checked; n = n.nextElementSibling; } });
         $('#all2').onclick = () => { document.querySelectorAll('.un').forEach((x) => x.checked = true); sync(); };
         $('#none2').onclick = () => { document.querySelectorAll('.un').forEach((x) => x.checked = false); sync(); };
-        const save = async (units) => { try { await api('admin/setunits', { grade: cur, units }); if (units.length) d.selected[cur] = units; else delete d.selected[cur]; alert(units.length ? `${cur}: ${units.length}개 단원만 출제됩니다.` : `${cur}: 제한을 풀었습니다. 모든 문제가 출제됩니다.`); draw(); } catch (e) { showErr(e.message); } };
+        const save = async (units) => { try { await api('admin/setunits', { grade: cur, units }); if (units.length) d.selected[cur] = units; else delete d.selected[cur]; toast(units.length ? `${cur}: ${units.length}개 단원만 출제됩니다.` : `${cur}: 제한을 풀었습니다. 모든 문제가 출제됩니다.`); draw(); } catch (e) { showErr(e.message); } };
         $('#sv').onclick = () => { const u = [...document.querySelectorAll('.un:checked')].map((x) => x.value); if (!u.length && !confirm('아무것도 체크하지 않으면 제한이 풀리고 모든 문제가 출제됩니다. 계속하시겠습니까?')) return; save(u); };
         $('#rel').onclick = () => { if (confirm(cur + ' 제한을 풀고 모든 문제를 출제하시겠습니까?')) save([]); };
       };
@@ -2029,13 +2143,13 @@ async function renderAdmin(tab) {
       if ($('#radd-go')) $('#radd-go').onclick = async () => {
         const ids = [...$('#radd').value.split(/\r?\n/).map((x) => x.trim()).filter(Boolean), ...[...document.querySelectorAll('.ua:checked')].map((c) => c.value)];
         if (!ids.length) return showErr('추가할 학생을 골라 주십시오.');
-        try { const r = await api('admin/roster_edit', { teacher: sel, add: ids }); if (r.missing) alert('없는 아이디: ' + r.missing); renderAdmin('teams'); } catch (e) { showErr(e.message); }
+        try { const r = await api('admin/roster_edit', { teacher: sel, add: ids }); if (r.missing) toast('없는 아이디: ' + r.missing); renderAdmin('teams'); } catch (e) { showErr(e.message); }
       };
       if ($('#rrm')) $('#rrm').onclick = async () => {
         const ids = [...document.querySelectorAll('.rk:checked')].map((c) => c.value);
-        if (!ids.length) return alert('빼려는 학생을 골라 주십시오.');
+        if (!ids.length) return toast('빼려는 학생을 골라 주십시오.');
         if (!confirm(`${ids.length}명을 이 반에서 빼시겠습니까? (학생 계정은 그대로 남습니다)`)) return;
-        try { await api('admin/roster_edit', { teacher: sel, remove: ids }); renderAdmin('teams'); } catch (e) { alert(e.message); }
+        try { await api('admin/roster_edit', { teacher: sel, remove: ids }); renderAdmin('teams'); } catch (e) { toast(e.message); }
       };
     } else if (tab === 'season') {
       const d = await api('admin/seasons'), z = (n) => String(n).padStart(2, '0');
@@ -2065,7 +2179,7 @@ async function renderAdmin(tab) {
       });
       document.querySelectorAll('.sd').forEach((b) => b.onclick = async () => {
         if (!confirm('이 시즌과 시즌 기록을 모두 지우시겠습니까? 되돌릴 수 없습니다.')) return;
-        try { await api('admin/season_delete', { id: +b.dataset.i }); renderAdmin('season'); } catch (e) { alert(e.message); }
+        try { await api('admin/season_delete', { id: +b.dataset.i }); renderAdmin('season'); } catch (e) { toast(e.message); }
       });
     } else if (tab === 'sus') {
       const days = window.__sd || 14, fast = window.__sf || 20, d = await api('admin/suspects', { days, fast });
@@ -2091,7 +2205,7 @@ async function renderAdmin(tab) {
       $('#sv').onclick = async () => {
         const v = {}; document.querySelectorAll('.cf').forEach((i) => v[i.dataset.k] = i.value);
         v.TIME_LIMIT_SEC = Number(v.TIME_LIMIT_MIN) * 60; delete v.TIME_LIMIT_MIN;
-        try { await api('admin/setcfg', v); alert('저장했습니다.'); } catch (e) { showErr(e.message); }
+        try { await api('admin/setcfg', v); toast('저장했습니다.'); } catch (e) { showErr(e.message); }
       };
     } else if (tab === 'notice') {
       const list = await api('notices');
@@ -2109,9 +2223,9 @@ async function renderAdmin(tab) {
     } else {
       app(`${tabs(tab)}<div class="card"><h2>관리자 비밀번호 변경</h2><input id="np" type="password" placeholder="새 비밀번호 (4자 이상)"><div class="err" id="err"></div><button class="primary" id="sv">변경</button></div>`);
       bindTabs();
-      $('#sv').onclick = async () => { try { await api('admin/adminpw', { pw: $('#np').value }); alert('변경했습니다.'); $('#np').value = ''; } catch (e) { showErr(e.message); } };
+      $('#sv').onclick = async () => { try { await api('admin/adminpw', { pw: $('#np').value }); toast('변경했습니다.'); $('#np').value = ''; } catch (e) { showErr(e.message); } };
     }
-  } catch (e) { if (token) alert(e.message); }
+  } catch (e) { if (token) toast(e.message); }
 }
 
 start();
