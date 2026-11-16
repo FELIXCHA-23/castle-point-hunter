@@ -258,7 +258,9 @@ def main():
         if r and r.get("skipped"):
             print(f"::warning::헌터스에 계정이 없는 학생 {r['skipped']}건은 건너뛰었습니다 (관리자 화면에서 확인).")
 
-    have = {} if DRY else {x["round_id"]: x for x in (h.rpc("catchu_sync_have", {}) or [])}
+    # 읽기만 하는 호출이라 DRY_RUN 에서도 부른다 (헌터스 키·함수 설치 확인 겸)
+    have = {x["round_id"]: x for x in (h.rpc("catchu_sync_have", {}) or [])}
+    print(f"헌터스: 이미지가 올라가 있는 회차 {len(have)}개")
     made = no_pdf = failed = 0
     for rd in rounds:
         total = int(rd.get("total") or 0)
