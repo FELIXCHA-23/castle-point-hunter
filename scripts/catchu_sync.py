@@ -27,6 +27,7 @@ import sys
 import requests
 
 SINCE = os.environ.get("SINCE", "2026-10-23")
+ELEM_TEACHER = "오민경"  # 초등 담당 선생님 (이 선생님 반·회차는 가져오지 않음)
 DRY = os.environ.get("DRY_RUN") == "1"
 FORCE_IMAGES = os.environ.get("FORCE_IMAGES") == "1"
 # 퇴원생 등 가져오지 않을 학생 이름 (쉼표로 구분). 공개 저장소라 이름은 코드에 쓰지 않고 비밀 값 EXCLUDED_NAMES 로만 받는다.
@@ -90,14 +91,22 @@ def load_kmms(k):
         d.setdefault("id", r.get("id"))
         by[r["collection"]].append(d)
 
-    rounds = [d for d in by["rounds"]
-              if "주차" in (d.get("title") or "") and "입학" not in (d.get("title") or "")
-              and (d.get("date") or "") >= SINCE]
+    # 초등 회차(오민경T 반 등)는 헌터스(중·고) 대상이 아니므로 뺀다
+    def elementary(d):
+        return str(d.get("grade") or "").startswith("초") or any(
+            ELEM_TEACHER in str(d.get(k) or "") for k in ("teacher", "teacherName", "owner"))
+
+    cand = [d for d in by["rounds"]
+            if "주차" in (d.get("title") or "") and "입학" not in (d.get("title") or "")
+            and (d.get("date") or "") >= SINCE]
+    rounds = [d for d in cand if not elementary(d)]
+    print(f"KMMS: 초등 회차 {len(cand) - len(rounds)}개는 제외")
     rids = {d["id"] for d in rounds}
 
     students = {}
     for s in by["students"]:
-        if (s.get("class") or "") == "입학테스트" or (s.get("name") or "").strip() in EXCLUDED_NAMES:
+        if (s.get("class") or "") == "입학테스트" or (s.get("name") or "").strip() in EXCLUDED_NAMES \
+                or str(s.get("grade") or "").startswith("초") or ELEM_TEACHER in str(s.get("teacher") or ""):
             continue
         students[s["id"]] = s
 
@@ -259,7 +268,13 @@ def main():
             print(f"::warning::헌터스에 계정이 없는 학생 {r['skipped']}건은 건너뛰었습니다 (관리자 화면에서 확인).")
 
     # 읽기만 하는 호출이라 DRY_RUN 에서도 부른다 (헌터스 키·함수 설치 확인 겸)
-    have = {x["round_id"]: x for x in (h.rpc("catchu_sync_have", {}) or [])}
+    try:
+        have = {x["round_id"]: x for x in (h.rpc("catchu_sync_have", {}) or [])}
+    except RuntimeError as e:
+        if not DRY:
+            raise
+        print(f"::error::헌터스 연결 실패 (HUNTERS_SERVICE_KEY 확인): {str(e)[:120]}")
+        have = {}
     print(f"헌터스: 이미지가 올라가 있는 회차 {len(have)}개")
     made = no_pdf = failed = 0
     for rd in rounds:
