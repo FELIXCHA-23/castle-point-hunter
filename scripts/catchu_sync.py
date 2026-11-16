@@ -182,7 +182,7 @@ def _regions(page, marks, spans, skip_head):
         nxt = same[0] if same else None
         bottom = (nxt["headTop"] - 2 if nxt and nxt["headTop"] is not None else nxt["top"] - 6) if nxt else H - FOOTER_PT
         left, right = (24, half - 4) if m["col"] == 0 else (half + 4, W - 24)
-        out.setdefault(m["num"], (left, max(0, m["top"] - 6), right, bottom))
+        out.setdefault(m["num"], (left, max(0, m["top"] - 2), right, bottom))  # -2: 위쪽 출처 줄이 걸치지 않게
     return out
 
 
@@ -209,10 +209,13 @@ def crop_pdf(pdf_bytes, total):
     probs, expls = {}, {}
     for page in doc:
         spans = _spans(page)
-        texts = {s["t"] for s in spans}
-        is_expl = any(t == "해설" or t.startswith("해설") for t in texts) or any("정답" in t for t in texts)
+        texts = {s["t"].replace(" ", "") for s in spans}
+        if any("빠른정답" in t for t in texts):
+            continue  # 빠른정답 표 쪽 (작은 번호가 표로 늘어서 있어 잘못 잘림)
+        # 해설 쪽: 단독 글자 '해설'이 있는 쪽. 문제 쪽에도 '정답률 NN%' 가 있으므로 '정답'으로 판단하면 안 됨
+        is_expl = "해설" in texts
         if is_expl:
-            ms = _marks(spans, page.rect.width, 9, True)
+            ms = _marks(spans, page.rect.width, 15, True)
             for n, rect in _regions(page, ms, spans, False).items():
                 if 1 <= n <= max(total, 1) and n not in expls:
                     expls[n] = (page.number, rect)
