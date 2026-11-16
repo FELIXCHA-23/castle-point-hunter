@@ -4,6 +4,8 @@ name: catchu-sync
 on:
   schedule:
     - cron: '0 18 * * *'   # 매일 18:00 UTC = 새벽 03:00 KST
+  push:   # 작업 브랜치에 올리면 숫자만 확인(DRY_RUN) 모드로 시험 실행
+    branches: [claude/project-thread-bkcsc4]
   workflow_dispatch:
     inputs:
       dry_run:
@@ -29,7 +31,7 @@ jobs:
           HUNTERS_SERVICE_KEY: ${{ secrets.HUNTERS_SERVICE_KEY }}
           GOOGLE_SA_JSON: ${{ secrets.GOOGLE_SA_JSON }}
           ROSTER_SHEET_ID: ${{ secrets.ROSTER_SHEET_ID }}
-          DRY_RUN: ${{ github.event.inputs.dry_run || '0' }}
+          DRY_RUN: ${{ github.event_name == 'push' && '1' || github.event.inputs.dry_run || '0' }}
         run: python scripts/roster_sync.py
       - name: Sync
         env:
@@ -38,6 +40,6 @@ jobs:
           KMMS_SERVICE_KEY: ${{ secrets.KMMS_SERVICE_KEY }}
           HUNTERS_SERVICE_KEY: ${{ secrets.HUNTERS_SERVICE_KEY }}
           EXCLUDED_NAMES: ${{ secrets.EXCLUDED_NAMES }}
-          DRY_RUN: ${{ github.event.inputs.dry_run || '0' }}
+          DRY_RUN: ${{ github.event_name == 'push' && '1' || github.event.inputs.dry_run || '0' }}
           FORCE_IMAGES: ${{ github.event.inputs.force_images || '0' }}
         run: python scripts/catchu_sync.py
