@@ -1,0 +1,35 @@
+name: catchu-sync
+# 캐치유테스트(KMMS) 오답과 문항 이미지를 헌터스로 매일 한 번 가져옵니다.
+# 공개 저장소라 실행 기록이 공개됩니다. 스크립트는 숫자만 출력합니다(학생 이름·문항 내용 출력 금지).
+on:
+  schedule:
+    - cron: '0 18 * * *'   # 매일 18:00 UTC = 새벽 03:00 KST
+  workflow_dispatch:
+    inputs:
+      dry_run:
+        description: '헌터스에 쓰지 않고 숫자만 확인 (1=예)'
+        default: '0'
+      force_images:
+        description: '이미 있는 문항 이미지도 다시 잘라 덮어쓰기 (1=예)'
+        default: '0'
+concurrency: catchu-sync
+jobs:
+  sync:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - run: pip install pymupdf==1.24.10 pillow==10.4.0 requests==2.32.3
+      - name: Sync
+        env:
+          KMMS_URL: https://fyutcmvzlardpanxibti.supabase.co
+          HUNTERS_URL: https://iydtrglylllkljayumxl.supabase.co
+          KMMS_SERVICE_KEY: ${{ secrets.KMMS_SERVICE_KEY }}
+          HUNTERS_SERVICE_KEY: ${{ secrets.HUNTERS_SERVICE_KEY }}
+          EXCLUDED_NAMES: ${{ secrets.EXCLUDED_NAMES }}
+          DRY_RUN: ${{ github.event.inputs.dry_run || '0' }}
+          FORCE_IMAGES: ${{ github.event.inputs.force_images || '0' }}
+        run: python scripts/catchu_sync.py

@@ -586,6 +586,40 @@ begin
   return jsonb_build_object('rounds', n_r, 'rows', n_w, 'skipped', n_skip);
 end $$;
 
+-- ----- 캐치유 자동 연동 (GitHub Actions scripts/catchu_sync.py 가 secret 키로만 부름. 학생·anon 은 못 부름) -----
+create or replace function public.catchu_sync_import(j jsonb) returns jsonb language sql security definer set search_path = castle, public as $$
+  select castle.catchu_import(j) $$;
+
+-- 회차별로 문제·해설 이미지가 몇 개 올라가 있는지
+create or replace function public.catchu_sync_have() returns jsonb language sql security definer set search_path = castle, public as $$
+  select coalesce(jsonb_agg(jsonb_build_object('round_id', round_id, 'probs', probs, 'expls', expls)), '[]')
+  from (select round_id, count(*) filter (where prob <> '') probs, count(*) filter (where expl <> '') expls
+        from castle.catchu_items group by round_id) q $$;
+
+-- 문항 이미지 넣기. p_overwrite=false 면 이미 있는 이미지는 그대로 두고 빈 칸만 채운다(손으로 올린 이미지를 보호).
+create or replace function public.catchu_sync_items(p_round text, p_items jsonb, p_overwrite boolean default false) returns jsonb
+language plpgsql security definer set search_path = castle, public as $$
+declare x jsonb; n int := 0;
+begin
+  if not exists (select 1 from castle.catchu_rounds where id = p_round) then return jsonb_build_object('items', 0); end if;
+  for x in select * from jsonb_array_elements(coalesce(p_items, '[]')) loop
+    insert into castle.catchu_items (round_id, no, prob, expl)
+      values (p_round, (x->>'no')::int, coalesce(x->>'prob', ''), coalesce(x->>'expl', ''))
+      on conflict (round_id, no) do update set
+        prob = case when p_overwrite and excluded.prob <> '' then excluded.prob when castle.catchu_items.prob = '' then excluded.prob else castle.catchu_items.prob end,
+        expl = case when p_overwrite and excluded.expl <> '' then excluded.expl when castle.catchu_items.expl = '' then excluded.expl else castle.catchu_items.expl end;
+    n := n + 1;
+  end loop;
+  return jsonb_build_object('items', n);
+end $$;
+
+revoke all on function public.catchu_sync_import(jsonb) from public, anon, authenticated;
+revoke all on function public.catchu_sync_have() from public, anon, authenticated;
+revoke all on function public.catchu_sync_items(text, jsonb, boolean) from public, anon, authenticated;
+grant execute on function public.catchu_sync_import(jsonb) to service_role;
+grant execute on function public.catchu_sync_have() to service_role;
+grant execute on function public.catchu_sync_items(text, jsonb, boolean) to service_role;
+
 -- ----- 오답노트 -----
 create or replace function castle.r_notes(tok text) returns jsonb language plpgsql as $$
 declare st castle.students := castle.stu(tok);
