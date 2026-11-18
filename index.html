@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="color-scheme" content="dark">
-<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, interactive-widget=resizes-content">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover, interactive-widget=resizes-content">
 <link rel="manifest" href="manifest.webmanifest">
 <link rel="icon" type="image/png" sizes="32x32" href="icons/favicon-32.png">
 <link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
@@ -1172,14 +1172,25 @@ input[type=checkbox]:focus-visible{outline:2px solid var(--gold,#D4B278);outline
   .spin{animation-duration:1.6s}
   input[type=checkbox]:checked::after{animation:none;clip-path:none}
 }
+/* 모바일 확대 방지: 더블탭 확대 차단(연타해도 화면이 커지지 않음), 입력칸 포커스 확대 방지 */
+html,body,*{touch-action:manipulation}
+input,textarea,select{font-size:max(16px,1em)}
 </style>
+<script>
+/* iOS 사파리는 user-scalable=no 를 무시하므로 핀치·더블탭 확대를 직접 막는다 */
+(function(){
+  ['gesturestart','gesturechange','gestureend'].forEach(function(t){document.addEventListener(t,function(e){e.preventDefault()},{passive:false})});
+  document.addEventListener('touchmove',function(e){if(e.touches&&e.touches.length>1)e.preventDefault()},{passive:false});
+  document.addEventListener('dblclick',function(e){e.preventDefault()},{passive:false});
+})();
+</script>
 </head>
 <body>
 <div id="app"></div>
 <script src="config.js?v=20261027"></script>
 <script>
 // 홈 화면 앱이 예전 화면을 붙잡고 있지 않도록: 열 때마다 새 버전이 있는지 확인해서 있으면 새로 불러옵니다
-const BUILD = '20261111-a';
+const BUILD = '20261118-a';
 (async () => {
   try {
     const t = await fetch('./index.html?nc=' + Date.now(), { cache: 'no-store' }).then((r) => r.text());
